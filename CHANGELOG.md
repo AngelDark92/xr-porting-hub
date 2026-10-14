@@ -1,3 +1,41 @@
+## [1.28.0-dev.1](https://github.com/4uva4ek/xr-porting-hub/compare/v1.27.0...v1.28.0-dev.1) (2026-10-14)
+
+### 🐛 Bug Fixes
+
+* Add Galaxy XR launcher icon patch for 4XVR to enhance app tile visibility ([2cd4603](https://github.com/4uva4ek/xr-porting-hub/commit/2cd460390a4966289085d08e933d77ba8f4512cc))
+* Codecs support update ([67f5a36](https://github.com/4uva4ek/xr-porting-hub/commit/67f5a3667281ff75ad4c99c84842ef9c19458ae6))
+* codecs support v5 ([a008e34](https://github.com/4uva4ek/xr-porting-hub/commit/a008e342233fa1f65cfb7266d049734fab144d6b))
+* decode Packages validation responses ([14b3deb](https://github.com/4uva4ek/xr-porting-hub/commit/14b3debf66f49c02f62c1e1fdb03a237f1d3a879))
+* Enhance AV1 codec diagnostics and update support library version ([82975b0](https://github.com/4uva4ek/xr-porting-hub/commit/82975b0f50cd11c9c876ab3bfc189fea33560310))
+* Enhance HdrPipelinePatches to improve MediaCodec surface reload handling ([47eeea7](https://github.com/4uva4ek/xr-porting-hub/commit/47eeea7bbac74a34accd7556970e825ee4bbd110))
+* enhance network optimization patch with tolerance for prior edits in scene and main transforms ([0f3e1b8](https://github.com/4uva4ek/xr-porting-hub/commit/0f3e1b89983c15115cc42be05e812714ed9a943c))
+* Keep 4XVR HDR surface routing verifiable so video playback runs ([01c1d3e](https://github.com/4uva4ek/xr-porting-hub/commit/01c1d3edfa2b287cb9a4caa5a58fa510596b8c43))
+* pin full-facebridge compat to its build list, exact legacy bases in the merged bridge description, clarify the native-closure test ([5572593](https://github.com/4uva4ek/xr-porting-hub/commit/55725931d924f01438c8daf93ec3e87a993cddbc))
+* Refactor patch descriptions for clarity and conciseness across multiple files ([540ebc1](https://github.com/4uva4ek/xr-porting-hub/commit/540ebc171be2153820269f1bda8c25dc0bcf811a))
+* remove recommended sets and update related documentation and tests ([f1175ad](https://github.com/4uva4ek/xr-porting-hub/commit/f1175ade35f63b4a0d30286abedc5c7aad3bcfa0))
+* repair external build attestation ([87a016f](https://github.com/4uva4ek/xr-porting-hub/commit/87a016f12115bbc20ef8ffd4461a46c6392d1b37))
+* restore controller HAL pose horizon before added prediction ([cd38db4](https://github.com/4uva4ek/xr-porting-hub/commit/cd38db426b2380bc9743b6dcf53b15dc27d2fd2e))
+* scope the Device identity recommendation to the legacy bases ([4076f91](https://github.com/4uva4ek/xr-porting-hub/commit/4076f91bbe45393253f7ceac8d3a07536287bf1a))
+* Update codecs support library version and enhance codec filtering logic ([92c7414](https://github.com/4uva4ek/xr-porting-hub/commit/92c7414137e3bf2dfa32f73306fd2651cbb759fc))
+* update Network Optimizations patch test to correctly validate prior microphone edits ([e3c07a0](https://github.com/4uva4ek/xr-porting-hub/commit/e3c07a0bcfd217e014ac46f34316f0f819247966))
+
+### ✨ New Features
+
+* Add 4XVR Galaxy XR recommended update and first on-device feedback fix ([8d0bb6e](https://github.com/4uva4ek/xr-porting-hub/commit/8d0bb6e9d31a2a073f5098fdbeb4ecaa32d8a7fb))
+* add analysis and patch plan for 4XVR 2.0.22 vs Galaxy XR reference mod and steamlink new uberudp patch ([74a0ff8](https://github.com/4uva4ek/xr-porting-hub/commit/74a0ff8eb6289658af03ff5cb54a1a49fa28017e))
+* Add diagnostics and verification scripts for Steam Link GalaxyXR patches ([03c7dd5](https://github.com/4uva4ek/xr-porting-hub/commit/03c7dd576d56f8ee0d8c2eb10257606da551bbe2))
+* add experimental patch to disable Uber link rescan for Steam Link 2.0.23 ([e3c2cbe](https://github.com/4uva4ek/xr-porting-hub/commit/e3c2cbe3911deceed561562e0b6aee0426d071f2))
+* add opt-in Steam Link 2.0.23 angular frame adapter ([5572286](https://github.com/4uva4ek/xr-porting-hub/commit/5572286a7dc1d1c49b66f6a8fe057ba3cb79cc81))
+* Add parity audit and fixes for 4XVR 2.0.22, including audio bridge and subtitle enhancements ([7700be8](https://github.com/4uva4ek/xr-porting-hub/commit/7700be88318f609ab18ee9bea3551728d68cf5db))
+* Add SubtitleStyleListener and Cue classes, HdrBridge, and native libraries for 4XVR ([bd02cd5](https://github.com/4uva4ek/xr-porting-hub/commit/bd02cd545f19ff7b4b0e114133071442e4531b4a))
+* delete the Steam Link recommended-set wrappers ([6b789c0](https://github.com/4uva4ek/xr-porting-hub/commit/6b789c078897fc7c906319539d90737e21d4f43e))
+* Enhance 4XVR compatibility with Android XR input features and popup management ([84339e6](https://github.com/4uva4ek/xr-porting-hub/commit/84339e63a1af3a79c6afdb75f9e8294aceeae8d9))
+* Galaxy XR SteamVR driver identity (galaxyxr) for all supported builds ([6c63d6b](https://github.com/4uva4ek/xr-porting-hub/commit/6c63d6bedce790bf70deb2040c62cb9091bf7c56))
+* Implement premium fallback patch for 4XVR 2.0.22 ([9a8a050](https://github.com/4uva4ek/xr-porting-hub/commit/9a8a05010e4b8f26012d2e1a8bb79fe41e5f9a80))
+* network optimizations for 2.0.23 and allow other codecs patch both still experimental ([76da903](https://github.com/4uva4ek/xr-porting-hub/commit/76da90316a54c7eab7b889f4e1e400871f5e2860))
+* recommended defaults on individual patches (Steam Link) ([111e6eb](https://github.com/4uva4ek/xr-porting-hub/commit/111e6ebd21f933f8395e59580681baa539937939))
+* Refactor and clean up patches for controller velocity and cadence ([bc96f66](https://github.com/4uva4ek/xr-porting-hub/commit/bc96f6643b539e8e9b7b4dac741faaab04ecf2ef))
+
 ## [1.28.0-dev.28](https://github.com/AngelDark92/xr-porting-hub/compare/v1.28.0-dev.27...v1.28.0-dev.28) (2026-10-14)
 
 ### 🐛 Bug Fixes
