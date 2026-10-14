@@ -6,6 +6,7 @@ import app.template.patches.steamlink.binary.*
 import app.template.patches.steamlink.identity.changePackageNamePatch
 import app.template.patches.steamlink.identity.deviceIdentityPatch
 import app.template.patches.steamlink.identity.deviceIdentityNativeXrPatch
+import app.template.patches.steamlink.identity.galaxyXrVendorDriverPatch
 import com.google.gson.JsonParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,6 +31,7 @@ class PatchCategoriesTest {
         ),
         "App & device identity" to listOf(
             changePackageNamePatch, deviceIdentityPatch, deviceIdentityNativeXrPatch,
+            galaxyXrVendorDriverPatch,
         ),
         "Advanced XR compatibility" to listOf(
             xrCoreRuntimePatch, xrDeviceConfigBaselinePatch, xrManifestCapabilityPackPatch,
@@ -49,8 +51,8 @@ class PatchCategoriesTest {
 
     @Test
     fun `every public patch carries its agreed category and default`() {
-        assertEquals(30, publicPatches.size)
-        assertEquals(listOf(5, 4, 4, 3, 7, 5, 2), groups.values.map { it.size })
+        assertEquals(31, publicPatches.size)
+        assertEquals(listOf(5, 4, 4, 4, 7, 5, 2), groups.values.map { it.size })
         groups.forEach { (category, patches) ->
             patches.forEach { patch ->
                 assertEquals(category, patch.category, patch.name)
@@ -91,7 +93,7 @@ class PatchCategoriesTest {
             val name = channel.name
             assertEquals(channel.name.lowercase(), generated.get("channel").asString)
             val entries = generated.getAsJsonArray("patches").map { it.asJsonObject }
-            assertEquals(if (channel == ReleaseChannel.STABLE) 21 else 30, entries.size, name)
+            assertEquals(if (channel == ReleaseChannel.STABLE) 22 else 31, entries.size, name)
             val names = entries.map { it.get("name").asString }
             assertEquals(names.sorted(), names, name)
             assertEquals(names.size, names.toSet().size, name)
