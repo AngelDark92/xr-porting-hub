@@ -1,0 +1,61 @@
+{
+  "shaders_h": "D:\\Angelo\\Desktop\\SteamLink-GalaxyXR-Windows-Toolkit-FULL\\steamlink-patches\\extensions\\gxr-spacewarp-layer\\src\\swp_shaders.h",
+  "cases": [
+    {
+      "name": "swp_extrap_frag",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    },
+    {
+      "name": "swp_gme_direct",
+      "glslang_exit": 0,
+      "probe_exit": 0,
+      "detail": "QCOM extension rejected by host glslang; dialect probe clean"
+    },
+    {
+      "name": "swp_gme_fallback",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    },
+    {
+      "name": "swp_h1_direct",
+      "glslang_exit": 0,
+      "probe_exit": 0,
+      "detail": "QCOM extension rejected by host glslang; dialect probe clean"
+    },
+    {
+      "name": "swp_h1_fallback",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    },
+    {
+      "name": "swp_median_frag",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    },
+    {
+      "name": "swp_sad_fallback_frag",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    },
+    {
+      "name": "swp_sad_frag_direct",
+      "glslang_exit": 0,
+      "probe_exit": 0,
+      "detail": "QCOM extension rejected by host glslang; dialect probe clean"
+    },
+    {
+      "name": "swp_vert_quad",
+      "glslang_exit": 0,
+      "probe_exit": null,
+      "detail": ""
+    }
+  ],
+  "expected": {},
+  "glslang": "Glslang Version: 11:16.6.0\nESSL Version: OpenGL ES GLSL 3.20 glslang Khronos. 16.6.0\nGLSL Version: 4.60 glslang Khronos. 16.6.0\nSPIR-V Version 0x00010600, Revision 1\nGLSL.std.450 Version 100, Revision 1\nKhronos Tool ID 8\nSPIR-V Generator Version 11\nGL_KHR_vulkan_glsl version 100\nARB_GL_gl_spirv version 100"
+}

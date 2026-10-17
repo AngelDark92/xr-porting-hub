@@ -76,12 +76,11 @@ object BlueNoiseMorpheAudit {
                 layout.code, mode, layer, existingHelper = expected.helper) }
             check(expected.helper != null) { "Expected production helper was not prepared" }
 
-            fovealBlueNoisePatch.options["inputDepth"] = inputDepth
-            backgroundBlueNoisePatch.options["inputDepth"] = inputDepth
+            blueNoisePatch.options["fovea"] = BlueNoiseLayer.FOVEA in layers
+            blueNoisePatch.options["background"] = BlueNoiseLayer.BACKGROUND in layers
             if (withOled) {
                 oledCalibrationPatch.options["profile"] = "final-balanced"
-                oledCalibrationPatch.options["foveaVdLike10Bit"] = false
-                oledCalibrationPatch.options["foveaVdLike8Bit"] = false
+                oledCalibrationPatch.options["foveaVdLike"] = false
                 oledCalibrationPatch.options["fovealGamma"] = fovealGamma
             }
             // Read the actual APK metadata through the same Morphe resource context as the
@@ -98,7 +97,7 @@ object BlueNoiseMorpheAudit {
             }
             val selection = linkedSetOf<Patch<*>>(metadataGuard)
             if (withOled && order == "oled-first") selection += oledCalibrationPatch
-            layers.forEach { selection += if (it == BlueNoiseLayer.FOVEA) fovealBlueNoisePatch else backgroundBlueNoisePatch }
+            selection += blueNoisePatch
             if (withOled && order == "blue-first") selection += oledCalibrationPatch
 
             val isolated = File(directory, "isolated-input.apk")

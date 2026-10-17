@@ -17,8 +17,7 @@ import app.template.patches.steamlink.androidxr.xrManifestCapabilityPackPatch
 import app.template.patches.steamlink.androidxr.xrPermissionSettingsBootstrapPatch
 import app.template.patches.steamlink.androidxr.xrStartupPermissionsPatch
 import app.template.patches.steamlink.binary.androidXrNativePermissionNamesPatch
-import app.template.patches.steamlink.binary.backgroundBlueNoisePatch
-import app.template.patches.steamlink.binary.fovealBlueNoisePatch
+import app.template.patches.steamlink.binary.blueNoisePatch
 import app.template.patches.steamlink.binary.forceHmdInitializationGatesPatch
 import app.template.patches.steamlink.binary.forceLobbyPermissionStateGatePatch
 import app.template.patches.steamlink.binary.forceStreamXrGatesPatch
@@ -38,8 +37,7 @@ class PatchCompatibilityMatrixTest {
     
     @Test
     fun individual_patches_are_recommended_on_supported_builds() {
-        assertEquals(false, oledCalibrationPatch.options["foveaVdLike10Bit"].default)
-        assertEquals(false, oledCalibrationPatch.options["foveaVdLike8Bit"].default)
+        assertEquals(false, oledCalibrationPatch.options["foveaVdLike"].default)
         assertEquals(
             legacyRecommendedPatches5001712,
             recommendedFor("2.0.20", 5001712).toSet(),
@@ -109,13 +107,14 @@ class PatchCompatibilityMatrixTest {
     }
 
     @Test
-    fun modern_recommended_set_contains_only_the_requested_seven_patches() {
+    fun modern_recommended_set_contains_only_the_requested_eight_patches() {
         assertEquals(
             setOf(
                 xrGalaxyXrHighResolutionPatch,
                 gxrFacebridgePatch,
                 microphoneInputPresetPatch,
                 networkOptimizationsPatch,
+                blueNoisePatch,
                 unrestrictedBatteryUsagePatch,
                 hmdOnlyPatch,
                 oledCalibrationPatch,
@@ -138,8 +137,7 @@ class PatchCompatibilityMatrixTest {
         assertEquals("voice-recognition", microphoneInputPresetPatch.options["preset"].default)
         assertEquals(60, hmdOnlyPatch.options["offsetMs"].default)
         assertEquals("final-balanced", oledCalibrationPatch.options["profile"].default)
-        assertEquals(false, oledCalibrationPatch.options["foveaVdLike10Bit"].default)
-        assertEquals(false, oledCalibrationPatch.options["foveaVdLike8Bit"].default)
+        assertEquals(false, oledCalibrationPatch.options["foveaVdLike"].default)
         assertEquals(1.00f, oledCalibrationPatch.options["fovealGamma"].default)
         assertTrue(networkOptimizationsPatch.default)
         assertEquals("Network Optimizations", networkOptimizationsPatch.name)
@@ -153,12 +151,13 @@ class PatchCompatibilityMatrixTest {
     }
 
     @Test
-    fun new_native_base_exposes_nine_individual_patches_and_no_legacy_mutations() {
+    fun new_native_base_exposes_ten_individual_patches_and_no_legacy_mutations() {
         val expected = setOf(
             xrGalaxyXrHighResolutionPatch,
             gxrFacebridgePatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch,
+            blueNoisePatch,
             xrCodecsSupportNativeXrPatch,
             unrestrictedBatteryUsagePatch,
             hmdOnlyPatch,
@@ -199,13 +198,12 @@ class PatchCompatibilityMatrixTest {
             xrLauncherBootstrapPatch,
             xrStartupPermissionsPatch,
             xrManifestCapabilityPackPatch,
-            deviceIdentityPatch,
+            deviceIdentityPatch, blueNoisePatch,
         )
         assertEquals(legacyRecommendedPatches, expected)
         val closure = legacyRecommendedPatches.flatMap { it.dependencyClosure() }.toSet()
         listOf(
-            appearOnTopPatch, changePackageNamePatch,
-            fovealBlueNoisePatch, backgroundBlueNoisePatch,
+            appearOnTopPatch, changePackageNamePatch, blueNoisePatch,
         )
             .forEach { assertFalse(it in closure, "recommended selection unexpectedly includes ${it.name}") }
         assertTrue(forceHmdInitializationGatesPatch.default)
@@ -216,10 +214,10 @@ class PatchCompatibilityMatrixTest {
     }
 
     @Test
-    fun new_legacy_bases_preserve_all_22_standalone_patches_and_optional_defaults() {
-        val completeCatalog = allIndividualPatches + listOf(fovealBlueNoisePatch, backgroundBlueNoisePatch)
+    fun new_legacy_bases_preserve_all_21_standalone_patches_and_optional_defaults() {
+        val completeCatalog = allIndividualPatches
         val reference = completeCatalog.filter { it.supports("2.0.20", 5001712) }.toSet()
-        assertEquals(22, reference.size)
+        assertEquals(21, reference.size)
         listOf("2.0.20" to 5001812, "2.0.21" to 5001968).forEach { (version, code) ->
             val supported = completeCatalog.filter { it.supports(version, code) }.toSet()
             // Codecs Support stays exact to 5001712 on the 2.0.20 line; the intermediate
@@ -336,7 +334,7 @@ class PatchCompatibilityMatrixTest {
             gxrFacebridgePatch,
             xrGalaxyXrHighResolutionPatch,
             microphoneInputPresetPatch,
-            networkOptimizationsPatch,
+            networkOptimizationsPatch, blueNoisePatch,
             xrCodecsSupportPatch,
             xrCodecsSupportNativeXrPatch,
             oledCalibrationPatch,
@@ -368,11 +366,11 @@ class PatchCompatibilityMatrixTest {
             xrLauncherBootstrapPatch,
             xrStartupPermissionsPatch,
             xrManifestCapabilityPackPatch,
-            deviceIdentityPatch,
+            deviceIdentityPatch, blueNoisePatch,
         )
 
         // Codecs Support is recommended only on the exact 2.0.20/5001712 base; the other legacy
-        // bases keep the 17-patch set and the native build keeps its 7-patch set.
+        // bases keep the 18-patch set and the native build keeps its 8-patch set.
         val legacyRecommendedPatches5001712 = legacyRecommendedPatches + xrCodecsSupportPatch
 
         val nativeRecommendedPatches = setOf(
@@ -380,6 +378,7 @@ class PatchCompatibilityMatrixTest {
             gxrFacebridgePatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch,
+            blueNoisePatch,
             unrestrictedBatteryUsagePatch,
             hmdOnlyPatch,
             oledCalibrationPatch,

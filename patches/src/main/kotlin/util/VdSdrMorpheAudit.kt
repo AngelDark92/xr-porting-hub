@@ -67,8 +67,7 @@ object VdSdrMorpheAudit {
                 VideoOutputPrecision.SRGB8_HIGHP, layout.version, layout.code),
                 layout.version, layout.code, mode, fovealGamma)
             oledCalibrationPatch.options["profile"] = "final-balanced"
-            oledCalibrationPatch.options["foveaVdLike10Bit"] = inputDepth == "10-bit"
-            oledCalibrationPatch.options["foveaVdLike8Bit"] = inputDepth == "8-bit"
+            oledCalibrationPatch.options["foveaVdLike"] = mode != FoveaMode.OFF
             oledCalibrationPatch.options["fovealGamma"] = fovealGamma
             // Read the actual APK metadata through the same Morphe resource context as the
             // production patch. Native identity alone is not an exact version-pair check.

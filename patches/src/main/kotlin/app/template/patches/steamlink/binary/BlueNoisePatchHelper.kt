@@ -156,7 +156,7 @@ internal fun applyBlueNoiseLayer(
 private fun validateBlueNoisePrefix(prefix: ByteArray) {
     if (blueNoiseHash(prefix) == "cbf2d90eb70b9769dd64e57da5d76dbc38ab7213dcf7b940c956813a1ddaa99a") return
     blueNoiseRequire(isOledCalibrationShader(prefix),
-        "Blue noise requires the exact stock shader or OLED calibration with both VD-like fovea toggles OFF; unknown or already-dithered shaders are not stacked")
+        "Blue noise requires the exact stock shader or OLED calibration with the VD-like fovea toggle OFF; unknown or already-dithered shaders are not stacked")
 }
 
 internal fun configureBlueNoiseHelper(payload: ByteArray, configuredHash: String, drawReturn: Long): ByteArray {

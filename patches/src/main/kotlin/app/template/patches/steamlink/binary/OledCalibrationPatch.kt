@@ -111,23 +111,13 @@ internal fun resolveVideoOutputPrecision(
     if (use8BitOutputWhenDithering && dither != VideoDitherMode.OFF)
         VideoOutputPrecision.SRGB8_HIGHP else selected
 
-// Existing option keys are retained. Both input declarations now select the same
-// VD-informed SDR foveal processing; input precision is negotiated by the host.
-// OFF and paddedVideoShader remain unchanged for existing calibration/blue-noise use.
+// The former 10-bit/8-bit option pair selected the same VD-informed SDR foveal
+// processing and merged into one foveaVdLike toggle; input precision is negotiated
+// by the host. OFF and paddedVideoShader remain unchanged for calibration/blue-noise use.
 internal enum class FoveaMode(val optionValue: String) {
     OFF("off"),
     INPUT_10BIT("input-10bit"),
     INPUT_8BIT("input-8bit");
-}
-
-internal fun resolveFoveaMode(input10Bit: Boolean, input8Bit: Boolean): FoveaMode = when {
-    input10Bit && input8Bit -> throw PatchException(
-        "Fovea VD-Like Input 10 bit and Fovea VD-Like Input 8 bit are mutually exclusive; " +
-            "select at most one",
-    )
-    input10Bit -> FoveaMode.INPUT_10BIT
-    input8Bit -> FoveaMode.INPUT_8BIT
-    else -> FoveaMode.OFF
 }
 
 // Defaults remain noise-free. Optional comparison dither is applied in calibrated
@@ -388,19 +378,11 @@ val oledCalibrationPatch = rawResourcePatch(
         required = true,
     )
 
-    val foveaVdLike10Bit by booleanOption(
-        key = "foveaVdLike10Bit",
+    val foveaVdLike by booleanOption(
+        key = "foveaVdLike",
         default = false,
-        title = "Fovea VD-Like Input 10 bit",
-        description = "VD-informed SDR processing for declared 10-bit input: use highp sampling, retain Valve's decoder colour correction, bypass the calibration profile on the foveal layer, and add no shader noise. The separate foveal gamma adjustment still applies. Output is 8-bit sRGB. Does not negotiate host depth or reproduce VD's raw-YUV decoder import. Mutually exclusive with the 8-bit option and separate blue-noise patch.",
-        required = true,
-    )
-
-    val foveaVdLike8Bit by booleanOption(
-        key = "foveaVdLike8Bit",
-        default = false,
-        title = "Fovea VD-Like Input 8 bit",
-        description = "Uses the same VD-informed SDR foveal processing for declared 8-bit input, retaining Valve's decoder colour correction while bypassing the calibration profile and adding no shader noise. The separate foveal gamma adjustment still applies. Output is 8-bit sRGB. Cannot recover precision already lost in the source. Mutually exclusive with the 10-bit option and separate blue-noise patch; does not negotiate host depth.",
+        title = "Fovea VD-like SDR processing",
+        description = "VD-informed SDR foveal processing: highp sampling, Valve's decoder colour correction retained, the calibration profile bypassed on the foveal layer, and no shader noise. The separate foveal gamma adjustment still applies. Output is 8-bit sRGB. The former 10-bit and 8-bit variants selected the same processing and are now one toggle. Does not negotiate host depth or reproduce VD's raw-YUV decoder import. Turn off when blue-noise dithering is selected on the foveal layer.",
         required = true,
     )
 
@@ -442,7 +424,7 @@ val oledCalibrationPatch = rawResourcePatch(
         // VD uses the same SDR colour path for both codec depths. Keep the calibrated
         // base program byte-identical, and change only the separately assembled foveal
         // suffix. The former common-prefix uvmask weight was not layer isolation.
-        val foveaMode = resolveFoveaMode(foveaVdLike10Bit == true, foveaVdLike8Bit == true)
+        val foveaMode = if (foveaVdLike == true) FoveaMode.INPUT_10BIT else FoveaMode.OFF
         val precision = VideoOutputPrecision.SRGB8_HIGHP
         val shaderPatched = bytes.copyOf().apply {
             paddedVideoShader(selectedGamma, selectedSaturation, precision).copyInto(this, shaderPos)
