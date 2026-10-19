@@ -65,7 +65,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.31.1](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v1.31.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;49 patches total
+> **[v1.32.0](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v1.32.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;49 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
@@ -125,14 +125,14 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link&nbsp;&nbsp;•&nbsp;&nbsp;25 patches</summary>
+<summary>📦 Steam Link&nbsp;&nbsp;•&nbsp;&nbsp;26 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
 | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.20 build 5001812; headset validation pending. | Native and APK adaptation for exact Steam Link 2.0.21 build 5001968; headset validation pending. | Verified Steam Link 2.0.22 build 5002244. | Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, and Codecs Support. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Exact Steam Link 2.0.20/5001712 high-resolution target with its isolated 2-projection to 3-layer payload. The topology correction has prior user-reported startup and delayed-frame runtime evidence; this rebuilt binary remains uninstalled. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.20 build 5001812; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.21 build 5001968; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.22 build 5002244; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.23 build 5002363; headset validation pending. |
+| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.20 build 5001812; headset validation pending. | Native and APK adaptation for exact Steam Link 2.0.21 build 5001968; headset validation pending. | Verified Steam Link 2.0.22 build 5002244. | Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Exact Steam Link 2.0.20/5001712 high-resolution target with its isolated 2-projection to 3-layer payload. The topology correction has prior user-reported startup and delayed-frame runtime evidence; this rebuilt binary remains uninstalled. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.20 build 5001812; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.21 build 5001968; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.22 build 5002244; headset validation pending. | Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.23 build 5002363; headset validation pending. |
 
 #### Image quality
 
@@ -183,6 +183,12 @@ This section is generated from the patch catalog during releases.
 | [XR Device Config Baseline](#xr-device-config-baseline) | Installs the default Galaxy XR headset and controller settings plus the dashboard files. | 5001712, 5001812, 5001968, 5002244 |  |
 | [XR Manifest Capability Pack](#xr-manifest-capability-pack) | Adds the Android XR/OpenXR permissions, features and app properties Steam Link needs. | 5001712, 5001812, 5001968, 5002244 |  |
 
+#### Controller
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Controller velocity frame](#controller-velocity-frame) | Fixes thrown-object directions by rotating controller speeds into the frame SteamVR expects. Builds: 2.0.23, angular velocity is reported local to the streamed pose; 2.0.20 - 2.0.22, it is reported in the base space. Angles measured on 2.0.23/5002363. Needs: nothing. The root Velocity Frame and Steam Link Pose Time modules do not run while this layer is loaded. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
+
 #### Streaming & network
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
@@ -192,14 +198,14 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
-| 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.20 (5001812) |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Angular adapter for corrected base-space velocities; requires active runtime correction. | Experimental patches for Steam Link 2.0.20 build 5001712. | Experimental patches for Steam Link 2.0.20 build 5001812. | Experimental patches for Steam Link 2.0.21 build 5001968. | Experimental patches for Steam Link 2.0.22 build 5002244. | Experimental patches for Steam Link 2.0.23 build 5002363. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller velocity frame layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller velocity frame layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller velocity frame layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller velocity frame layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller velocity frame layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Native and APK adaptation for exact Steam Link 2.0.20 build 5001812; headset validation pending. |
+| 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.20 (5001812) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Experimental patches for Steam Link 2.0.20 build 5001712. | Experimental patches for Steam Link 2.0.20 build 5001812. | Experimental patches for Steam Link 2.0.21 build 5001968. | Experimental patches for Steam Link 2.0.22 build 5002244. | Experimental patches for Steam Link 2.0.23 build 5002363. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Native and APK adaptation for exact Steam Link 2.0.20 build 5001812; headset validation pending. |
 
 #### Image quality
 
@@ -211,9 +217,8 @@ This section is generated from the patch catalog during releases.
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
-| [Controller angular world to local (experimental)](#controller-angular-world-to-local-experimental) | Adapts Galaxy XR's angular velocity to Steam Link 2.0.23's controller axes. Builds: exact 2.0.23/5002363. Experimental there: headset validation pending. Needs: the Velocity Frame runtime correction active in the app (it does not enable it itself); not with stock velocities or the old velocity patches. Details: https://github.com/4uva4ek. | 5002363 |  |
 | [Controller pose extrapolation](#controller-pose-extrapolation) | Makes Galaxy XR predict controller poses to the moment the app asks, instead of repeating one sample per frame, and smooths out jitter. Builds: 5001712 to 5002363 (measured on 2.0.23). Needs: nothing. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
-| [Controller velocity frame](#controller-velocity-frame) | Fixes thrown-object directions by rotating controller speeds into the frame SteamVR expects. Builds: 2.0.23, angular velocity is reported local to the streamed pose; 2.0.20 - 2.0.22, it is reported in the base space. Needs: nothing. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
+| [Controller pose time (experimental)](#controller-pose-time-experimental) | Sends each controller pose to SteamVR with the time it was sampled at instead of the packet's send time, so SteamVR predicts the controller from the right moment. The Galaxy XR runtime labels every controller pose 28.82 ms after the sample it carries; the compensation is subtracted from that label. Builds: exact 2.0.20/5001712 and 2.0.23/5002363, Galaxy XR firmware I610UEU2AZF3. Experimental: ported from the Steam Link Pose Time root module, not yet run as an APK layer on a headset. Needs: nothing; not with Controller pose extrapolation or the controller HAL pose patch. Details: https://github.com/4uva4ek. | 5001712, 5002363 | • Pose time compensation (ms) |
 
 #### Controllers (Shizuku)
 

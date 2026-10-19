@@ -1,3 +1,10 @@
+## [1.32.0](https://github.com/AngelDark92/xr-porting-hub/compare/v1.31.1...v1.32.0) (2026-10-19)
+
+### ✨ New Features
+
+* add experimental controller pose time patch ([3c7e8b5](https://github.com/AngelDark92/xr-porting-hub/commit/3c7e8b53ecbbeb509ca01e707be37c8dfaabb7b0))
+* make controller velocity frame a stable default and retire the angular adapter ([47f8dd4](https://github.com/AngelDark92/xr-porting-hub/commit/47f8dd47aa7cc11a0455f8f4ce59859a4d4bf639))
+
 ## [1.31.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.31.0...v1.31.1) (2026-10-18)
 
 ### 🐛 Bug Fixes
