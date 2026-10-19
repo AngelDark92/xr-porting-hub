@@ -129,7 +129,7 @@ object Constants {
                         "Microphone input preset (Voice Recognition), Unrestricted battery usage, " +
                         "Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, " +
                         "Blue-noise dithering with the default foveal layer, Network Optimizations, " +
-                        "OpenXR CPU and GPU BOOST, and Codecs Support. " +
+                        "OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. " +
                         "The retired projection experiments are excluded. " +
                         if (build.versionCode == 5002363) "Decoded-base adaptation; headset validation pending." else ""
                 } else {

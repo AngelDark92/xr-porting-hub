@@ -45,10 +45,10 @@ The [full patch list](TECHNICAL_REFERENCE.md#full-patch-list) is in the technica
 
 ## Controller fixes
 
-Controller patches are optional; pose extrapolation and velocity frame are off by default. Use one path:
+Controller velocity frame is on by default; the other controller patches are optional. Use one path:
 
 - **Non-root:** **Controller pose extrapolation** + **Controller velocity frame**. Add the 2 Shizuku controller patches if Shizuku is running and granted to Steam Link.
-- **Root (KernelSU):** no controller patch — use the KernelSU modules with the controller fixes. The PC-side Galaxy XR SteamVR driver is optional for VRLink compatibility.
+- **Root (KernelSU):** no controller patch — deselect Controller velocity frame and use the KernelSU modules with the controller fixes. The PC-side Galaxy XR SteamVR driver is optional for VRLink compatibility.
 
 Which patch, which build, and when: [Controller fixes — what to apply](CONTROLLER-FIXES.md).
 

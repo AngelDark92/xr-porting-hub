@@ -1,11 +1,8 @@
 package app.template.patches.steamlink.androidxr
 
-import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
-import app.morphe.patcher.patch.SupportedAbi
 import app.morphe.patcher.patch.rawResourcePatch
-import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.PatchCategories
 
 internal const val CONTROLLER_VELOCITY_FRAME_LIBRARY = "libgxr_controller_velocity_frame.so"
@@ -15,7 +12,6 @@ internal const val CONTROLLER_VELOCITY_FRAME_MANIFEST =
 private data class ControllerVelocityFrameBuild(
     val version: String,
     val versionCode: Int,
-    val measured: Boolean,
     val angularWorld: Boolean,
 )
 
@@ -23,13 +19,15 @@ private data class ControllerVelocityFrameBuild(
 // depend on the controller pose offset. All 5 bases use the same action name and, with this
 // repository's controller_config.json, the same offset; the angles were measured on 5002363 only.
 // One patch covers all 5 bases; the angular-velocity frame written into the bundled layer differs
-// per build (2.0.23: the streamed-pose frame; the legacy bases: the base-space frame).
+// per build (2.0.23: the streamed-pose frame; the legacy bases: the base-space frame). Because the
+// 2.0.23 layer already reports the angular velocity local to the streamed pose, no separate
+// world-to-local adapter is needed on that base.
 private val CONTROLLER_VELOCITY_FRAME_BUILDS = listOf(
-    ControllerVelocityFrameBuild("2.0.23", 5002363, measured = true, angularWorld = false),
-    ControllerVelocityFrameBuild("2.0.20", 5001712, measured = false, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.20", 5001812, measured = false, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.21", 5001968, measured = false, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.22", 5002244, measured = false, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.23", 5002363, angularWorld = false),
+    ControllerVelocityFrameBuild("2.0.20", 5001712, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.20", 5001812, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.21", 5001968, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.22", 5002244, angularWorld = true),
 )
 
 private fun List<ControllerVelocityFrameBuild>.has(version: String, versionCode: String): Boolean =
@@ -61,25 +59,13 @@ val controllerVelocityFramePatch = rawResourcePatch(
     name = "Controller velocity frame",
     description = "$CONTROLLER_VELOCITY_FRAME_DESCRIPTION Builds: 2.0.23, angular velocity is " +
         "reported local to the streamed pose; 2.0.20 - 2.0.22, it is reported in the base space. " +
-        "Needs: nothing. " +
+        "Angles measured on 2.0.23/5002363. Needs: nothing. The root Velocity Frame and Steam Link " +
+        "Pose Time modules do not run while this layer is loaded. " +
         STEAM_LINK_CONTROLLER_CREDIT,
-    default = false,
+    default = true,
 ) {
     category(PatchCategories.CONTROLLER)
-    compatibleWith(*CONTROLLER_VELOCITY_FRAME_BUILDS.map { build ->
-        Compatibility(
-            name = EXPERIMENTAL_COMPATIBILITY_NAME,
-            packageName = "com.valvesoftware.steamlinkvr",
-            targets = listOf(AppTarget(
-                version = build.version,
-                versionCodes = SupportedAbi.entries.associateWith { build.versionCode },
-                description = "Controller velocity frame layer for exact Steam Link " +
-                    "${build.version}/${build.versionCode}; " +
-                    if (build.measured) "measured on a Galaxy XR headset."
-                    else "measured on 2.0.23/5002363 only, not run on this base.",
-            )),
-        )
-    }.toTypedArray())
+    compatibleWith(*COMPATIBILITIES_STEAM_LINK.toTypedArray())
 
     execute {
         // Morphe dependencies do not re-check compatibility before execution.

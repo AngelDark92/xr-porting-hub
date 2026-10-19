@@ -40,7 +40,7 @@ class PatchCategoriesTest {
         ),
         "Controller" to listOf(
             controllerPoseExtrapolationPatch, controllerVelocityFramePatch,
-            controllerAngularLocalPatch,
+            controllerPoseTimePatch,
         ),
         "Controllers (Shizuku)" to listOf(
             controllerGripHapticsPatch, controllerHalPosePatch,
@@ -74,6 +74,7 @@ class PatchCategoriesTest {
                 deviceIdentityPatch,
                 xrCodecsSupportPatch, performanceBoostPatch,
                 networkOptimizationsPatch, blueNoisePatch,
+                controllerVelocityFramePatch,
             ),
             publicPatches.filter { it.default }.toSet(),
         )
@@ -97,7 +98,7 @@ class PatchCategoriesTest {
             val name = channel.name
             assertEquals(channel.name.lowercase(), generated.get("channel").asString)
             val entries = generated.getAsJsonArray("patches").map { it.asJsonObject }
-            assertEquals(if (channel == ReleaseChannel.STABLE) 25 else 32, entries.size, name)
+            assertEquals(if (channel == ReleaseChannel.STABLE) 26 else 32, entries.size, name)
             val names = entries.map { it.get("name").asString }
             assertEquals(names.sorted(), names, name)
             assertEquals(names.size, names.toSet().size, name)
@@ -107,7 +108,7 @@ class PatchCategoriesTest {
                 assertEquals(patch.category, entry.get("category").asString, patch.name)
                 assertEquals(patch.default, entry.get("default").asBoolean, patch.name)
             }
-            assertEquals(if (channel == ReleaseChannel.STABLE) 0 else 3,
+            assertEquals(if (channel == ReleaseChannel.STABLE) 1 else 3,
                 entries.count { it.get("category").asString == "Controller" }, name)
             assertEquals(if (channel == ReleaseChannel.STABLE) 0 else 2,
                 entries.count { it.get("category").asString == "Controllers (Shizuku)" }, name)

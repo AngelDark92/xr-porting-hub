@@ -1,5 +1,6 @@
 package app.template.patches.steamlink.androidxr
 
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
 import java.security.MessageDigest
 import kotlin.test.Test
@@ -66,31 +67,25 @@ class ControllerVelocityFramePatchTest {
     }
 
     @Test
-    fun `patch is opt-in and one patch covers all 5 bases`() {
+    fun `patch is stable, on by default and one patch covers all 5 bases`() {
         assertEquals("Controller velocity frame", controllerVelocityFramePatch.name)
 
-        assertFalse(controllerVelocityFramePatch.default, controllerVelocityFramePatch.name)
+        assertTrue(controllerVelocityFramePatch.default, controllerVelocityFramePatch.name)
         assertTrue(controllerVelocityFramePatch.dependencies.isEmpty(), controllerVelocityFramePatch.name)
         val compatibilities = controllerVelocityFramePatch.compatibility.orEmpty()
-        assertTrue(compatibilities.all { it.name == EXPERIMENTAL_COMPATIBILITY_NAME }, controllerVelocityFramePatch.name)
+        assertTrue(compatibilities.none { it.name == EXPERIMENTAL_COMPATIBILITY_NAME }, controllerVelocityFramePatch.name)
+        assertEquals(COMPATIBILITIES_STEAM_LINK, compatibilities, controllerVelocityFramePatch.name)
         assertEquals(
-            listOf(
+            setOf(
                 "2.0.23" to 5002363, "2.0.20" to 5001712, "2.0.20" to 5001812,
                 "2.0.21" to 5001968, "2.0.22" to 5002244,
             ),
-            compatibilities.map { it.targets.single() }.map { it.version to it.versionCodes!!.values.toSet().single() },
+            compatibilities.map { it.targets.single() }.map { it.version to it.versionCodes!!.values.toSet().single() }.toSet(),
             controllerVelocityFramePatch.name,
         )
         assertTrue("local to the streamed pose" in controllerVelocityFramePatch.description.orEmpty())
         assertTrue("in the base space" in controllerVelocityFramePatch.description.orEmpty())
-        // Only the base the layer was measured on says so.
-        assertEquals(
-            listOf("2.0.23"),
-            controllerVelocityFramePatch.compatibility.orEmpty()
-                .map { it.targets.single() }
-                .filter { "not run on this base" !in it.description.orEmpty() }
-                .map { it.version },
-        )
+        assertTrue("measured on 2.0.23/5002363" in controllerVelocityFramePatch.description.orEmpty())
 
         listOf("2.0.20" to "5001712", "2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244")
             .forEach { (version, versionCode) ->
