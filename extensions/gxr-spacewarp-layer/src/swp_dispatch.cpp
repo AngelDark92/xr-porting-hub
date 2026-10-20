@@ -50,11 +50,23 @@
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
+// glGetTexLevelParameteriv entered the core in ES 3.1 (the estimator requires
+// 3.2), so the format probe uses the 3.2 header. The host-test stubs declare
+// the same entry point in their gl3.h shim.
+#if !defined(SWP_HOST_TESTS)
+#include <GLES3/gl32.h>
+#endif
 #include <android/log.h>
 #include <jni.h>  // openxr_platform.h's Android extension blocks name jni types
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
+
+// The NDK's GLES3/gl3.h does not export this pname (it is used by the format
+// probe below); the value is the GLES 3.0 token.
+#ifndef GL_TEXTURE_INTERNAL_FORMAT
+#define GL_TEXTURE_INTERNAL_FORMAT 0x1003
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -122,6 +134,8 @@ void SwpVtsResetSession();
 void SwpVtsSessionEnded();
 void SwpVtsNoteEndFrame();
 bool SwpVtsSynthesisAllowed();
+// Published carrier value (0 off / 1 late frames only / 2 half rate).
+uint32_t SwpVtsMode();
 bool SwpVtsArm();
 }  // extern "C"
 
@@ -132,6 +146,9 @@ namespace {
 constexpr uint32_t kStatusStandDown = 16u;   // contract bit; sticky until re-init
 constexpr const char* kDisableEnv = "GXR_DISABLE_GXR_SPACEWARP";
 constexpr size_t kRealHistoryCap = 4;        // prev/curr window for vector generation
+constexpr int kMaxSlots = 2;                 // video projections: base + foveated
+constexpr uint32_t kMaxProjectionLayers = 8; // layer-array scan bound
+constexpr uint32_t kModeHalfRate = 2;        // carrier value for half-rate mode
 constexpr size_t kArrivalHistoryCap = 8;     // newest arrivals used for the scale factor
 constexpr int kClockPairsCap = 8;            // mono<->XrTime anchors (newest-first ring)
 constexpr int kMaxConsecutiveMissed = 2;     // beyond this: pass stock (conservative)
@@ -155,6 +172,16 @@ struct SwapchainImages {
     bool glesValid = false;
 };
 
+// One selected video projection and its own arrival history. The two slots
+// share the estimator's uv field (identical extent and view geometry — RE
+// 2026-10-20) but never share textures, so each keeps its own prev/curr pair.
+struct SlotState {
+    XrSwapchain swapL = XR_NULL_HANDLE;
+    XrSwapchain swapR = XR_NULL_HANDLE;
+    uint32_t texL = 0, texR = 0;  // this tick's pending images
+    std::vector<FrameRecord> history;
+};
+
 struct DispatchState {
     bool decisionMade = false;    // one-shot enable decision per session
     bool enabledForSession = false;
@@ -175,7 +202,21 @@ struct DispatchState {
     uint64_t tickEpoch = 0;       // arrival epoch snapshot of the previous endframe
     std::map<XrSwapchain, SwapchainImages> swapchains;
     std::map<XrSwapchain, uint32_t> acquiredIndex;
-    std::vector<FrameRecord> realHistory;
+    SlotState slots[kMaxSlots];
+    int slotCount = 0;
+    // Presentation cadence (half-rate mode): did the previous presented tick
+    // carry a real decoded frame, and has anything been presented yet?
+    bool havePresented = false;
+    bool lastPresentedWasReal = false;
+    // Owned staging pair per slot. The warp lands here first and reaches the
+    // swapchain only after EVERY selected slot succeeded, so a partial failure
+    // can never leave mixed stereo or a mixed slot set.
+    uint32_t staging[kMaxSlots][2] = {{0, 0}, {0, 0}};
+    int stageW = 0, stageH = 0;
+    GLint stageFormat = 0;   // internal format of the destination swapchain
+    GLuint copyReadFbo = 0, copyDrawFbo = 0;
+    // Last carrier mode seen, so a 1 <-> 2 flip also drops stale maps.
+    uint32_t lastMode = 0;
     // mono<->XrTime anchor ring (index 0 = newest, increasing index = older):
     // arrivals convert within the pair window that contains them; entries older
     // than every window stand down (never guessed).
@@ -229,16 +270,19 @@ void SwpPoseToViewMatrix(const float pos[3], const float quat[4], float out[16])
     out[15] = 1.0f;
 }
 
-// Missed-tick scaleFactor (VD C# derivation): normalized display progress past the
-// newest decoded arrival, normalized by the inter-arrival span:
-//   scale = (predictedDisplayTime - arrivalNewest) / (arrivalNewest - arrivalPrev)
-// One fully skipped tick gives ~2.0. Returns false (tick stands down) for
-// degenerate or out-of-range inputs; never silently clamps.
+// Missed-tick scaleFactor (VD convention: normalized progress between the two
+// history frame indexes, 1.0 == exactly at the newest arrival):
+//   scale = (predictedDisplayTime - arrivalPrev) / (arrivalNewest - arrivalPrev)
+// The extrapolation shader applies (1 - scale) to the stored uv field, so one fully
+// skipped tick (~2.0) is one interval of displacement; a numerator measured
+// from arrivalNewest would make the first skipped tick a zero-motion copy.
+// Returns false (tick stands down) for degenerate or out-of-range inputs;
+// never silently clamps.
 bool SwpScaleFactorForMissedTick(uint64_t predDisp, uint64_t arrivalPrev, uint64_t arrivalNewest,
                                  float* outScale) {
     if (!outScale || !predDisp || !arrivalPrev || !arrivalNewest) return false;
     if (arrivalNewest <= arrivalPrev || predDisp <= arrivalNewest) return false;
-    const double numer = static_cast<double>(predDisp - arrivalNewest);
+    const double numer = static_cast<double>(predDisp - arrivalPrev);
     const double denom = static_cast<double>(arrivalNewest - arrivalPrev);
     const double scale = numer / denom;
     if (std::isnan(scale) || scale < kMinScaleFactor || scale > kMaxScaleFactor) return false;
@@ -389,6 +433,11 @@ bool EnsureEstimatorReadyLocked(DispatchState& state) {
             table.glTexParameteri = &glTexParameteri;
             table.glGetString = &glGetString;
             table.glGetIntegerv = &glGetIntegerv;
+            table.glIsEnabled = &glIsEnabled;
+            table.glEnable = &glEnable;
+            table.glDisable = &glDisable;
+            table.glColorMask = &glColorMask;
+            table.glGetBooleanv = &glGetBooleanv;
             table.getCurrentContext = []() -> void* {
                 return reinterpret_cast<void*>(eglGetCurrentContext());
             };
@@ -501,8 +550,8 @@ bool ArrivalXrTime(DispatchState& state, uint64_t arrivalMono, uint64_t* outXr) 
     return false;
 }
 
-void RecordRealTickLocked(DispatchState& state, uint32_t texL, uint32_t texR, uint64_t epoch,
-                          uint64_t predDispTime) {
+void RecordSlotTickLocked(DispatchState& state, SlotState& slot, uint32_t texL, uint32_t texR,
+                          uint64_t epoch, uint64_t predDispTime) {
     FrameRecord record;
     record.texL = texL;
     record.texR = texR;
@@ -512,10 +561,181 @@ void RecordRealTickLocked(DispatchState& state, uint32_t texL, uint32_t texR, ui
     std::memcpy(record.matR, state.locMatR, sizeof(record.matR));
     std::memcpy(record.fovL, state.locFovL, sizeof(record.fovL));
     std::memcpy(record.fovR, state.locFovR, sizeof(record.fovR));
-    state.realHistory.push_back(record);
-    if (state.realHistory.size() > kRealHistoryCap) {
-        state.realHistory.erase(state.realHistory.begin());
+    slot.history.push_back(record);
+    if (slot.history.size() > kRealHistoryCap) {
+        slot.history.erase(slot.history.begin());
     }
+}
+
+// Query the pending image's internal format. The client's format is not fixed
+// (the OLED calibration patch can select 10-bit or FP16 video swapchains), and
+// an ES colour blit requires identical read/draw formats, so staging must use
+// whatever the destination actually carries.
+bool DestinationFormat(uint32_t tex, GLint* outFormat) {
+    if (!tex || !outFormat) return false;
+    GLint prevActive = GL_TEXTURE0;
+    GLint prevBinding = 0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &prevActive);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevBinding);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    GLint format = 0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
+    const GLenum err = glGetError();
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(prevBinding));
+    glActiveTexture(static_cast<GLenum>(prevActive));
+    if (err != GL_NO_ERROR || format == 0) return false;
+    *outFormat = format;
+    return true;
+}
+
+// Owned staging pair in the DESTINATION's internal format, so the commit blit is
+// format-identical (ES does not convert on blit). The caller's active unit and
+// its binding are restored: this path runs outside the estimator's own guard.
+bool EnsureStagingLocked(DispatchState& state, int w, int h, GLint format) {
+    if (state.stageW == w && state.stageH == h && state.stageFormat == format &&
+        state.staging[0][0] && state.staging[1][1]) {
+        return true;
+    }
+    GLint prevActive = GL_TEXTURE0;
+    GLint prevBinding = 0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &prevActive);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevBinding);
+    for (int s = 0; s < kMaxSlots; s++) {
+        for (int e = 0; e < 2; e++) {
+            if (state.staging[s][e]) {
+                glDeleteTextures(1, &state.staging[s][e]);
+                state.staging[s][e] = 0;
+            }
+        }
+    }
+    for (int s = 0; s < kMaxSlots; s++) {
+        for (int e = 0; e < 2; e++) {
+            glGenTextures(1, &state.staging[s][e]);
+            if (!state.staging[s][e]) return false;
+            glBindTexture(GL_TEXTURE_2D, state.staging[s][e]);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(format), w, h);
+        }
+    }
+    const bool ok = glGetError() == GL_NO_ERROR;
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(prevBinding));
+    glActiveTexture(static_cast<GLenum>(prevActive));
+    if (!ok) return false;
+    state.stageW = w;
+    state.stageH = h;
+    state.stageFormat = format;
+    LOG("staging pair allocated %dx%d internal-format 0x%x (slots %d)", w, h, (unsigned)format,
+        state.slotCount);
+    return true;
+}
+
+// Attach one (src, dst) pair and report whether both framebuffers are complete.
+// Used to validate EVERY pair before the first write, so a rejected format or
+// attachment cannot leave a half-committed composite.
+bool ValidateCopyPair(uint32_t src, uint32_t dst, DispatchState& state) {
+    if (!src || !dst) return false;
+    if (!state.copyReadFbo) glGenFramebuffers(1, &state.copyReadFbo);
+    if (!state.copyDrawFbo) glGenFramebuffers(1, &state.copyDrawFbo);
+    if (!state.copyReadFbo || !state.copyDrawFbo) return false;
+    GLint prevRead = 0, prevDraw = 0;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prevRead);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevDraw);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, state.copyReadFbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, src, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, state.copyDrawFbo);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst, 0);
+    const bool ok = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE &&
+                    glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(prevRead));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(prevDraw));
+    return ok && glGetError() == GL_NO_ERROR;
+}
+
+// Blit one owned staging image into the pending swapchain image. Scissor is
+// disabled for the copy and restored; the caller's read/draw bindings survive.
+bool CopyStagingToSwapchain(uint32_t src, uint32_t dst, int w, int h, DispatchState& state) {
+    if (!src || !dst) return false;
+    if (!state.copyReadFbo) glGenFramebuffers(1, &state.copyReadFbo);
+    if (!state.copyDrawFbo) glGenFramebuffers(1, &state.copyDrawFbo);
+    if (!state.copyReadFbo || !state.copyDrawFbo) return false;
+    GLint prevRead = 0, prevDraw = 0;
+    const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prevRead);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevDraw);
+    if (scissor) glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, state.copyReadFbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, src, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, state.copyDrawFbo);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst, 0);
+    bool ok = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE &&
+              glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    if (ok) glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    if (glGetError() != GL_NO_ERROR) ok = false;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(prevRead));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(prevDraw));
+    if (scissor) glEnable(GL_SCISSOR_TEST);
+    return ok;
+}
+
+// Warp every selected slot into staging, then commit all of them. No swapchain
+// image is touched until every eye of every slot rendered successfully.
+bool SynthesizeSlotsLocked(DispatchState& state, float scale) {
+    if (state.slotCount <= 0) return false;
+    GLint format = 0;
+    if (!DestinationFormat(state.slots[0].texL, &format)) {
+        RateLimitedLog(state, "cannot resolve the projection image format");
+        return false;
+    }
+    if (!EnsureStagingLocked(state, static_cast<int>(state.inputW),
+                             static_cast<int>(state.inputH), format)) {
+        RateLimitedLog(state, "staging allocation failed");
+        return false;
+    }
+    for (int s = 0; s < state.slotCount; s++) {
+        SlotState& slot = state.slots[s];
+        if (slot.history.empty()) return false;
+        const FrameRecord& src = slot.history.back();
+        if (!src.texL || !src.texR) return false;
+        if (src.texL == slot.texL || src.texR == slot.texR) {
+            // The client re-presented the same image: sampling and rendering the
+            // same texture is undefined. Stand this tick down to stock.
+            RateLimitedLog(state, "warp source equals destination; passing stock");
+            return false;
+        }
+        if (!SwpExtrapolateStereo(state.mvTexL, state.mvTexR, src.texL, src.texR,
+                                  state.staging[s][0], state.staging[s][1], scale)) {
+            RateLimitedLog(state, "extrapolation failed");
+            return false;
+        }
+    }
+    // Validate every pair BEFORE the first write; only then commit.
+    for (int s = 0; s < state.slotCount; s++) {
+        if (!ValidateCopyPair(state.staging[s][0], state.slots[s].texL, state) ||
+            !ValidateCopyPair(state.staging[s][1], state.slots[s].texR, state)) {
+            RateLimitedLog(state, "staging commit rejected before write");
+            return false;
+        }
+    }
+    for (int s = 0; s < state.slotCount; s++) {
+        SlotState& slot = state.slots[s];
+        if (!CopyStagingToSwapchain(state.staging[s][0], slot.texL,
+                                    static_cast<int>(state.inputW), static_cast<int>(state.inputH),
+                                    state) ||
+            !CopyStagingToSwapchain(state.staging[s][1], slot.texR,
+                                    static_cast<int>(state.inputW), static_cast<int>(state.inputH),
+                                    state)) {
+            // Pre-validated, so this is a driver-level failure mid-commit: log it
+            // as a mixed-composite risk, never as a clean stand-down.
+            RateLimitedLog(state, "staging commit failed after validation (composite may be mixed)");
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace
@@ -606,10 +826,29 @@ XrResult SwpDispatchDestroySession(XrSession session) {
     // MV textures live in the client's context: delete only while that exact context
     // is still current, else leave the two small RGBA16F textures (a few KB once per
     // session; destroying GL names without their context is invalid GL usage).
-    if (state.mvTexL && state.mvTexR && state.creationCtx &&
-        eglGetCurrentContext() == state.creationCtx) {
-        glDeleteTextures(1, &state.mvTexL);
-        glDeleteTextures(1, &state.mvTexR);
+    if (state.creationCtx && eglGetCurrentContext() == state.creationCtx) {
+        if (state.mvTexL && state.mvTexR) {
+            glDeleteTextures(1, &state.mvTexL);
+            glDeleteTextures(1, &state.mvTexR);
+        }
+        // Owned staging + copy FBOs belong to this context; without this the
+        // full-resolution pair leaks on every reconnect.
+        for (int s = 0; s < kMaxSlots; s++) {
+            for (int e = 0; e < 2; e++) {
+                if (state.staging[s][e]) {
+                    glDeleteTextures(1, &state.staging[s][e]);
+                    state.staging[s][e] = 0;
+                }
+            }
+        }
+        if (state.copyReadFbo) {
+            glDeleteFramebuffers(1, &state.copyReadFbo);
+            state.copyReadFbo = 0;
+        }
+        if (state.copyDrawFbo) {
+            glDeleteFramebuffers(1, &state.copyDrawFbo);
+            state.copyDrawFbo = 0;
+        }
     }
     if (state.estimatorInited) {
         SwpDestroy();
@@ -693,40 +932,73 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     const TickKind kind = SwpClassifyTick(epochNow, state->tickEpoch, state->haveTickEpoch, false);
     state->tickEpoch = epochNow;
     state->haveTickEpoch = true;
+    // The bridge cadence must keep running even on a tick whose projection
+    // layout cannot be resolved; the gate decision is read below.
+    SwpVtsNoteEndFrame();
 
-    // This endframe's projection subimage data = exactly what the compositor reads.
-    const XrCompositionLayerProjection* proj = nullptr;
+    // -----------------------------------------------------------------------
+    // Projection slots. The client submits one projection per video component;
+    // audited submission order (RE 2026-10-20):
+    //   2.0.20/5001712 : [base, foveated]                  -> both are video
+    //   2.0.23/5002363 : [underside, base, foveated]       -> last two are video
+    // The underside layer is never rendered (static/undefined content), so
+    // warping it produced a composite where the real video stayed stock. Any
+    // other layer count is not an audited composition: pass stock.
+    // -----------------------------------------------------------------------
+    const XrCompositionLayerProjection* projs[kMaxProjectionLayers] = {};
+    uint32_t projCount = 0;
     if (frameEndInfo) {
         for (uint32_t i = 0; i < frameEndInfo->layerCount; i++) {
-            if (frameEndInfo->layers[i] &&
-                frameEndInfo->layers[i]->type == XR_TYPE_COMPOSITION_LAYER_PROJECTION) {
-                proj = reinterpret_cast<const XrCompositionLayerProjection*>(
-                    frameEndInfo->layers[i]);
-                break;
+            const XrCompositionLayerBaseHeader* layer = frameEndInfo->layers[i];
+            if (!layer || layer->type != XR_TYPE_COMPOSITION_LAYER_PROJECTION) continue;
+            if (projCount < kMaxProjectionLayers) {
+                projs[projCount] =
+                    reinterpret_cast<const XrCompositionLayerProjection*>(layer);
             }
+            projCount++;
         }
     }
-    if (proj && proj->viewCount != 2) {
-        // Unsupported projection shape (e.g. single-eye): pass stock forever, log once.
-        state->enabledForSession = false;
-        static std::atomic<bool> loggedViewCount{false};
+    int firstSlot = -1;
+    if (projCount == 2) firstSlot = 0;
+    else if (projCount == 3) firstSlot = 1;
+    if (firstSlot < 0 || projCount > kMaxProjectionLayers) {
+        static std::atomic<bool> loggedShape{false};
         bool expected = false;
-        if (loggedViewCount.compare_exchange_strong(expected, true)) {
-            LOG("projection viewCount=%u unsupported; spacewarp inactive for the session",
-                proj->viewCount);
+        if (loggedShape.compare_exchange_strong(expected, true)) {
+            LOG("projection count %u is not an audited composition (2 or 3); "
+                "spacewarp passes stock", projCount);
         }
-        proj = nullptr;
+        return g_nextEndFrame(session, frameEndInfo);
     }
-    if (!proj) return g_nextEndFrame(session, frameEndInfo);
+    const int slotCount = 2;
+    for (int s = 0; s < slotCount; s++) {
+        const XrCompositionLayerProjection* p = projs[firstSlot + s];
+        if (!p || p->viewCount != 2) {
+            state->enabledForSession = false;
+            static std::atomic<bool> loggedViewCount{false};
+            bool expected = false;
+            if (loggedViewCount.compare_exchange_strong(expected, true)) {
+                LOG("projection viewCount=%u unsupported; spacewarp inactive for the session",
+                    p ? p->viewCount : 0u);
+            }
+            return g_nextEndFrame(session, frameEndInfo);
+        }
+        const XrExtent2Di& e0 = p->views[0].subImage.imageRect.extent;
+        const XrExtent2Di& e1 = p->views[1].subImage.imageRect.extent;
+        if (e0.width != e1.width || e0.height != e1.height || e0.width <= 0 || e0.height <= 0) {
+            RateLimitedLog(*state, "projection eyes disagree on extent");
+            return g_nextEndFrame(session, frameEndInfo);
+        }
+    }
 
-    // (Re)arm the estimator extents from the live subimage rect; a mid-session
+    // (Re)arm the estimator extents from the reference (base) slot; a mid-session
     // size change re-inits the estimator and drops the maps (fail-safe).
-    if (!state->inputW || !state->inputH ||
-        state->inputW != static_cast<uint32_t>(proj->views[0].subImage.imageRect.extent.width) ||
-        state->inputH !=
-            static_cast<uint32_t>(proj->views[0].subImage.imageRect.extent.height)) {
-        state->inputW = proj->views[0].subImage.imageRect.extent.width;
-        state->inputH = proj->views[0].subImage.imageRect.extent.height;
+    const int32_t refW = projs[firstSlot]->views[0].subImage.imageRect.extent.width;
+    const int32_t refH = projs[firstSlot]->views[0].subImage.imageRect.extent.height;
+    if (!state->inputW || !state->inputH || state->inputW != static_cast<uint32_t>(refW) ||
+        state->inputH != static_cast<uint32_t>(refH)) {
+        state->inputW = static_cast<uint32_t>(refW);
+        state->inputH = static_cast<uint32_t>(refH);
         if (state->estimatorInited) {
             SwpDestroy();
             state->estimatorInited = false;
@@ -734,49 +1006,73 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
             state->mvAllocTried = false;
             state->mvTexL = 0;
             state->mvTexR = 0;
-            state->realHistory.clear();
+        }
+        for (int s = 0; s < kMaxSlots; s++) state->slots[s].history.clear();
+    }
+    // One uv field serves every slot: their view geometry and extent are
+    // identical (verified for both bases). A slot that disagrees passes stock.
+    for (int s = 1; s < slotCount; s++) {
+        const XrExtent2Di& e = projs[firstSlot + s]->views[0].subImage.imageRect.extent;
+        if (static_cast<uint32_t>(e.width) != state->inputW ||
+            static_cast<uint32_t>(e.height) != state->inputH) {
+            RateLimitedLog(*state, "projection extent differs from the estimator input; passing stock");
+            return g_nextEndFrame(session, frameEndInfo);
         }
     }
 
-    uint32_t texL = 0, texR = 0;
-    if (!ResolvePendingTextureLocked(*state, proj->views[0], &texL) ||
-        !ResolvePendingTextureLocked(*state, proj->views[1], &texR)) {
-        RateLimitedLog(*state, "pending swapchain textures unknown");
-        return g_nextEndFrame(session, frameEndInfo);
+    // Resolve this tick's pending images per slot and keep the slot identity
+    // stable (a changed swapchain pair drops that slot's history).
+    state->slotCount = slotCount;
+    for (int s = 0; s < slotCount; s++) {
+        const XrCompositionLayerProjection* p = projs[firstSlot + s];
+        SlotState& slot = state->slots[s];
+        uint32_t texL = 0, texR = 0;
+        if (!ResolvePendingTextureLocked(*state, p->views[0], &texL) ||
+            !ResolvePendingTextureLocked(*state, p->views[1], &texR)) {
+            RateLimitedLog(*state, "pending swapchain textures unknown");
+            return g_nextEndFrame(session, frameEndInfo);
+        }
+        if (slot.swapL != p->views[0].subImage.swapchain ||
+            slot.swapR != p->views[1].subImage.swapchain) {
+            slot.swapL = p->views[0].subImage.swapchain;
+            slot.swapR = p->views[1].subImage.swapchain;
+            slot.history.clear();
+        }
+        slot.texL = texL;
+        slot.texR = texR;
     }
 
     // -----------------------------------------------------------------------
-    // Brief-10 bridge gate: ALL synthesis (MV generation + extrapolation) runs
-    // only while the bridge carrier reads enabled; otherwise the tick is plain
-    // stock passthrough (the layer's observers keep learning: arrival learning,
-    // tick classification, real-tick history).
+    // Bridge gate: ALL synthesis runs only while the carrier reads enabled;
+    // otherwise the tick is plain stock passthrough (observers keep learning).
     // -----------------------------------------------------------------------
-    SwpVtsNoteEndFrame();
-    const bool synthesisAllowed = SwpVtsSynthesisAllowed();
-    if (synthesisAllowed && !state->synthesisWasAllowed) {
-        // Fresh enablement (session start or a mid-session bridge flip): stale
-        // maps must never warp old content; require a fresh real-tick generation
-        // before any extrapolation, and restart the missed-tick count.
+    const uint32_t mode = SwpVtsMode();
+    const bool synthesisAllowed = mode != 0;
+    if (synthesisAllowed && (!state->synthesisWasAllowed || mode != state->lastMode)) {
+        // Fresh enablement (session start, bridge flip or mode flip): stale maps
+        // must never warp old content, and the cadence restarts on a real tick.
         state->mvValid = false;
         state->consecutiveMissed = 0;
+        state->havePresented = false;
+        state->lastPresentedWasReal = false;
     }
     state->synthesisWasAllowed = synthesisAllowed;
+    state->lastMode = mode;
     if (!synthesisAllowed) {
         if (kind == TickKind::Real) {
-            // Observation continues without synthesis: history keeps the presented
-            // pair so a later enablement is bounded by the fresh-generation rule
-            // above (no extrapolation ever runs from pre-disable content).
-            RecordRealTickLocked(*state, texL, texR, epochNow, predDispTime);
+            for (int s = 0; s < slotCount; s++) {
+                RecordSlotTickLocked(*state, state->slots[s], state->slots[s].texL,
+                                     state->slots[s].texR, epochNow, predDispTime);
+            }
             state->consecutiveMissed = 0;
+            state->havePresented = true;
+            state->lastPresentedWasReal = true;
         }
         return g_nextEndFrame(session, frameEndInfo);
     }
 
     // CRITICAL: draw only with the client's current EGL context, and only when it
-    // matches the context the frame assets were created with (when the arrival was
-    // created with an explicit context; context-less images are checked for simply
-    // "a non-null context is current"). This layer never creates or currents its
-    // own context in this iteration (worst case = stock).
+    // matches the context the frame assets were created with.
     const EGLContext currentCtx = eglGetCurrentContext();
     if (currentCtx == EGL_NO_CONTEXT || (arrivalCtx && currentCtx != arrivalCtx)) {
         RateLimitedLog(*state, "current EGL context does not match the frame-asset context");
@@ -784,8 +1080,6 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     }
     if (!state->creationCtx) state->creationCtx = arrivalCtx;
 #ifdef SWP_HAVE_ESTIMATOR
-    // Identity anchor: the estimator re-checks against THIS binding on every call
-    // (sibling header: never assume a context).
     SwpBindIdentityContext(reinterpret_cast<void*>(currentCtx));
 #endif
 
@@ -794,44 +1088,71 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     }
 
     if (kind == TickKind::Real) {
-        // Real tick: prev=older, curr=newest, with the LocateViews pose of the tick.
-        if (!state->realHistory.empty()) {
-            const FrameRecord& prev = state->realHistory.back();
-            if (prev.texL && prev.texL != texL && prev.texR != texR) {
-                if (SwpGenerateVectorsStereo(prev.texL, texL, prev.texR, texR, prev.matL,
-                                             prev.matR, prev.fovL, prev.fovR, state->mvTexL,
-                                             state->mvTexR)) {
-                    state->mvValid = true;
-                    g_lastEstimatorStatus.store(SwpLastStatus());
-                } else {
-                    state->mvValid = false;
-                    g_lastEstimatorStatus.store(SwpLastStatus());
-                    RateLimitedLog(*state, "vector generation failed");
-                }
+        // Motion field from the reference slot: prev (last arrival) -> curr.
+        SlotState& base = state->slots[0];
+        bool mvOk = false;
+        if (!base.history.empty()) {
+            const FrameRecord& prev = base.history.back();
+            if (prev.texL && prev.texL != base.texL && prev.texR != base.texR) {
+                mvOk = SwpGenerateVectorsStereo(prev.texL, base.texL, prev.texR, base.texR,
+                                                prev.matL, prev.matR, prev.fovL, prev.fovR,
+                                                state->mvTexL, state->mvTexR);
             }
         }
-        RecordRealTickLocked(*state, texL, texR, epochNow, predDispTime);
+        state->mvValid = mvOk;
+        g_lastEstimatorStatus.store(SwpLastStatus());
+        if (!mvOk && !base.history.empty()) RateLimitedLog(*state, "vector generation failed");
+
+        // Half-rate mode: every second presented tick is synthesized from the
+        // previously presented frame instead of showing the fresh decode.
+        bool synthesized = false;
+        if (mode == kModeHalfRate && state->havePresented && state->lastPresentedWasReal) {
+            uint64_t arrivalsArr[kArrivalHistoryCap] = {0};
+            uint64_t arrivalMonoArr[kArrivalHistoryCap] = {0};
+            const int historyCount =
+                SwpEglArrivalHistory(arrivalsArr, arrivalMonoArr, kArrivalHistoryCap);
+            uint64_t sourceXr = 0, beforeSourceXr = 0;
+            float forcedScale = 0.0f;
+            if (historyCount >= 3 &&
+                ArrivalXrTime(*state, arrivalMonoArr[1], &sourceXr) &&
+                ArrivalXrTime(*state, arrivalMonoArr[2], &beforeSourceXr) &&
+                SwpScaleFactorForMissedTick(predDispTime, beforeSourceXr, sourceXr, &forcedScale)) {
+                synthesized = SynthesizeSlotsLocked(*state, forcedScale);
+            } else {
+                RateLimitedLog(*state, "half-rate scale unavailable; presenting the decoded frame");
+            }
+        }
+        for (int s = 0; s < slotCount; s++) {
+            RecordSlotTickLocked(*state, state->slots[s], state->slots[s].texL,
+                                 state->slots[s].texR, epochNow, predDispTime);
+        }
         state->consecutiveMissed = 0;
+        state->havePresented = true;
+        state->lastPresentedWasReal = !synthesized;
         return g_nextEndFrame(session, frameEndInfo);
     }
     if (kind == TickKind::Stalled) return g_nextEndFrame(session, frameEndInfo);
 
-    // Missed tick: extrapolate the most recent presented pair into the pending dst.
+    // Missed tick: extrapolate each slot's newest arrival into its pending image.
     state->consecutiveMissed++;
     if (state->consecutiveMissed > kMaxConsecutiveMissed) {
         RateLimitedLog(*state, "consecutive missed-tick cap; passing stock");
         return g_nextEndFrame(session, frameEndInfo);
     }
-    if (!state->mvValid || state->realHistory.size() < 2) {
+    if (!state->mvValid) {
         RateLimitedLog(*state, "no valid maps for extrapolation");
         return g_nextEndFrame(session, frameEndInfo);
     }
+    for (int s = 0; s < slotCount; s++) {
+        if (state->slots[s].history.empty()) {
+            RateLimitedLog(*state, "no history for a selected projection");
+            return g_nextEndFrame(session, frameEndInfo);
+        }
+    }
 
+    const uint64_t predForScale = state->pairXr[0];
     uint64_t arrivals[kArrivalHistoryCap] = {0};
     uint64_t arrivalMono[kArrivalHistoryCap] = {0};
-    // The display moment this missed tick is composing for = THIS tick's
-    // predictedDisplayTime (captured at its xrBeginFrame).
-    const uint64_t predForScale = state->pairXr[0];
     const int historyCount = SwpEglArrivalHistory(arrivals, arrivalMono, kArrivalHistoryCap);
     uint64_t arrNewestXr = 0, arrPrevXr = 0;
     if (historyCount < 2) {
@@ -848,12 +1169,12 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
         RateLimitedLog(*state, "scale factor out of sane range");
         return g_nextEndFrame(session, frameEndInfo);
     }
-    const FrameRecord& src = state->realHistory.back();
-    if (SwpExtrapolateStereo(state->mvTexL, state->mvTexR, src.texL, src.texR, texL, texR, scale)) {
+    if (SynthesizeSlotsLocked(*state, scale)) {
         g_lastEstimatorStatus.store(SwpLastStatus());
+        state->havePresented = true;
+        state->lastPresentedWasReal = false;
     } else {
         g_lastEstimatorStatus.store(SwpLastStatus());
-        RateLimitedLog(*state, "extrapolation failed");
     }
     return g_nextEndFrame(session, frameEndInfo);
 }
@@ -915,7 +1236,10 @@ XrResult SwpDispatchAcquireSwapchainImage(XrSwapchain swapchain,
 // never auto-enable. Flipping the entry applies to the NEXT session; the
 // bridge's own flips take effect live within the 60-endframe poll cadence.
 // Exported (default visibility) so a bridge workstream can dlsym it.
-#ifndef EXPORT
+#if defined(_MSC_VER)
+// Host-test build: default visibility is an ELF concept; nothing dlsyms here.
+#define EXPORT
+#elif !defined(EXPORT)
 #define EXPORT __attribute__((visibility("default")))
 #endif
 EXPORT void SwpSetEnabled(bool enabled) {

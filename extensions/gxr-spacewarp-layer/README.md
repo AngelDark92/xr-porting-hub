@@ -39,14 +39,25 @@ brief (08-ESTIMATOR-B1a); the two are joined by the shared interface contract in
   buffer pool (`maxImages 20`).
 - At `xrEndFrame`: identical epoch as the previous endframe ⇒ the same decoded arrival
   is being presented again ⇒ **missed tick** ⇒
-  `SwpExtrapolateStereo(mvMapL/R, srcL/R, dstL/R, scaleFactor)` into the pending
-  projection textures.
+  `SwpExtrapolateStereo(mvMapL/R, srcL/R, stagingL/R, scaleFactor)` into owned
+  staging images, then committed into the pending projection textures by a
+  format-matched blit — and only after every eye of every selected projection
+  rendered successfully, so a partial failure never reaches the compositor.
 - Fresh epoch ⇒ **real tick** ⇒ `SwpGenerateVectorsStereo(prev=older, curr=newest, the
   LocateViews pose of each tick)`; the first real tick only records history.
-- `scaleFactor = (predictedDisplayTime − arrivalNewest) / (arrivalNewest − arrivalPrev)`
-  (VD's C# derivation; arrivals converted into XrTime through the `xrBeginFrame`
-  monotonic/paired-anchor ring), clamped to `[0.05, 3.0]`, and at most
-  **2 consecutive** extrapolated ticks before the layer passes stock again.
+- `scaleFactor = (predictedDisplayTime − arrivalPrev) / (arrivalNewest − arrivalPrev)`
+  (VD's normalized progress between the two history frame indexes: 1.0 exactly at the
+  newest arrival, 2.0 one skipped interval; the extrapolation shader applies `1 − scale`;
+  arrivals converted into XrTime through the `xrBeginFrame` monotonic/paired-anchor
+  ring), clamped to `[0.05, 3.0]`, and at most **2 consecutive** extrapolated ticks
+  before the layer passes stock again.
+- **Synthesis modes (2026-10-20, owner directive).** The carrier value is the mode:
+  `0` off, `1` late frames only (the original behavior), `2` half rate. In half-rate
+  mode every second presented tick is synthesized from the previously presented frame
+  instead of showing the fresh decode, so real frames update at half the display rate;
+  the client still decodes every frame. Any other value reads as late-frames-only and
+  never rewrites the host's saved setting. A mode flip mid-session behaves like a fresh
+  enablement: stale maps are dropped and the next real tick regenerates them.
 - Any failure stands down **this tick only** (contract status 16), logged **once per 30
   occurrences**; the already-rendered client content still reaches the compositor, so
   the worst case equals stock. Estimator-init failure stands the session down

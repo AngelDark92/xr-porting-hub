@@ -16,6 +16,8 @@
 
 #include <cstdarg>
 #include <cstdint>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -102,6 +104,18 @@ extern "C" const GLubyte* glGetString(GLenum) {
     return reinterpret_cast<const GLubyte*>("gxr-stub-gl");
 }
 extern "C" void glGetIntegerv(GLenum, GLint*) {}
+static int g_blitCalls = 0;
+extern "C" void glBlitFramebuffer(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint,
+                                  GLbitfield, GLenum) { ++g_blitCalls; }
+extern "C" GLboolean glIsEnabled(GLenum) { return GL_FALSE; }
+extern "C" void glEnable(GLenum) {}
+extern "C" void glDisable(GLenum) {}
+extern "C" void glColorMask(GLboolean, GLboolean, GLboolean, GLboolean) {}
+extern "C" void glGetBooleanv(GLenum, GLboolean*) {}
+// The fake swapchain images are SRGB8_ALPHA8, like the client video layers.
+extern "C" void glGetTexLevelParameteriv(GLenum, GLint, GLenum pname, GLint* params) {
+    if (params) *params = pname == GL_TEXTURE_INTERNAL_FORMAT ? GL_SRGB8_ALPHA8 : 0;
+}
 
 // --- EGL stub body ---
 static void* g_currentCtx = reinterpret_cast<void*>(0xC0DE);
@@ -115,6 +129,9 @@ struct EstimatorCalls {
     uint32_t lastPrevTexL = 0, lastCurrTexL = 0, lastPrevTexR = 0, lastCurrTexR = 0;
     uint32_t lastMvTexL = 0, lastMvTexR = 0;
     uint32_t lastSrcTexL = 0, lastSrcTexR = 0, lastDstTexL = 0, lastDstTexR = 0;
+    uint32_t firstDstTexL = 0, firstDstTexR = 0, firstSrcTexL = 0, firstSrcTexR = 0;
+    struct Pair { uint32_t srcL, srcR, dstL, dstR; };
+    std::vector<Pair> pairs;
     float lastScale = 0.f;
     bool initResult = true;
     bool generateResult = true;
@@ -144,6 +161,13 @@ bool SwpGenerateVectorsStereo(uint32_t prevTexL, uint32_t currTexL, uint32_t pre
 }
 bool SwpExtrapolateStereo(uint32_t mvTexL, uint32_t mvTexR, uint32_t srcTexL, uint32_t srcTexR,
                           uint32_t dstTexL, uint32_t dstTexR, float scaleFactor) {
+    g_est.pairs.push_back({srcTexL, srcTexR, dstTexL, dstTexR});
+    if (g_est.extrapolateCalls == 0) {
+        g_est.firstDstTexL = dstTexL;
+        g_est.firstDstTexR = dstTexR;
+        g_est.firstSrcTexL = srcTexL;
+        g_est.firstSrcTexR = srcTexR;
+    }
     g_est.extrapolateCalls++;
     g_est.lastMvTexL = mvTexL;
     g_est.lastMvTexR = mvTexR;
@@ -187,6 +211,9 @@ bool SwpSetGlTable(const SwpGlTable* table) {
         (const void*)table->glBindTexture, (const void*)table->glActiveTexture,
         (const void*)table->glTexStorage2D, (const void*)table->glTexParameteri,
         (const void*)table->glGetString, (const void*)table->glGetIntegerv,
+        (const void*)table->glIsEnabled, (const void*)table->glEnable,
+        (const void*)table->glDisable, (const void*)table->glColorMask,
+        (const void*)table->glGetBooleanv,
     };
     for (const void* entry : entries) {
         if (!entry) return false;
@@ -242,7 +269,15 @@ struct NextCalls {
 static const XrSession kFakeSession = reinterpret_cast<XrSession>(0xA11);
 static uint64_t g_fakePredDispTime = 0;
 static const XrSwapchain kFakeSwapchain = reinterpret_cast<XrSwapchain>(0xBEEF);
+// Second video projection (foveated): its own swapchains and images, like the
+// client's separate per-component pairs.
+static const XrSwapchain kFakeSwapchainFov = reinterpret_cast<XrSwapchain>(0xF0F0);
+// 2.0.23/5002363 also submits an "underside" projection the client never
+// renders; its swapchains must never be warped.
+static const XrSwapchain kFakeSwapchainUnd = reinterpret_cast<XrSwapchain>(0x0D0D);
 static uint32_t g_swapchainImageIds[3] = {101, 102, 103};
+static uint32_t g_fovImageIds[3] = {201, 202, 203};
+static uint32_t g_undImageIds[3] = {301, 302, 303};
 static uint32_t g_acquiredIndex = 0;
 
 static XrResult XRAPI_PTR FakeCreateSession(XrInstance, const XrSessionCreateInfo*,
@@ -287,8 +322,12 @@ static XrResult XRAPI_PTR FakeEndFrame(XrSession, const XrFrameEndInfo* frameEnd
     return XR_SUCCESS;
 }
 static XrResult XRAPI_PTR FakeEnumerateSwapchainImages(
-    XrSwapchain, uint32_t, uint32_t* countOutput, XrSwapchainImageBaseHeader* images) {
+    XrSwapchain swapchain, uint32_t, uint32_t* countOutput, XrSwapchainImageBaseHeader* images) {
     g_next.enumerate++;
+    const uint32_t* ids = swapchain == kFakeSwapchainFov
+                              ? g_fovImageIds
+                              : swapchain == kFakeSwapchainUnd ? g_undImageIds
+                                                               : g_swapchainImageIds;
     *countOutput = 3;
     struct SwapchainImageGles {
         XrStructureType type;
@@ -301,7 +340,7 @@ static XrResult XRAPI_PTR FakeEnumerateSwapchainImages(
     for (uint32_t i = 0; i < 3; i++) {
         out[i].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
         out[i].next = nullptr;
-        out[i].image = g_swapchainImageIds[i];
+        out[i].image = ids[i];
         out[i].pad = 0;
     }
     return XR_SUCCESS;
@@ -310,6 +349,8 @@ static XrResult XRAPI_PTR FakeAcquireSwapchainImage(XrSwapchain,
                                                     const XrSwapchainImageAcquireInfo*,
                                                     uint32_t* index) {
     g_next.acquire++;
+    // The test controls the round-robin position; both eyes of one swapchain
+    // use the same index, like a per-view swapchain in the client.
     *index = g_acquiredIndex;
     return XR_SUCCESS;
 }
@@ -351,59 +392,117 @@ static void DriveEnumerate() {
         uint32_t pad;
     };
     static SwapchainImageGles array[3];
+    static SwapchainImageGles fovArray[3];
     for (uint32_t i = 0; i < 3; i++) {
-        array[i].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
-        array[i].next = nullptr;
+        array[i].type = fovArray[i].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
+        array[i].next = fovArray[i].next = nullptr;
         array[i].image = g_swapchainImageIds[i];
-        array[i].pad = 0;
+        fovArray[i].image = g_fovImageIds[i];
+        array[i].pad = fovArray[i].pad = 0;
     }
     uint32_t count = 0;
     SwpDispatchEnumerateSwapchainImages(kFakeSwapchain, 3, &count,
                                         reinterpret_cast<XrSwapchainImageBaseHeader*>(array));
+    // The foveated projection has its own swapchain pair (client layout).
+    SwpDispatchEnumerateSwapchainImages(kFakeSwapchainFov, 3, &count,
+                                        reinterpret_cast<XrSwapchainImageBaseHeader*>(fovArray));
 }
 
-// Projection frame-end builder: one projection layer (2 views on the configured
-// swapchain) plus one overlay layer that MUST stay untouched.
+static void DriveEnumerateUnd() {
+    struct SwapchainImageGles {
+        XrStructureType type;
+        const void* next;
+        uint32_t image;
+        uint32_t pad;
+    };
+    static SwapchainImageGles array[3];
+    for (uint32_t i = 0; i < 3; i++) {
+        array[i].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
+        array[i].next = nullptr;
+        array[i].image = g_undImageIds[i];
+        array[i].pad = 0;
+    }
+    uint32_t count = 0;
+    SwpDispatchEnumerateSwapchainImages(kFakeSwapchainUnd, 3, &count,
+                                        reinterpret_cast<XrSwapchainImageBaseHeader*>(array));
+}
+
+// Projection frame-end builder: the two video projections the client submits
+// (base + foveated, separate swapchain pairs) plus one overlay layer that MUST
+// stay untouched. This mirrors the audited 2.0.20/5001712 composition the layer
+// treats as [base, foveated].
 struct ProjLayers {
-    XrCompositionLayerProjection projection{};
-    XrCompositionLayerProjectionView views[2]{};
+    XrCompositionLayerProjection projection[3]{};
+    XrCompositionLayerProjectionView views[3][2]{};
     XrCompositionLayerQuad overlay{};
-    const XrCompositionLayerBaseHeader* layers[2] = {nullptr, nullptr};
+    const XrCompositionLayerBaseHeader* layers[4] = {nullptr, nullptr, nullptr, nullptr};
     XrFrameEndInfo info{};
 };
 
-static ProjLayers BuildProjectionLayers(XrSwapchain swapchain) {
-    ProjLayers out;
+static void FillProjection(ProjLayers& out, int index, XrSwapchain swapchain) {
     for (int eye = 0; eye < 2; eye++) {
-        out.views[eye].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
-        out.views[eye].subImage.swapchain = swapchain;
-        out.views[eye].subImage.imageArrayIndex = 0;
-        out.views[eye].subImage.imageRect.offset.x = 0;
-        out.views[eye].subImage.imageRect.offset.y = 0;
-        out.views[eye].subImage.imageRect.extent.width = 2048;
-        out.views[eye].subImage.imageRect.extent.height = 2048;
-        out.views[eye].pose.orientation.w = 1.0f;
-        out.views[eye].pose.position.x = static_cast<float>(eye);
-        out.views[eye].fov.angleLeft = -1.2f;
-        out.views[eye].fov.angleRight = 1.2f;
-        out.views[eye].fov.angleUp = 1.0f;
-        out.views[eye].fov.angleDown = -1.0f;
+        auto& view = out.views[index][eye];
+        view.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
+        view.subImage.swapchain = swapchain;
+        view.subImage.imageArrayIndex = 0;
+        view.subImage.imageRect.offset.x = 0;
+        view.subImage.imageRect.offset.y = 0;
+        view.subImage.imageRect.extent.width = 2048;
+        view.subImage.imageRect.extent.height = 2048;
+        view.pose.orientation.w = 1.0f;
+        view.pose.position.x = static_cast<float>(eye);
+        view.fov.angleLeft = -1.2f;
+        view.fov.angleRight = 1.2f;
+        view.fov.angleUp = 1.0f;
+        view.fov.angleDown = -1.0f;
     }
-    out.projection.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION;
-    out.projection.space = reinterpret_cast<XrSpace>(0x5E3);
-    out.projection.viewCount = 2;
-    out.projection.views = out.views;
+    out.projection[index].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION;
+    out.projection[index].space = reinterpret_cast<XrSpace>(0x5E3 + index);
+    out.projection[index].viewCount = 2;
+    out.projection[index].views = out.views[index];
+}
+
+// Out-param on purpose: the layer-array entries point INTO this struct, so a
+// returned copy would leave dangling pointers (NRVO is not a contract).
+static void BuildProjectionLayers(ProjLayers& out, XrSwapchain swapchain) {
+    FillProjection(out, 0, swapchain);
+    FillProjection(out, 1, kFakeSwapchainFov);
     out.overlay.type = (XrStructureType)0x7777;  // non-projection overlay: forwarded untouched
-    out.layers[0] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection);
-    out.layers[1] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.overlay);
+    out.layers[0] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection[0]);
+    out.layers[1] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection[1]);
+    out.layers[2] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.overlay);
     out.info.type = XR_TYPE_FRAME_END_INFO;
     out.info.displayTime = g_fakePredDispTime;
-    out.info.layerCount = 2;
+    out.info.layerCount = 3;
     out.info.layers = out.layers;
-    return out;
+}
+
+// 2.0.23/5002363 composition: [underside, base, foveated] + overlay.
+static void BuildProjectionLayers3(ProjLayers& out, XrSwapchain base, XrSwapchain fov,
+                                   XrSwapchain und) {
+    FillProjection(out, 0, und);
+    FillProjection(out, 1, base);
+    FillProjection(out, 2, fov);
+    out.overlay.type = (XrStructureType)0x7777;
+    out.layers[0] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection[0]);
+    out.layers[1] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection[1]);
+    out.layers[2] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.projection[2]);
+    out.layers[3] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&out.overlay);
+    out.info.type = XR_TYPE_FRAME_END_INFO;
+    out.info.displayTime = g_fakePredDispTime;
+    out.info.layerCount = 4;
+    out.info.layers = out.layers;
 }
 
 // One full tick: clock set outside; the tick records its endframe display time.
+static void AcquireBoth() {
+    uint32_t pending = 0;
+    CHECK(XR_SUCCEEDED(SwpDispatchAcquireSwapchainImage(kFakeSwapchain, nullptr, &pending)),
+          "acquire base swapchain forwards");
+    CHECK(XR_SUCCEEDED(SwpDispatchAcquireSwapchainImage(kFakeSwapchainFov, nullptr, &pending)),
+          "acquire foveated swapchain forwards");
+}
+
 static void Tick(uint64_t predDispTime) {
     g_fakePredDispTime = predDispTime;
     XrFrameBeginInfo beginInfo{};
@@ -419,9 +518,40 @@ static void Tick(uint64_t predDispTime) {
     CHECK(XR_SUCCEEDED(SwpDispatchLocateViews(kFakeSession, &viewLocate, &viewState, 2, &count,
                                               views)),
           "locate views forwards");
-    ProjLayers layers = BuildProjectionLayers(kFakeSwapchain);
+    AcquireBoth();
+    ProjLayers layers;
+    BuildProjectionLayers(layers, kFakeSwapchain);
     layers.info.displayTime = predDispTime;  // the compositor deadline this tick
     CHECK(XR_SUCCEEDED(SwpDispatchEndFrame(kFakeSession, &layers.info)), "end frame forwards");
+}
+
+// One full tick of the 2.0.23/5002363 composition: the client acquires all three
+// projections (including the underside it never draws) and submits four layers.
+static void Tick3(uint64_t predDispTime) {
+    g_fakePredDispTime = predDispTime;
+    XrFrameBeginInfo beginInfo{};
+    beginInfo.type = XR_TYPE_FRAME_BEGIN_INFO;
+    CHECK(XR_SUCCEEDED(SwpDispatchBeginFrame(kFakeSession, &beginInfo)), "3-proj begin frame");
+    XrViewState viewState{};
+    viewState.type = XR_TYPE_VIEW_STATE;
+    XrView views[2]{};
+    uint32_t count = 0;
+    XrViewLocateInfo viewLocate{};
+    viewLocate.type = XR_TYPE_VIEW_LOCATE_INFO;
+    CHECK(XR_SUCCEEDED(SwpDispatchLocateViews(kFakeSession, &viewLocate, &viewState, 2, &count,
+                                              views)),
+          "3-proj locate views");
+    uint32_t pending = 0;
+    CHECK(XR_SUCCEEDED(SwpDispatchAcquireSwapchainImage(kFakeSwapchainUnd, nullptr, &pending)),
+          "3-proj acquire underside forwards");
+    CHECK(XR_SUCCEEDED(SwpDispatchAcquireSwapchainImage(kFakeSwapchain, nullptr, &pending)),
+          "3-proj acquire base forwards");
+    CHECK(XR_SUCCEEDED(SwpDispatchAcquireSwapchainImage(kFakeSwapchainFov, nullptr, &pending)),
+          "3-proj acquire foveated forwards");
+    ProjLayers layers;
+    BuildProjectionLayers3(layers, kFakeSwapchain, kFakeSwapchainFov, kFakeSwapchainUnd);
+    layers.info.displayTime = predDispTime;
+    CHECK(XR_SUCCEEDED(SwpDispatchEndFrame(kFakeSession, &layers.info)), "3-proj end frame");
 }
 
 static void ResetAll() {
@@ -435,6 +565,7 @@ static void ResetAll() {
     g_acquiredIndex = 0;
     g_fakePredDispTime = 0;
     g_glTableCalls = 0;
+    g_blitCalls = 0;
     g_glTableResult = true;
     g_boundIdentityCtx = nullptr;
     g_identityBindings = 0;
@@ -472,23 +603,26 @@ static void CheckPoseMatrix() {
     const float half = 0.70710678f;
     const float quatYaw[4] = {half, 0, half, 0};
     SwpPoseToViewMatrix(pos0, quatYaw, mat);
-    CHECK(mat[8] == 1.0f, "pose->view: yaw carries +Z into view +X");
+    // 0.70710678f squared rounds to just under 0.5 in float, so an exact
+    // comparison is toolchain-dependent; the tolerance is the assertion.
+    CHECK(std::fabs(mat[8] - 1.0f) < 1e-5f, "pose->view: yaw carries +Z into view +X");
     // Position (1,0,0) under 90-degree yaw: translation column zeroes x and applies
     // -R*p = -(0,0,-1)... the x-rotated basis maps p.x into -view.z: mat[14] = -(-1) = ...
     const float pos1[3] = {1, 0, 0};
     SwpPoseToViewMatrix(pos1, quatYaw, mat);
-    CHECK(mat[12] == 0.0f && mat[13] == 0.0f && mat[14] == 1.0f,
+    CHECK(std::fabs(mat[12]) < 1e-5f && std::fabs(mat[13]) < 1e-5f &&
+              std::fabs(mat[14] - 1.0f) < 1e-5f,
           "pose->view: translation applied on the rotated basis");
 }
 
 static void CheckScaleFactor() {
     float scale = 0.f;
-    CHECK(SwpScaleFactorForMissedTick(3000, 1000, 2000, &scale) && scale > 0.99f &&
-              scale < 1.01f,
-          "scale factor: one progress span -> 1.0");
-    CHECK(SwpScaleFactorForMissedTick(4000, 1000, 2000, &scale) && scale > 1.99f &&
+    CHECK(SwpScaleFactorForMissedTick(3000, 1000, 2000, &scale) && scale > 1.99f &&
               scale < 2.01f,
-          "scale factor: two progress spans -> 2.0");
+          "scale factor: one skipped interval past newest -> 2.0 (shader applies 1-scale)");
+    CHECK(SwpScaleFactorForMissedTick(4000, 1000, 2000, &scale) && scale > 2.99f &&
+              scale < 3.01f,
+          "scale factor: two skipped intervals -> 3.0 (cap)");
     CHECK(!SwpScaleFactorForMissedTick(1500, 1000, 2000, &scale),
           "scale factor: pred earlier than the newest arrival stands down");
     CHECK(!SwpScaleFactorForMissedTick(100000, 1000, 2000, &scale),
@@ -571,10 +705,13 @@ static void CheckDispatchFlow() {
     CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session)) &&
               session == kFakeSession && g_next.createSession == 1,
           "session create forwards and tracks the handle");
+    // A new session restarts the carrier cache; the host republishes on its own
+    // cadence, so the harness models that with an explicit publish here.
+    SwpVtsTestPublish(1);
 
     g_acquiredIndex = 1;
     DriveEnumerate();  // swapchain 0xBEEF textures = {101, 102, 103}; pending index 1 -> 102
-    CHECK(g_next.enumerate == 1, "enumerate forwards");
+    CHECK(g_next.enumerate == 2, "enumerate forwards for both video projections");
 
     // Tick 1: one arrival before it -> REAL tick: history record only.
     SwpEglTestSetNowNs(1000);   // BeginFrame#1 clock anchor (mono 1000, xr 100000)
@@ -590,7 +727,8 @@ static void CheckDispatchFlow() {
     g_fakePredDispTime = 200000;
     SwpEglTestSetNowNs(2000);
     g_acquiredIndex = 2;
-    ProjLayers layers2 = BuildProjectionLayers(kFakeSwapchain);
+    ProjLayers layers2;
+    BuildProjectionLayers(layers2, kFakeSwapchain);
     XrFrameBeginInfo begin2{};
     begin2.type = XR_TYPE_FRAME_BEGIN_INFO;
     CHECK(XR_SUCCEEDED(SwpDispatchBeginFrame(kFakeSession, &begin2)), "begin frame 2");
@@ -604,6 +742,7 @@ static void CheckDispatchFlow() {
                                               views2)),
           "locate views 2");
     SwpEglArrivalObserved((void*)11, (void*)0xC0DE, nullptr, 2100);  // fresh arrival
+    AcquireBoth();
     CHECK(XR_SUCCEEDED(SwpDispatchEndFrame(kFakeSession, &layers2.info)), "end frame 2");
     CHECK(g_est.generateCalls == 1, "vector generation on the second real tick");
     CHECK(g_est.lastPrevTexL == 102 && g_est.lastCurrTexL == 103,
@@ -615,7 +754,8 @@ static void CheckDispatchFlow() {
     g_fakePredDispTime = 300000;
     SwpEglTestSetNowNs(3000);
     g_acquiredIndex = 0;  // round-robin wrap: pending image index 0 -> texture 101
-    ProjLayers layers3 = BuildProjectionLayers(kFakeSwapchain);
+    ProjLayers layers3;
+    BuildProjectionLayers(layers3, kFakeSwapchain);
     XrFrameBeginInfo begin3{};
     begin3.type = XR_TYPE_FRAME_BEGIN_INFO;
     CHECK(XR_SUCCEEDED(SwpDispatchBeginFrame(kFakeSession, &begin3)), "begin frame 3");
@@ -628,15 +768,31 @@ static void CheckDispatchFlow() {
     CHECK(XR_SUCCEEDED(SwpDispatchLocateViews(kFakeSession, &viewLocate3, &viewState3, 2, &count3,
                                               views3)),
           "locate views 3");
+    AcquireBoth();
     CHECK(XR_SUCCEEDED(SwpDispatchEndFrame(kFakeSession, &layers3.info)), "end frame 3");
-    CHECK(g_est.extrapolateCalls == 1, "extrapolation on the missed tick");
-    CHECK(g_est.lastDstTexL == 101 && g_est.lastDstTexR == 101,
-          "extrapolation targets the pending subimage textures");
-    CHECK(g_est.lastSrcTexL == 103 && g_est.lastSrcTexR == 103,
-          "extrapolation sources the last presented pair");
-    CHECK(g_est.lastScale >= 0.5f && g_est.lastScale <= 1.5f,
-          "extrapolation scale is inside the sane range (synthetic anchors)");
-    CHECK(g_next.lastLayerCount == 2, "the layer list reaches the runtime untouched");
+    CHECK(g_est.extrapolateCalls == 2, "one extrapolation per selected projection on the missed tick");
+    {
+        std::vector<uint32_t> dstIds;
+        bool stagingOnly = g_est.pairs.size() == 2;
+        for (const auto& pair : g_est.pairs) {
+            const uint32_t dsts[2] = {pair.dstL, pair.dstR};
+            for (uint32_t id : dsts) {
+                if ((id >= 101 && id <= 103) || (id >= 201 && id <= 203)) stagingOnly = false;
+                dstIds.push_back(id);
+            }
+        }
+        std::sort(dstIds.begin(), dstIds.end());
+        stagingOnly = stagingOnly && dstIds.size() == 4 &&
+                      std::unique(dstIds.begin(), dstIds.end()) == dstIds.end();
+        CHECK(stagingOnly, "all four eye warps target distinct owned staging textures");
+    }
+    CHECK(g_blitCalls == 4, "both eyes of both projections are committed by blit");
+    CHECK(g_est.firstSrcTexL >= 101 && g_est.firstSrcTexL <= 103 &&
+              g_est.lastSrcTexL >= 201 && g_est.lastSrcTexL <= 203,
+          "each projection sources its own last presented pair");
+    CHECK(g_est.lastScale >= 1.5f && g_est.lastScale <= 2.5f,
+          "one skipped interval extrapolates by ~2.0 (shader applies 1-scale)");
+    CHECK(g_next.lastLayerCount == 3, "the layer list reaches the runtime untouched");
     g_logLines.clear();
 
     // Ticks 4-6: pass stock once more than 2 consecutive missed ticks.
@@ -647,7 +803,7 @@ static void CheckDispatchFlow() {
         xr += 100000;
     }
     const int extrapolated = g_est.extrapolateCalls;
-    CHECK(extrapolated == 2, "the second consecutive missed tick still extrapolates");
+    CHECK(extrapolated == 4, "the second consecutive missed tick still extrapolates both projections");
     Tick(xr);  // third consecutive missed tick: the cap passes stock
     CHECK(g_est.extrapolateCalls == extrapolated,
           "the consecutive cap passes stock without estimator calls");
@@ -705,6 +861,7 @@ static void CheckStandDowns() {
     XrSession session3 = nullptr;
     CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info3, &session3)),
           "re-enabled session create forwards");
+    SwpVtsTestPublish(1);  // the host republishes on its cadence for the new session
     g_est.initCalled = false;
     SwpEglResetArrivals();
     SwpEglTestSetNowNs(4000);
@@ -712,6 +869,55 @@ static void CheckStandDowns() {
     g_acquiredIndex = 1;
     Tick(900000);
     CHECK(g_est.initCalled, "the next session re-reads the enable entry and runs");
+}
+
+// 2.0.23/5002363 composition: [underside, base, foveated]. The underside layer is
+// never drawn by the client; the layer must select the LAST TWO projections and
+// never touch the underside swapchains even though the client acquires them.
+static void CheckThreeProjectionLayout() {
+    ResetAll();
+    CHECK(InstallNext(), "next chain installs (3-projection run)");
+    XrSessionCreateInfo info = GlesSessionInfo();
+    XrSession session = nullptr;
+    CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session)),
+          "3-proj session create");
+    SwpVtsTestPublish(1);
+    g_acquiredIndex = 1;
+    DriveEnumerate();
+    DriveEnumerateUnd();
+    SwpEglTestSetNowNs(1000);
+    SwpEglArrivalObserved((void*)10, (void*)0xC0DE, nullptr, 1100);
+    Tick3(100000);
+    CHECK(g_est.initCalled, "3-proj estimator init");
+
+    SwpEglTestSetNowNs(2000);
+    g_acquiredIndex = 2;
+    SwpEglArrivalObserved((void*)11, (void*)0xC0DE, nullptr, 2100);
+    Tick3(200000);
+    CHECK(g_est.generateCalls == 1, "3-proj vectors from the base slot");
+
+    SwpEglTestSetNowNs(3000);
+    g_acquiredIndex = 0;
+    Tick3(300000);  // missed: extrapolate both video projections
+    CHECK(g_est.extrapolateCalls == 2,
+          "3-proj layout extrapolates exactly the two video projections");
+    bool touchesUnderside = false;
+    bool mapsBaseAndFoveated = g_est.pairs.size() == 2;
+    for (const auto& pair : g_est.pairs) {
+        const uint32_t ids[4] = {pair.srcL, pair.srcR, pair.dstL, pair.dstR};
+        for (uint32_t id : ids) {
+            if (id >= 301 && id <= 303) touchesUnderside = true;
+        }
+    }
+    CHECK(!touchesUnderside, "the underside swapchains are never a warp source or destination");
+    if (mapsBaseAndFoveated) {
+        CHECK(g_est.pairs[0].srcL >= 101 && g_est.pairs[0].srcL <= 103,
+              "slot 0 is the base projection");
+        CHECK(g_est.pairs[1].srcL >= 201 && g_est.pairs[1].srcL <= 203,
+              "slot 1 is the foveated projection");
+    } else {
+        CHECK(false, "the 3-projection layout produced two extrapolation calls");
+    }
 }
 
 // Brief-10 enable gating: ALL synthesis (MV-gen + extrapolation) only while the
@@ -801,11 +1007,13 @@ static void CheckBridgeGating() {
     // ...and the next missed tick extrapolates into the pending dst textures.
     g_acquiredIndex = 0;  // round-robin wrap: the missed tick's dst is texture 101
     GateTick();
-    CHECK(g_est.extrapolateCalls == 1, "the next missed tick extrapolates");
-    CHECK(g_est.lastDstTexL == 101 && g_est.lastDstTexR == 101,
-          "the extrapolated tick targets the pending subimage textures");
-    CHECK(g_est.lastSrcTexL == 103 && g_est.lastSrcTexR == 103,
-          "the extrapolation sources the post-enablement presented pair");
+    CHECK(g_est.extrapolateCalls == 2, "the next missed tick extrapolates both projections");
+    CHECK(g_est.firstDstTexL != g_est.firstSrcTexL &&
+              g_est.lastDstTexL != g_est.lastSrcTexL,
+          "the extrapolated tick warps into staging, not into its sources");
+    CHECK(g_est.firstSrcTexL >= 101 && g_est.firstSrcTexL <= 103 &&
+              g_est.lastSrcTexL >= 201 && g_est.lastSrcTexL <= 203,
+          "each projection sources its post-enablement presented pair");
 
     // The per-session entry stays authoritative: entry off + carrier on = stock.
     SwpSetEnabled(false);
@@ -835,6 +1043,7 @@ static void CheckSessionTeardown() {
     XrSessionCreateInfo info = GlesSessionInfo();
     XrSession session = nullptr;
     CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session)), "session create");
+    SwpVtsTestPublish(1);  // the host republishes on its cadence for the new session
     g_acquiredIndex = 1;
     DriveEnumerate();
     SwpEglTestSetNowNs(1000);
@@ -845,7 +1054,8 @@ static void CheckSessionTeardown() {
     CHECK(XR_SUCCEEDED(SwpDispatchDestroySession(kFakeSession)), "destroy session forwards");
     // After teardown, calls with the stale session: pure passthrough, no state.
     g_est.initCalled = false;
-    ProjLayers layers2 = BuildProjectionLayers(kFakeSwapchain);
+    ProjLayers layers2;
+    BuildProjectionLayers(layers2, kFakeSwapchain);
     Tick(300000);
     CHECK(g_est.generateCalls == 0 && g_est.extrapolateCalls == 0,
           "no estimator activity for the torn-down session");
@@ -862,6 +1072,7 @@ int main() {
     CheckClassify();
     CheckArrivalLearning();
     CheckDispatchFlow();
+    CheckThreeProjectionLayout();
     CheckBridgeGating();
     CheckStandDowns();
     CheckSessionTeardown();
