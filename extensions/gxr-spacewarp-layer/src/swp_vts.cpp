@@ -1,10 +1,12 @@
 // gxr-spacewarp: VTS bridge consumer (brief 10-W2A-LAYER-WIRING).
 //
-// One boolean flows host -> client over the vrlink typed ValueTransportSystem
+// One 4-byte value flows host -> client over the vrlink typed ValueTransportSystem
 // channel (receipt 06-BRIDGE: the wire type 7 "Value Transport", decoded record
 // codec, receiver auto-instantiates unknown value ids 1..0x73). The owner chose
 // the carrier id 0x48 (72); the host's in-process VrlinkTap publishes a 4-byte
-// int on it; THIS module consumes it on the client with NO stock APK edit:
+// int on it (0 = off, 1 = late frames only, 2 = half rate; 2026-10-20 owner
+// directive added the mode on the same value, so no second id or RE is needed);
+// THIS module consumes it on the client with NO stock APK edit:
 //
 //   * SVLRoot* capture: the layer GOT-patches two PLT-routed SVLRoot methods
 //     of libvrlink_scene.so (SVLRoot::ParsePeerValueSettings — receipt 06's
@@ -34,9 +36,11 @@
 //       Both mutex shapes make the call safe from the render thread at
 //       ~1.5 Hz. The profile's ReadReturn field carries the policy.
 //   * Cadence: one carrier read every 60 endframes (cheap). Semantics: 4-byte
-//     int, nonzero = enabled. Read failure / never published (unknown) =>
-//     treated as disabled; the layer NEVER auto-enables on stock sessions
-//     ("carrier value not present" is logged once per session).
+//     int, 0 = off, 1 = late frames only, 2 = half rate; any other value reads
+//     as late-frames-only and never rewrites the host's saved setting. Read
+//     failure / never published (unknown) => treated as disabled; the layer
+//     NEVER auto-enables on stock sessions ("carrier value not present" is
+//     logged once per session).
 //   * Dispatch gate (swp_dispatch.cpp): ALL synthesis (MV generation +
 //     extrapolation) runs only while this module reads the carrier enabled;
 //     everything else stays the stock passthrough path (the layer's observers
@@ -209,10 +213,19 @@ constexpr int kCarrierOff = 1;         // published 0 (the host actively disable
 constexpr int kCarrierOn = 2;          // published nonzero
 constexpr int kCarrierUnpublished = 3; // BGetRemoteValue returned "not present"
 
+// 2026-10-20 (owner directive): the published value is also the synthesis
+// mode — 0 = off, 1 = late frames only, 2 = half rate. Unknown and
+// unpublished are carrier STATES, not values; both read as disabled. An
+// older host publishing 1 keeps the late-frames behavior.
+constexpr uint32_t kCarrierModeLateFrames = 1;
+constexpr uint32_t kCarrierModeHalfRate = 2;
+
 std::atomic<int> g_state{kVtsStatePending};
 std::atomic<bool> g_busy{false};
 std::atomic<uintptr_t> g_svlRoot{0};
 std::atomic<int> g_carrier{kCarrierUnknown};
+// Last published 4-byte carrier value (0 / 1 / 2); the mode source of truth.
+std::atomic<uint32_t> g_carrierValue{0};
 
 // Per-session one-line log flags (reset by SwpVtsResetSession).
 std::atomic<bool> g_notPresentLogged{false};
@@ -325,6 +338,7 @@ void PollCarrierLogged() {
             LOG("SVLRoot not captured yet (no live vrlink session); carrier stays"
                 " unknown => disabled");
         }
+        g_carrierValue.store(0);
         g_carrier.store(kCarrierUnknown);
         return;
     }
@@ -344,6 +358,7 @@ void PollCarrierLogged() {
             ? got != 0
             : got == kCarrierPayloadBytes;
     if (!present) {
+        g_carrierValue.store(0);
         g_carrier.store(kCarrierUnpublished);
         if (!g_notPresentLogged.exchange(true)) {
             LOG("carrier value not present (id 0x%x never published this session);"
@@ -351,11 +366,15 @@ void PollCarrierLogged() {
         }
         return;
     }
+    if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;  // undefined mode reads as late-frames
+    const uint32_t previousValue = g_carrierValue.exchange(value);
     const int next = value != 0 ? kCarrierOn : kCarrierOff;
     const int previous = g_carrier.exchange(next);
-    if (previous != next) {
-        LOG("bridge carrier 0x%x = %u (spacewarp %s)", kCarrierId, value,
-            next == kCarrierOn ? "enabled" : "disabled");
+    if (previous != next || previousValue != value) {
+        LOG("bridge carrier 0x%x = %u (%s)", kCarrierId, value,
+            value == kCarrierModeHalfRate ? "spacewarp half rate"
+                : value == kCarrierModeLateFrames ? "spacewarp late frames only"
+                                                  : "spacewarp disabled");
     }
 }
 
@@ -378,6 +397,7 @@ void SwpVtsResetSession() {
     g_notPresentLogged.store(false);
     g_notCapturedLogged.store(false);
     g_notArmedLogged.store(false);
+    g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
     g_endframeCounter = 0;
 }
@@ -385,6 +405,7 @@ void SwpVtsResetSession() {
 void SwpVtsSessionEnded() {
     // The XR session is gone: never read a root that may be destroyed with it.
     g_svlRoot.store(0);
+    g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
     g_endframeCounter = 0;
 }
@@ -399,6 +420,10 @@ void SwpVtsNoteEndFrame() {
 
 // The synthesis gate (cheap, lock-free): true only while the carrier reads ON.
 bool SwpVtsSynthesisAllowed() { return g_carrier.load() == kCarrierOn; }
+
+// The published mode (0 off / 1 late frames only / 2 half rate). The dispatch
+// reads it once per endframe, beside the gate.
+uint32_t SwpVtsMode() { return g_carrierValue.load(); }
 
 // Arm once the scene lib is loaded (retried from XR calls like the egl hook).
 // Independent of SwpHooksArm: a capture failure never disturbs arrival learning
@@ -507,11 +532,14 @@ void SwpVtsTestSetRoot(void* root) { SwpVtsRootObserved(root); }
 // Preset the carrier cache as if a poll had already read it (the flow tests
 // model "the host published the carrier before the session ticks").
 void SwpVtsTestPublish(uint32_t value) {
+    if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;
+    g_carrierValue.store(value);
     g_carrier.store(value != 0 ? kCarrierOn : kCarrierOff);
 }
 void SwpVtsTestResetAll() {
     g_state.store(kVtsStatePending);
     g_svlRoot.store(0);
+    g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
     g_notPresentLogged.store(false);
     g_notCapturedLogged.store(false);

@@ -14,6 +14,10 @@ Expected outcomes (also pinned in swp_manifest.json):
     remaining grammar (uniforms, loops, search code) must compile clean.
   - every other full shader (vert, median, extrap, fallback L1) must
     compile clean as-is.
+  - the uniform reflection gate links each composed program the worker builds
+    (`-l -q`, same quad vertex shader) and requires every `ULocDef` name in
+    swp_est_worker.cpp to be an active uniform: `glGetUniformLocation` returns
+    -1 for a declared-but-unread uniform, and setup treats that as fatal.
 Exit code 0 = all expectations met.
 """
 import json
@@ -26,6 +30,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent          # .../extensions/gxr-spacewarp-layer/tests
 SRC = HERE.parent / "src"
 SHADERS_H = SRC / "swp_shaders.h"
+WORKER_CPP = SRC / "swp_est_worker.cpp"
 
 # glslang.exe shipped by the wave's tooling tree (sibling of the repo root).
 ROOTS = [HERE.parents[3], HERE.parents[3].parent, HERE.parent.parent]
@@ -152,6 +157,106 @@ def run_glslang(path, kind):
     return r.returncode, (r.stdout + r.stderr).strip()
 
 
+# Programs the worker links, and the compositions each one may build. GME/H1
+# compose behind either SAD prefix and both arms must resolve the same names.
+REFLECT_PROGRAMS = {
+    "progGme": ("gme", ("swp_gme_direct", "swp_gme_fallback")),
+    "progSad": ("sad", ("swp_sad_frag_direct", "swp_sad_fallback_frag")),
+    "progMed": ("median", ("swp_median_frag",)),
+    "progH1": ("h1", ("swp_h1_direct", "swp_h1_fallback")),
+    "progExtrap": ("extrap", ("swp_extrap_frag",)),
+}
+
+
+def extract_worker_uniforms(text):
+    """ULocDef arrays and the ResolveUniforms(program, array, count) calls that
+    swp_est_worker.cpp resolves strictly at setup."""
+    defs = {}
+    for m in re.finditer(
+            r'ULocDef\s+([A-Za-z_][A-Za-z_0-9]*)\s*\[\s*\]\s*=\s*\{(.*?)\};', text, re.S):
+        defs[m.group(1)] = re.findall(r'\{\s*"([^"]+)"\s*,', m.group(2))
+    progs = {}
+    for m in re.finditer(
+            r'ResolveUniforms\(\s*g\.(prog[A-Za-z_0-9]+)\s*,\s*'
+            r'([A-Za-z_][A-Za-z_0-9]*)\s*,\s*(\d+)\s*\)', text):
+        progs[m.group(1)] = (m.group(2), int(m.group(3)))
+    return defs, progs
+
+
+def parse_uniform_reflection(log):
+    """Names under glslang's `Uniform reflection:` heading (active uniforms;
+    the same view glGetUniformLocation resolves against)."""
+    names, in_uniforms = [], False
+    for line in log.splitlines():
+        s = line.strip()
+        if s == "Uniform reflection:":
+            in_uniforms = True
+            continue
+        if not in_uniforms:
+            continue
+        if not s:
+            break
+        m = re.match(r'([A-Za-z_][A-Za-z_0-9]*)(?:\[\d+\])?\s*:', s)
+        if m:
+            names.append(m.group(1))
+    return names
+
+
+def link_reflect(vert_path, frag_path):
+    r = subprocess.run([str(GLSLANG), "-l", "-q", str(vert_path), str(frag_path)],
+                       capture_output=True, text=True, timeout=120)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def check_uniform_reflection(comp, macros, tmp, report):
+    """Regression: a name the worker resolves must be an ACTIVE uniform of the
+    linked program. A declaration the shader body never reads is dropped by
+    link reflection, so strict glGetUniformLocation returns -1 and the whole
+    estimator stands down for the session."""
+    defs, progs = extract_worker_uniforms(WORKER_CPP.read_text(encoding="utf8"))
+    if not progs:
+        fail("worker: no ResolveUniforms(program, array, count) call parsed")
+        return
+    vert_path = tmp / "reflect_quad.vert"
+    vert_path.write_text(macros["SWP_GLSL_VERSION"] + macros["SWP_GLSL_QUAD_VERT"],
+                         encoding="ascii", newline="\n")
+    seen = {}
+    for prog, (array, count) in sorted(progs.items()):
+        if prog not in REFLECT_PROGRAMS:
+            fail(f"worker: {prog} has no reflection mapping in this test")
+            continue
+        if array not in defs:
+            fail(f"worker: {prog} references unknown uniform array {array}")
+            continue
+        names = defs[array]
+        if count != len(names):
+            fail(f"worker: ResolveUniforms({prog}, {array}, {count}) "
+                 f"does not match the array's {len(names)} entries")
+        _, variants = REFLECT_PROGRAMS[prog]
+        for variant in variants:
+            src = comp[variant]
+            probe = qcom_stub_probe(src) if "blockMatchSADQCOM" in src else None
+            path = tmp / f"reflect_{variant}.frag"
+            path.write_text(src, encoding="ascii", newline="\n")
+            code, log = link_reflect(vert_path, path)
+            if code != 0 and probe is not None and "GL_QCOM_block_match" in log:
+                path = tmp / f"reflect_{variant}.probe.frag"
+                path.write_text(probe, encoding="ascii", newline="\n")
+                code, log = link_reflect(vert_path, path)
+            got = parse_uniform_reflection(log)
+            missing = [n for n in names if n not in got]
+            seen[variant] = {"program": prog, "defs": array, "glslang_exit": code,
+                             "reflected": got, "missing": missing}
+            print(f"  reflect {variant}: exit={code} "
+                  f"{len(names) - len(missing)}/{len(names)} names active")
+            if code != 0:
+                fail(f"{variant}: link/reflection failed (exit {code}):\n{log[:800]}")
+            elif missing:
+                fail(f"{variant}: worker resolves {', '.join(missing)} but link "
+                     "reflection omits it (unread declaration => -1 at setup)")
+    report["uniform_reflection"] = seen
+
+
 def main():
     text = SHADERS_H.read_text(encoding="utf8")
     macros, consts = extract_shaders(text)
@@ -159,7 +264,8 @@ def main():
         fail(f"extraction: macros={len(macros)} consts={len(consts)}")
         sys.exit(1)
 
-    report = {"shaders_h": str(SHADERS_H), "cases": [], "expected": {}}
+    report = {"shaders_h": str(SHADERS_H), "cases": [], "expected": {},
+              "uniform_reflection": {}}
     comp = resolve_compositions(macros, consts)
     tmp = Path(tempfile.mkdtemp(prefix="swp-shader-syntax-"))
     for name, src in sorted(comp.items()):
@@ -191,6 +297,9 @@ def main():
             "detail": detail[:2000] if detail else "",
         })
         print(f"  {name}: exit={code} probe={probe_code}")
+
+    if GLSLANG is not None:
+        check_uniform_reflection(comp, macros, tmp, report)
 
     if GLSLANG is None:
         fail("glslang.exe not found — syntax validation skipped (structural only)")

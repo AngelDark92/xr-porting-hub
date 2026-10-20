@@ -25,7 +25,7 @@ internal const val GXR_SPACEWARP_GATE0_5001712 = "gxr_spacewarp_gate0_5001712.js
 // The layer payload is base-agnostic (the .so's per-base profile table selects the
 // scene-lib pins at runtime); only the two gate evidence JSONs are per base.
 internal const val GXR_SPACEWARP_LIBRARY_SHA256 =
-    "7fe4b20b6d9d6ce8c10fec40ceb93bd7b76d0acb84acfe21a8a6577b741536ab"
+    "867356426b648e91119661dc3c1b7be6aa4312a35315be11fac4f4130f64435e"
 internal const val GXR_SPACEWARP_MANIFEST_SHA256 =
     "623f0f1b9c69d049cc9c3754d0481aa06b40529d322f3e233bafa12af840943b"
 internal const val GXR_SPACEWARP_GATE0_SHA256 =

@@ -57,5 +57,135 @@
     }
   ],
   "expected": {},
+  "uniform_reflection": {
+    "swp_extrap_frag": {
+      "program": "progExtrap",
+      "defs": "extrapDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uMv",
+        "uFovScale",
+        "uClampMag",
+        "uScaleFactor",
+        "uSrMode",
+        "uSrRadius",
+        "uSrc"
+      ],
+      "missing": []
+    },
+    "swp_gme_direct": {
+      "program": "progGme",
+      "defs": "gmeDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uGlobalMax",
+        "uBlock",
+        "uInputSize",
+        "uPrev",
+        "uCurr",
+        "uGmeOriginStride",
+        "uGmeStep"
+      ],
+      "missing": []
+    },
+    "swp_gme_fallback": {
+      "program": "progGme",
+      "defs": "gmeDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uGlobalMax",
+        "uBlock",
+        "uInputSize",
+        "uPrev",
+        "uCurr",
+        "uGmeOriginStride",
+        "uGmeStep"
+      ],
+      "missing": []
+    },
+    "swp_h1_direct": {
+      "program": "progH1",
+      "defs": "h1Defs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uBlock",
+        "uPrev",
+        "uCurr",
+        "uMvSize",
+        "uBlockGrid",
+        "uGlobalMax",
+        "uInputSize",
+        "uMedianTex",
+        "uNoMotionUv"
+      ],
+      "missing": []
+    },
+    "swp_h1_fallback": {
+      "program": "progH1",
+      "defs": "h1Defs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uBlock",
+        "uPrev",
+        "uCurr",
+        "uMvSize",
+        "uBlockGrid",
+        "uGlobalMax",
+        "uInputSize",
+        "uMedianTex",
+        "uNoMotionUv"
+      ],
+      "missing": []
+    },
+    "swp_median_frag": {
+      "program": "progMed",
+      "defs": "medDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uMvSize",
+        "uMedianStride",
+        "uL1Raw"
+      ],
+      "missing": []
+    },
+    "swp_sad_frag_direct": {
+      "program": "progSad",
+      "defs": "sadDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uBlock",
+        "uPrev",
+        "uCurr",
+        "uMvSize",
+        "uBlockGrid",
+        "uGlobalMax",
+        "uInputSize",
+        "uGmeTex",
+        "uSearchSpan",
+        "uSadScale",
+        "uNoMotion"
+      ],
+      "missing": []
+    },
+    "swp_sad_fallback_frag": {
+      "program": "progSad",
+      "defs": "sadDefs",
+      "glslang_exit": 0,
+      "reflected": [
+        "uBlock",
+        "uPrev",
+        "uCurr",
+        "uMvSize",
+        "uBlockGrid",
+        "uGlobalMax",
+        "uInputSize",
+        "uGmeTex",
+        "uSearchSpan",
+        "uSadScale",
+        "uNoMotion"
+      ],
+      "missing": []
+    }
+  },
   "glslang": "Glslang Version: 11:16.6.0\nESSL Version: OpenGL ES GLSL 3.20 glslang Khronos. 16.6.0\nGLSL Version: 4.60 glslang Khronos. 16.6.0\nSPIR-V Version 0x00010600, Revision 1\nGLSL.std.450 Version 100, Revision 1\nKhronos Tool ID 8\nSPIR-V Generator Version 11\nGL_KHR_vulkan_glsl version 100\nARB_GL_gl_spirv version 100"
 }

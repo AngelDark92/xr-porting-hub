@@ -137,6 +137,16 @@ struct SwpGlTable {
     // Query
     PFNGLGETSTRINGPROC glGetString;
     PFNGLGETINTEGERVPROC glGetIntegerv;
+    // Raster-state control: the warp must not inherit the client's scissor,
+    // blend, depth, cull or colour mask. Saved before every public call and
+    // restored after it (2026-10-20).
+    // Typed explicitly (not via PFNGL* typedefs): the host-test stub headers
+    // define only the entry points, and this table is the layer's own contract.
+    GLboolean (*glIsEnabled)(GLenum cap);
+    void (*glEnable)(GLenum cap);
+    void (*glDisable)(GLenum cap);
+    void (*glColorMask)(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+    void (*glGetBooleanv)(GLenum pname, GLboolean* data);
     // Hooks
     void* (*getCurrentContext)(void);  // eglGetCurrentContext route (optional; may be NULL)
     unsigned long long (*nowMicros)(void);  // monotonic microsecond clock (optional; NULL = no budget)

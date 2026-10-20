@@ -44,7 +44,7 @@ struct Engine {
     GLuint progExtrap = 0;
 
     struct GmeLocs {
-        GLint prev, curr, inputSize, block, gmeStep, originStride, globalMax, sadScale;
+        GLint prev, curr, inputSize, block, gmeStep, originStride, globalMax;
     } gme{};
     struct SadLocs {
         GLint prev, curr, gmeTex, inputSize, mvSize, blockGrid, block, searchSpan,
@@ -55,7 +55,7 @@ struct Engine {
     } med{};
     struct H1Locs {
         GLint prev, curr, medTex, inputSize, mvSize, blockGrid, block, globalMax,
-            sadScale, noMotionUv;
+            noMotionUv;
     } h1{};
     struct ExtrapLocs {
         GLint src, mv, scaleFactor, fovScale, clampMag, srRadius, srMode;
@@ -88,11 +88,24 @@ struct SaveState {
     GLint active = GL_TEXTURE0;
     GLint viewport[4] = {0, 0, 0, 0};
     GLint texBinding[4] = {0, 0, 0, 0};  // GL_TEXTURE0..GL_TEXTURE0+3
+    // Raster state that can clip or tint a fullscreen warp (2026-10-20).
+    GLboolean scissor = GL_FALSE;
+    GLboolean blend = GL_FALSE;
+    GLboolean depth = GL_FALSE;
+    GLboolean cull = GL_FALSE;
+    GLboolean colorMask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
     bool ok = false;
 };
 
 static bool SaveCallerState(SaveState* s) {
     if (!g.gl || !g.gl->glGetIntegerv || !g.gl->glActiveTexture) return false;
+    if (g.gl->glIsEnabled && g.gl->glGetBooleanv) {
+        s->scissor = g.gl->glIsEnabled(GL_SCISSOR_TEST);
+        s->blend = g.gl->glIsEnabled(GL_BLEND);
+        s->depth = g.gl->glIsEnabled(GL_DEPTH_TEST);
+        s->cull = g.gl->glIsEnabled(GL_CULL_FACE);
+        g.gl->glGetBooleanv(GL_COLOR_WRITEMASK, s->colorMask);
+    }
     g.gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &s->fbo);
     g.gl->glGetIntegerv(GL_CURRENT_PROGRAM, &s->prog);
     g.gl->glGetIntegerv(GL_VIEWPORT, s->viewport);
@@ -108,8 +121,30 @@ static bool SaveCallerState(SaveState* s) {
     return true;
 }
 
+// Force the state a fullscreen warp needs. Restored by RestoreCallerState.
+static void ApplyEngineState() {
+    if (!g.gl) return;
+    if (g.gl->glDisable) {
+        g.gl->glDisable(GL_SCISSOR_TEST);
+        g.gl->glDisable(GL_BLEND);
+        g.gl->glDisable(GL_DEPTH_TEST);
+        g.gl->glDisable(GL_CULL_FACE);
+    }
+    if (g.gl->glColorMask) g.gl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
 static void RestoreCallerState(const SaveState& s) {
     if (!g.gl || !s.ok) return;
+    if (g.gl->glColorMask) g.gl->glColorMask(s.colorMask[0], s.colorMask[1], s.colorMask[2], s.colorMask[3]);
+    if (g.gl->glEnable && g.gl->glDisable) {
+        const struct { GLboolean on; GLenum cap; } caps[] = {
+            {s.scissor, GL_SCISSOR_TEST}, {s.blend, GL_BLEND},
+            {s.depth, GL_DEPTH_TEST}, {s.cull, GL_CULL_FACE}};
+        for (const auto& c : caps) {
+            if (c.on) g.gl->glEnable(c.cap);
+            else g.gl->glDisable(c.cap);
+        }
+    }
     g.gl->glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(s.fbo));
     g.gl->glUseProgram(static_cast<GLuint>(s.prog));  // may be 0
     for (int i = 0; i < 4; ++i) {
@@ -313,7 +348,6 @@ static bool PassGme(const SwpEstConfig& cfg, uint32_t prevTex, uint32_t currTex)
     g.gl->glUniform2i(g.gme.gmeStep, cfg.gmeStepX, cfg.gmeStepY);
     g.gl->glUniform2i(g.gme.originStride, cfg.gmeOriginStrideX, cfg.gmeOriginStrideY);
     g.gl->glUniform2i(g.gme.globalMax, cfg.globalMaxX, cfg.globalMaxY);
-    g.gl->glUniform1f(g.gme.sadScale, cfg.sadScale);
     return PassDraw("gme");
 }
 
@@ -357,17 +391,17 @@ static bool PassH1(const SwpEstConfig& cfg, uint32_t prevTex, uint32_t currTex, 
     g.gl->glUniform2i(g.h1.blockGrid, cfg.blockGridW, cfg.blockGridH);
     g.gl->glUniform1i(g.h1.block, cfg.block);
     g.gl->glUniform2i(g.h1.globalMax, cfg.globalMaxX, cfg.globalMaxY);
-    g.gl->glUniform1f(g.h1.sadScale, cfg.sadScale);
     g.gl->glUniform1f(g.h1.noMotionUv, cfg.noMotionUv);
     return PassDraw("h1");
 }
 
-// Extrapolate pipeline: the caller's viewport is kept (the projection view's
-// render area); only the FBO target changes.
+// Extrapolate pipeline: the destination is the projection swapchain image, so
+// the viewport is set to the full input extent explicitly (never inherited from
+// the client's last draw).
 static bool PassExtrap(const SwpEstConfig& cfg, float scaleFactor,
                        uint32_t mvTex, uint32_t srcTex, uint32_t dstTex) {
     g.gl->glUseProgram(g.progExtrap);
-    if (!BindTarget(dstTex, 0, 0, false)) return false;
+    if (!BindTarget(dstTex, cfg.inputW, cfg.inputH, true)) return false;
     BindSampler(g.extrap.src, 0, srcTex);
     BindSampler(g.extrap.mv, 1, mvTex);
     g.gl->glUniform1f(g.extrap.scaleFactor, scaleFactor);
@@ -394,6 +428,8 @@ bool EstiGlSetup(const SwpEstConfig& cfg, bool* qcomArmed) {
         !g.gl->glGenFramebuffers || !g.gl->glDeleteFramebuffers || !g.gl->glBindFramebuffer ||
         !g.gl->glFramebufferTexture2D || !g.gl->glCheckFramebufferStatus ||
         !g.gl->glGenTextures || !g.gl->glDeleteTextures || !g.gl->glActiveTexture ||
+        !g.gl->glIsEnabled || !g.gl->glEnable || !g.gl->glDisable || !g.gl->glColorMask ||
+        !g.gl->glGetBooleanv ||
         !g.gl->glBindTexture || !g.gl->glTexStorage2D || !g.gl->glTexParameteri ||
         !g.gl->glDrawArrays || !g.gl->glViewport ||
         !g.gl->glUniform1i || !g.gl->glUniform2i || !g.gl->glUniform1f ||
@@ -498,7 +534,7 @@ bool EstiGlSetup(const SwpEstConfig& cfg, bool* qcomArmed) {
         {"uPrev", &g.gme.prev}, {"uCurr", &g.gme.curr},
         {"uInputSize", &g.gme.inputSize}, {"uBlock", &g.gme.block},
         {"uGmeStep", &g.gme.gmeStep}, {"uGmeOriginStride", &g.gme.originStride},
-        {"uGlobalMax", &g.gme.globalMax}, {"uSadScale", &g.gme.sadScale},
+        {"uGlobalMax", &g.gme.globalMax},
     };
     ULocDef sadDefs[] = {
         {"uPrev", &g.sad.prev}, {"uCurr", &g.sad.curr}, {"uGmeTex", &g.sad.gmeTex},
@@ -515,7 +551,7 @@ bool EstiGlSetup(const SwpEstConfig& cfg, bool* qcomArmed) {
         {"uPrev", &g.h1.prev}, {"uCurr", &g.h1.curr}, {"uMedianTex", &g.h1.medTex},
         {"uInputSize", &g.h1.inputSize}, {"uMvSize", &g.h1.mvSize},
         {"uBlockGrid", &g.h1.blockGrid}, {"uBlock", &g.h1.block},
-        {"uGlobalMax", &g.h1.globalMax}, {"uSadScale", &g.h1.sadScale},
+        {"uGlobalMax", &g.h1.globalMax},
         {"uNoMotionUv", &g.h1.noMotionUv},
     };
     ULocDef extrapDefs[] = {
@@ -524,10 +560,10 @@ bool EstiGlSetup(const SwpEstConfig& cfg, bool* qcomArmed) {
         {"uClampMag", &g.extrap.clampMag}, {"uSrRadius", &g.extrap.srRadius},
         {"uSrMode", &g.extrap.srMode},
     };
-    ok = ResolveUniforms(g.progGme, gmeDefs, 8) &&
+    ok = ResolveUniforms(g.progGme, gmeDefs, 7) &&
          ResolveUniforms(g.progSad, sadDefs, 11) &&
          ResolveUniforms(g.progMed, medDefs, 3) &&
-         ResolveUniforms(g.progH1, h1Defs, 10) &&
+         ResolveUniforms(g.progH1, h1Defs, 9) &&
          ResolveUniforms(g.progExtrap, extrapDefs, 7);
     if (!ok) {
         EstiGlShutdown();
@@ -591,6 +627,7 @@ bool EstiMvMapOneEye(const SwpEstConfig& cfg, uint32_t prevTex, uint32_t currTex
         SWP_EST_LOG("GXRSwarp: pass: state save failed (context race?)");
         return false;
     }
+    ApplyEngineState();
     DrainErrors();
 
     const uint64_t start = (cfg.budgetMicros && g.gl->nowMicros) ? g.gl->nowMicros() : 0;
@@ -639,6 +676,7 @@ bool EstiExtrapolateOneEye(const SwpEstConfig& cfg, float scaleFactor, uint32_t 
         SWP_EST_LOG("GXRSwarp: pass: state save failed (context race?)");
         return false;
     }
+    ApplyEngineState();
     DrainErrors();
 
     const uint64_t start = (cfg.budgetMicros && g.gl->nowMicros) ? g.gl->nowMicros() : 0;

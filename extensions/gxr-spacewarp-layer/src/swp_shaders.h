@@ -143,7 +143,6 @@ uniform int uBlock;
 uniform ivec2 uGmeStep;            // candidate stride (hierarchical coarse pass)
 uniform ivec2 uGmeOriginStride;    // block-lattice stride
 uniform ivec2 uGlobalMax;
-uniform float uSadScale;
 
 layout(location = 0) in vec2 vUv;
 layout(location = 0) out vec4 oGme;
@@ -194,7 +193,6 @@ uniform ivec2 uMvSize;
 uniform ivec2 uBlockGrid;
 uniform int uBlock;
 uniform ivec2 uGlobalMax;
-uniform float uSadScale;
 uniform float uNoMotionUv;          // zero floor on the stored uv vector
 
 layout(location = 0) in vec2 vUv;
@@ -327,7 +325,11 @@ void main() {
         d *= min(room, vec2(1.0));                      // stretch with radius
     }
     vec2 suv = clamp(vUv + d, vec2(0.0), vec2(1.0));    // then clamps
-    oColor = texture(uSrc, suv);                        // caller's filter/wrap params apply
+    // RGB is warped; alpha stays at the UNWARPED uv. The foveated layer's mask
+    // is its swapchain alpha channel (client layerFlags 6, RE 2026-10-20) and
+    // is screen-space, so moving it would move the mask instead of the picture.
+    // The opaque base layer's alpha is ignored by the compositor.
+    oColor = vec4(texture(uSrc, suv).rgb, texture(uSrc, vUv).a);
 }
 )GLSL"
 
