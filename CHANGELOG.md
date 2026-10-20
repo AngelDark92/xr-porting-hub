@@ -1,3 +1,9 @@
+## [1.32.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.0...v1.32.1) (2026-10-20)
+
+### 🐛 Bug Fixes
+
+* **spacewarp:** warp the real video projections and add the half-rate mode ([b689e9f](https://github.com/AngelDark92/xr-porting-hub/commit/b689e9f499dc5738ac3019ecf17f0c76351c4ece))
+
 ## [1.32.1-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.0...v1.32.1-dev.1) (2026-10-20)
 
 ### 🐛 Bug Fixes
