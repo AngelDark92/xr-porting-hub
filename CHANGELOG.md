@@ -1,3 +1,9 @@
+## [2.0.0-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.1...v2.0.0-dev.2) (2026-10-21)
+
+### ✨ New Features
+
+* **foveal:** support 2.0.20/5001712 and 2.0.23/5002363 ([d426ee2](https://github.com/AngelDark92/xr-porting-hub/commit/d426ee22c3ee192f98591900fcaa94e8d5ef1a32))
+
 ## [2.0.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.33.0-dev.1...v2.0.0-dev.1) (2026-10-21)
 
 ### ⚠ BREAKING CHANGES
