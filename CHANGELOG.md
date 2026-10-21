@@ -1,3 +1,9 @@
+## [2.0.0-dev.3](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* edited Steam Link identity patches to unify model handling ([a5a9d8c](https://github.com/AngelDark92/xr-porting-hub/commit/a5a9d8cefc5d8935c9baa0a913750378e528e966))
+
 ## [2.0.0-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.1...v2.0.0-dev.2) (2026-10-21)
 
 ### ✨ New Features
