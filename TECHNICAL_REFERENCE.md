@@ -59,7 +59,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v2.0.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.0.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
+> **[v2.0.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.0.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;48 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
@@ -191,14 +191,20 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
-| 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.23 (5002363) |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Experimental patches for Steam Link 2.0.20 build 5001712. | Experimental patches for Steam Link 2.0.23 build 5002363. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. |
+| 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.20 (5001712) | 2.0.23 (5002363) | 2.0.23 (5002363) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Verified Steam Link 2.0.20 build 5001712. | Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending. | Experimental patches for Steam Link 2.0.20 build 5001712. | Experimental patches for Steam Link 2.0.23 build 5002363. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending. |
+
+#### Image quality
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental) | Only for exact 2.0.20/5001712 and 2.0.23/5002363: draws just the foveal image on a transparent 5000x6000 canvas per eye, keeping the background view. Needs: headset validation. | 5001712, 5002363 |  |
 
 #### Controller
 

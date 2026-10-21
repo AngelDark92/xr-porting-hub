@@ -1,0 +1,189 @@
+package app.template.patches.steamlink.androidxr
+
+import app.template.patches.shared.PatchCategories
+import app.morphe.patcher.patch.PatchException
+import app.morphe.patcher.patch.Compatibility
+import app.morphe.patcher.patch.rawResourcePatch
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
+import java.io.File
+import java.nio.file.Files
+import java.security.MessageDigest
+
+internal const val FOVEAL_CANVAS_LIBRARY = "libgxr_foveal_canvas.so"
+internal const val FOVEAL_CANVAS_MANIFEST = "XR_APILAYER_local_GalaxyXR_foveal_canvas.json"
+internal const val FOVEAL_CANVAS_HELPER_SHA256 = "af816d579e753a66e32bd2001dd6bf082f49038888bfd147519cea1834e174f1"
+internal const val FOVEAL_CANVAS_MANIFEST_SHA256 =
+    "9d28be5fe61ebe804d760cc0254aca357efdd39dc9b6996e12220527507c2832"
+
+private data class SceneFunction(val offset: Int, val size: Int, val sha256: String)
+
+private data class FovealCanvasLayout(
+    val versionName: String,
+    val versionCode: Int,
+    val sceneSize: Int,
+    val functions: List<SceneFunction>,
+)
+
+// Symbol-derived complete-function identities from the original signed Valve APKs:
+// QSVLRendererXR::GetProjectionLayers and QSVLRendererXR::FlipFrame. Other patches may
+// modify their own sites elsewhere; these submission functions must remain untouched.
+private val FOVEAL_CANVAS_LAYOUTS = listOf(
+    FovealCanvasLayout(
+        versionName = "2.0.20",
+        versionCode = 5001712,
+        sceneSize = 2_221_072,
+        functions = listOf(
+            SceneFunction(0x10a410, 492, "adb6101ef08c9245e61a0950d7046b3b6d96205074657e294cc265ee0bc28576"),
+            SceneFunction(0x10ad18, 2772, "bc5e4118046726343cba0edd0d40793cd53dafe5b99db9f3935f3e713b9f5b1d"),
+        ),
+    ),
+    FovealCanvasLayout(
+        versionName = "2.0.23",
+        versionCode = 5002363,
+        sceneSize = 2_292_008,
+        functions = listOf(
+            SceneFunction(0x10c1c4, 692, "2a732a7867cdc16309b4afa7b5d1971cfdf1bb67b5437925f11a465c797665c0"),
+            SceneFunction(0x10cd00, 3000, "986357756174710f0087b191157a11ee70104190360c6c17b466b951d8004884"),
+        ),
+    ),
+)
+
+private fun fovealCanvasLayoutFor(versionName: String, versionCode: String): FovealCanvasLayout? =
+    FOVEAL_CANVAS_LAYOUTS.singleOrNull {
+        it.versionName == versionName && it.versionCode.toString() == versionCode
+    }
+
+internal fun isFovealCanvasSteamLinkBuild(versionName: String, versionCode: String): Boolean =
+    fovealCanvasLayoutFor(versionName, versionCode) != null
+
+private val FOVEAL_CANVAS_COMPATIBILITIES = COMPATIBILITIES_STEAM_LINK.filter { compatibility ->
+    compatibility.targets.any { target ->
+        target.versionCodes?.values?.any { code ->
+            FOVEAL_CANVAS_LAYOUTS.any { it.versionCode == code && it.versionName == target.version }
+        } == true
+    }
+}.map { exact ->
+    Compatibility(
+        name = EXPERIMENTAL_COMPATIBILITY_NAME,
+        packageName = requireNotNull(exact.packageName),
+        targets = exact.targets,
+    )
+}
+
+private fun canvasSha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+    .digest(bytes).joinToString("") { "%02x".format(it) }
+
+internal fun validateFovealCanvasScene(scene: ByteArray, versionName: String, versionCode: String) {
+    val layout = fovealCanvasLayoutFor(versionName, versionCode)
+        ?: throw PatchException("Foveal canvas has no scene layout for $versionName/$versionCode")
+    if (scene.size != layout.sceneSize) {
+        throw PatchException("Foveal canvas requires the exact $versionName/$versionCode scene layout")
+    }
+    layout.functions.forEach { function ->
+        if (canvasSha256(scene.copyOfRange(function.offset, function.offset + function.size)) !=
+            function.sha256
+        ) {
+            throw PatchException(
+                "Foveal canvas found an unknown renderer function at 0x${function.offset.toString(16)}",
+            )
+        }
+    }
+    retiredNativeProjectionHook(scene)?.let {
+        throw PatchException("Foveal canvas rejects retired renderer hook $it; use the original APK")
+    }
+}
+
+internal fun validateFovealCanvasPayload(helper: ByteArray, manifest: ByteArray) {
+    if (helper.size < 20 || !helper.copyOfRange(0, 4)
+            .contentEquals(byteArrayOf(0x7f, 0x45, 0x4c, 0x46)) ||
+        helper[4] != 2.toByte() || helper[5] != 1.toByte() ||
+        helper[18] != 0xb7.toByte() || helper[19] != 0.toByte()
+    ) {
+        throw PatchException("Bundled foveal canvas helper is not an ARM64 ELF library")
+    }
+    if (canvasSha256(helper) != FOVEAL_CANVAS_HELPER_SHA256) {
+        throw PatchException("Bundled foveal canvas helper failed its SHA-256 precondition")
+    }
+    if (canvasSha256(manifest) != FOVEAL_CANVAS_MANIFEST_SHA256) {
+        throw PatchException("Bundled foveal canvas manifest failed its SHA-256 precondition")
+    }
+}
+
+/** All layout, payload and existing-file preconditions are checked before writes. */
+internal fun installFovealCanvasResources(
+    apkRoot: File,
+    versionName: String,
+    versionCode: String,
+    helperBytes: ByteArray? = null,
+    manifestBytes: ByteArray? = null,
+): Boolean {
+    // Dependencies bypass Morphe compatibility. Excluded pairs must not even read files.
+    if (!isFovealCanvasSteamLinkBuild(versionName, versionCode)) return false
+
+    val sceneFile = File(apkRoot, "lib/arm64-v8a/libvrlink_scene.so")
+    if (!sceneFile.isFile) throw PatchException("Missing exact foveal canvas renderer library")
+    validateFovealCanvasScene(sceneFile.readBytes(), versionName, versionCode)
+    val helper = helperBytes ?: projectionModeResource(FOVEAL_CANVAS_LIBRARY)
+    val manifest = manifestBytes ?: projectionModeResource(FOVEAL_CANVAS_MANIFEST)
+    validateFovealCanvasPayload(helper, manifest)
+
+    val files = listOf(
+        File(sceneFile.parentFile, FOVEAL_CANVAS_LIBRARY) to helper,
+        File(apkRoot, "assets/openxr/1/api_layers/implicit.d/$FOVEAL_CANVAS_MANIFEST") to manifest,
+    )
+    files.forEach { (target, expected) ->
+        if (target.exists() && (!target.isFile || !target.readBytes().contentEquals(expected))) {
+            throw PatchException("Foveal canvas found a stale or modified resource: ${target.path}")
+        }
+    }
+    val missing = files.filterNot { (target, _) -> target.exists() }
+    if (missing.isEmpty()) return true
+
+    val staged = mutableListOf<Pair<File, File>>()
+    val created = mutableListOf<File>()
+    try {
+        missing.forEach { (target, bytes) ->
+            if (!target.parentFile.isDirectory && !target.parentFile.mkdirs()) {
+                throw PatchException("Could not create foveal canvas resource directory")
+            }
+            val temporary = File.createTempFile("gxr-foveal-canvas-", ".tmp", target.parentFile)
+            staged += temporary to target
+            temporary.writeBytes(bytes)
+        }
+        staged.forEach { (temporary, target) ->
+            // No replacement: an unexpected concurrent file must never be overwritten.
+            Files.move(temporary.toPath(), target.toPath())
+            created += target
+        }
+    } catch (failure: Exception) {
+        created.asReversed().forEach { target ->
+            try { Files.deleteIfExists(target.toPath()) } catch (rollback: Exception) {
+                failure.addSuppressed(rollback)
+            }
+        }
+        throw failure
+    } finally {
+        staged.forEach { (temporary, _) -> Files.deleteIfExists(temporary.toPath()) }
+    }
+    return true
+}
+
+@Suppress("unused")
+val xrFovealCanvasPatch = rawResourcePatch(
+    name = "Full-FOV foveal canvas (experimental)",
+    description = "Only for exact 2.0.20/5001712 and 2.0.23/5002363: draws just the foveal image on a " +
+        "transparent 5000x6000 canvas per eye, keeping the background view. Needs: headset validation.",
+    default = false,
+) {
+    category(PatchCategories.IMAGE_QUALITY)
+    compatibleWith(*FOVEAL_CANVAS_COMPATIBILITIES.toTypedArray())
+    execute {
+        if (!isFovealCanvasSteamLinkBuild(packageMetadata.versionName, packageMetadata.versionCode)) {
+            return@execute
+        }
+        val sceneFile = get("lib/arm64-v8a/libvrlink_scene.so")
+        val apkRoot = sceneFile.parentFile!!.parentFile!!.parentFile!!
+        installFovealCanvasResources(apkRoot, packageMetadata.versionName, packageMetadata.versionCode)
+    }
+}

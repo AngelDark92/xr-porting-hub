@@ -6,13 +6,13 @@ This catalog documents the hub's patch sets; the primary one is Steam Link VR (`
 
 ## Current patch categories
 
-All 30 selectable Steam Link patches use 7 categories in Morphe Manager 1.30.0 or newer.
+All 31 selectable Steam Link patches use 7 categories in Morphe Manager 1.30.0 or newer.
 Categories organize the list; exact-build guards, patch dependencies and defaults remain authoritative.
 The retired entries below are historical records and are not selectable.
 
 | Category | Count | Current patches |
 |---|---:|---|
-| Image quality | 3 | [Galaxy XR high-resolution 3-projection fix](#galaxy-xr-high-resolution-3-projection-fix-xrgalaxyxrhighresolutionpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch) |
+| Image quality | 4 | [Galaxy XR high-resolution 3-projection fix](#galaxy-xr-high-resolution-3-projection-fix-xrgalaxyxrhighresolutionpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch); [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental-xrfovealcanvaspatch) |
 | Tracking & audio | 4 | [Visual Delay Fix](#visual-delay-fix-hmdonlypatch); [GXR face and tongue bridge](#gxr-face-and-tongue-bridge-gxrfacebridgepatch); [XR Input Routing Config](#xr-input-routing-config-xrinputroutingconfigpatch); [Microphone input preset](#microphone-input-preset-microphoneinputpresetpatch) |
 | Startup & permissions | 4 | [Startup permission requests (before 5002322)](#startup-permission-requests-before-5002322-xrstartuppermissionspatch); [Startup splash and XR launch mode (before 5002322)](#startup-splash-and-xr-launch-mode-before-5002322-xrlauncherbootstrappatch); [Unrestricted battery usage](#unrestricted-battery-usage-unrestrictedbatteryusagepatch); [Appear on top (legacy)](#appear-on-top-legacy-appearontoppatch) |
 | App & device identity | 5 | [Change package name](#change-package-name-changepackagenamepatch); [Device identity](#device-identity-deviceidentitypatch); [Device identity (2.0.23/5002363)](#device-identity-20235002363-deviceidentitynativexrpatch); Galaxy XR vendor driver; [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost-performanceboostpatch) |
@@ -72,7 +72,7 @@ Separate, default-off experiment for exact **2.0.22/5002322** and **2.0.23/50023
 
 ## Retired bases (2026-10-21)
 
-Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21. Their layout tables, compatibility entries, the Full-FOV foveal canvas patch and the optional BOOST patch were removed; only 2.0.20/5001712 and 2.0.23/5002363 remain supported. Historical records stay under `diagnostics/`.
+Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21. Their layout tables, compatibility entries and the optional BOOST patch were removed; only 2.0.20/5001712 and 2.0.23/5002363 remain supported. The Full-FOV foveal canvas experiment was re-scoped the same day to those two bases. Historical records stay under `diagnostics/`.
 
 ## Current adaptations
 
@@ -355,6 +355,28 @@ when explicitly requested: the function loaded, a 2x2 Surface was created and qu
 terminal quad. No overlay permission, type-2038 Steam Link window, or recording contamination
 existed. The headset palm A/B/A result was `MATCHES REFERENCE -> MATCHES REFERENCE -> MATCHES
 REFERENCE`, establishing perceived parity with Valve's native 3-projection APK with Appear on top.
+
+---
+
+### Full-FOV foveal canvas (experimental) (`xrFovealCanvasPatch`)
+
+Optional, default off. Installs `lib/arm64-v8a/libgxr_foveal_canvas.so` and the
+`XR_APILAYER_local_GalaxyXR_foveal_canvas` implicit layer manifest. The layer draws only
+the foveal projection on a transparent 5000×6000 canvas per eye and keeps the background
+view. It changes no `libvrlink_scene.so` bytes. Before installing it validates the exact
+scene size and the two stock submission functions `QSVLRendererXR::GetProjectionLayers`
+and `QSVLRendererXR::FlipFrame` for that base, then rejects retired projection hooks.
+
+| Base | Scene size | GetProjectionLayers | FlipFrame |
+|---|---:|---|---|
+| 2.0.20/5001712 | 2,221,072 | `0x10a410`, 492 B, `adb6101ef08c9245e61a0950d7046b3b6d96205074657e294cc265ee0bc28576` | `0x10ad18`, 2,772 B, `bc5e4118046726343cba0edd0d40793cd53dafe5b99db9f3935f3e713b9f5b1d` |
+| 2.0.23/5002363 | 2,292,008 | `0x10c1c4`, 692 B, `2a732a7867cdc16309b4afa7b5d1971cfdf1bb67b5437925f11a465c797665c0` | `0x10cd00`, 3,000 B, `986357756174710f0087b191157a11ee70104190360c6c17b466b951d8004884` |
+
+Bundled helper SHA-256 `af816d579e753a66e32bd2001dd6bf082f49038888bfd147519cea1834e174f1`;
+manifest SHA-256 `9d28be5fe61ebe804d760cc0254aca357efdd39dc9b6996e12220527507c2832`.
+The canvas has not been run on a headset for either base. It is the experiment that checks
+whether the canvas still yields a high-resolution image when the 3-projection fix is
+selected.
 
 ---
 

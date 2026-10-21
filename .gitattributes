@@ -8,6 +8,7 @@
 *.bat           text eol=crlf
 
 # This manifest is validated by a byte-exact SHA-256 pin on every platform.
+/patches/src/main/resources/steamlink/androidxr/XR_APILAYER_local_GalaxyXR_foveal_canvas.json text eol=lf
 /patches/src/main/resources/steamlink/androidxr/XR_APILAYER_local_GalaxyXR_codecs_support.json text eol=lf
 /patches/src/main/resources/steamlink/androidxr/telemetry/*.json text eol=lf
 /patches/src/main/resources/steamlink/androidxr/telemetry/*.tsv text eol=lf

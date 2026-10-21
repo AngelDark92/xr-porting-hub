@@ -1,7 +1,8 @@
 # Full-FOV foveal canvas experiment — 2026-10-01
 
-> **Retired 2026-10-21.** The patch and this harness were removed with the 5001812 base. See
-> [RETIRED-2026-10-21.md](RETIRED-2026-10-21.md). This page is a historical record.
+> **Re-scoped 2026-10-21.** The 5001812 base was retired, so the patch now targets
+> 2.0.20/5001712 and 2.0.23/5002363 with per-base scene pins. The 5001812 runs below are
+> the historical record; the current harness commands apply to the re-scoped patch.
 
 
 > Update 2026-10-12: first device run crashed Steam Link at every start; root cause found in the layer's pre-instance `getInstanceProcAddr` path and fixed ([crash RCA and fix](2026-10-12-loader-crash-rca-and-fix.md)). Device re-validation pending.

@@ -840,6 +840,60 @@
       "options": []
     },
     {
+      "name": "Full-FOV foveal canvas (experimental)",
+      "description": "Only for exact 2.0.20/5001712 and 2.0.23/5002363: draws just the foveal image on a transparent 5000x6000 canvas per eye, keeping the background view. Needs: headset validation.",
+      "category": "Image quality",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link Experimental",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001712,
+                "ARMEABI_V7A": 5001712,
+                "X86_64": 5001712,
+                "X86": 5001712
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Verified Steam Link 2.0.20 build 5001712."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link Experimental",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.23",
+              "versionCodes": {
+                "ARM64_V8A": 5002363,
+                "ARMEABI_V7A": 5002363,
+                "X86_64": 5002363,
+                "X86": 5002363
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "GXR face and tongue bridge",
       "description": "Face and tongue feed for the VRCFT module: the face bridge on 2.0.20/5001712, tongue out/left/right/up/down slots on 2.0.23/5002363; Valve's own expressions and tongue-out keep working.",
       "category": "Tracking & audio",
