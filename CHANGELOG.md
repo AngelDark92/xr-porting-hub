@@ -1,3 +1,9 @@
+## [2.0.0-dev.4](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-21)
+
+### ✨ New Features
+
+* implement context-safe resource management and ownership tracking for ASW sessions ([246b882](https://github.com/AngelDark92/xr-porting-hub/commit/246b882300f1250f0a439ee83d1eea0ee0e9ad8e))
+
 ## [2.0.0-dev.3](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-21)
 
 ### 🐛 Bug Fixes
