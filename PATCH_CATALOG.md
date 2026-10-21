@@ -111,17 +111,18 @@ On exact 2.0.20/5001712 the 18 individual patches below plus BOOST and Codecs Su
 13. XR Input Routing Config
 14. Startup splash and XR launch mode (before 5002322)
 15. XR Manifest Capability Pack
-16. Device identity (Recommended: Meta Quest Pro / `Oculus Quest Pro` model)
+16. Device identity (Galaxy XR identity, model `xrvst2ue`)
 17. Startup permission requests (before 5002322)
 18. Blue-noise dithering (fovea default, background opt-in; OLED's VD-like fovea toggle must stay off)
 19. OpenXR CPU and GPU BOOST (exact 2.0.20/5001712)
 20. Codecs Support (exact 2.0.20/5001712)
 
-Leave **HMD identity** on **Recommended**, or explicitly select **Meta Quest Pro**, for the legacy base. Exact 2.0.20/5001712 resolves Recommended to `meta-quest-pro`. Explicit Samsung, Stock, or PICO choices remain authoritative. The 10-patch 5002363 recommended set does not select Device identity (2.0.23/5002363), which stays optional and off by default.
+**Device identity** has no selector: every legacy base reports the Galaxy XR identity with model `xrvst2ue`, the headset's `Build.PRODUCT`. The 10-patch 5002363 recommended set does not select Device identity (2.0.23/5002363), which stays optional and off by default.
 
-The legacy Device identity entry depends on XR Device Config Baseline, so the baseline runs before the identity
-override. The legacy Quest payload preserves SamsungVST tracking, Galaxy XR controller and eye
-routing; only the 3 runtime-selected HMD model values change to `Oculus Quest Pro`.
+The legacy Device identity entry depends on XR Device Config Baseline, so the baseline runs before the
+identity writer; the baseline itself no longer writes `hmd_config.json`. The Galaxy payload
+preserves SamsungVST tracking and Galaxy XR controller/eye routing, and every runtime-selected HMD
+entry reports the single model `xrvst2ue`.
 Private/transitive support dependencies are deduplicated by Morphe; the counts above describe
 direct public selections, not all internal tasks.
 
@@ -155,10 +156,11 @@ Selection uses exact `(versionName, versionCode)` before checking the pinned lib
 **Default: enabled individually; part of the legacy recommended set** (legacy builds only) — depends on `xrCoreRuntimePatch`
 | Artifact | Edit |
 |---|---|
-| `assets/config/hmd_config.json` | Full replace — Galaxy XR HMD identity (sSerialNumber=VRLINKHMDGALAXYXR, sManufacturerName=Samsung, sModelNumber=Galaxy XR, sControllerType=galaxy_xr_hmd, requestedExtensions=[XR_EXT_eye_gaze_interaction]) |
 | `assets/config/controller_config.json` | Full replace — /interaction_profiles/oculus/touch_controller static props + pose action offset + input/haptic action bindings |
 | `assets/config/default_config.json` | Full replace — `preflight.ignore_microphone_muted = false` |
 | `assets/webui/dash/index.html` | Full replace — Steam Link dashboard HTML bootstrap |
+
+`hmd_config.json` is deliberately not written here: Device identity is its only writer on every base.
 
 ---
 
@@ -628,47 +630,33 @@ Exact 2.0.23/5002363 only; headset validation pending. See the [diagnostic recor
 ## identity group
 
 ### Device identity (`deviceIdentityPatch`)
-**Default: enabled individually; part of the recommended set on the legacy base** — `recommended` resolves to Meta Quest Pro on exact 2.0.20/5001712; native 5002363 is excluded.
+**Default: enabled; part of the recommended set on the legacy bases** — writes the Galaxy XR identity with the single model number `xrvst2ue` on every legacy base. Native 5002363 keeps the separate optional entry below.
 
 | Artifact | Edit |
 |---|---|
-| `assets/config/hmd_config.json` (legacy builds) | Retains the previously verified full profile-specific identity payload |
+| `assets/config/hmd_config.json` (legacy builds) | Installs the bundled Galaxy XR identity payload: `unknown`, `xrvst2` and `xrvst2ue` entries with model `xrvst2ue`, `SamsungVST` tracking, `Samsung` manufacturer and `{vrlink}` input/render roots; 2.0.20/5001712 additionally converts `requestedExtensions` to the headset-keyed object for those three products |
 
-**Option `profile`:**
-
-| Value | `sModelNumber` |
-|---|---|
-| `recommended` | Default: `Oculus Quest Pro` on exact 2.0.20/5001712 |
-| `samsung-galaxy-xr` | Explicit Galaxy XR identity |
-| `stock-no-change` | No additional identity override; the legacy config-baseline dependency still runs |
-| `meta-quest-pro` | `Oculus Quest Pro` |
-| `pico-4-pro` | `PICO 4 Pro` |
-
-Recommended is resolved during execution from the APK's exact version/build; it does not mutate
-the shared option for another build. Explicit profile choices, including saved Samsung, Stock,
-and PICO selections, override Recommended. The native 5002363 base is covered by the separate
-optional Device identity (2.0.23/5002363) entry below.
+`xrvst2ue` is this headset's `Build.PRODUCT` and therefore the `vrlink_<model>` section name the
+PC-side VRLink driver reads, so a patched legacy build routes to the same section as an unpatched
+2.0.23 build. There is no headset selector: the Quest Pro / PICO 4 Pro spoof profiles, the
+`profile` option and their payloads were removed.
 
 ---
 
 ### Device identity (2.0.23/5002363) (`deviceIdentityNativeXrPatch`)
-**Default: disabled; exact 2.0.23/5002363 only** — optional, and not part of the 10-patch recommended set.
+**Default: disabled; exact 2.0.23/5002363 only** — optional, and not part of the recommended set.
 
 | Artifact | Edit |
 |---|---|
-| `assets/config/hmd_config.json` (Galaxy profile) | Atomic targeted merge: upserts exact `unknown`, `xrvst2`, and `xrvst2ue` entries with stable Galaxy serial/model/device identity and `{galaxyxrresources}` input/render roots; unrelated extensions, profiles, offsets, and controller configuration are preserved |
-| `assets/config/hmd_config.json` (Quest/Pico) | Changes only the runtime fallback model string |
+| `assets/config/hmd_config.json` (native build) | Atomic targeted merge: upserts exact `unknown`, `xrvst2`, and `xrvst2ue` entries with the same `xrvst2ue` model, `SamsungVST` tracking and `{vrlink}` roots; unrelated extensions, profiles, offsets, and controller configuration are preserved |
 
 This intentionally preserves the native build's requested extensions and vendor profiles. In particular,
 `controller_config.json` remains byte-identical, retaining `XR_EXT_hand_interaction`,
 `/interaction_profiles/ext/hand_interaction_ext`, and its hand grip/aim poses.
 
-**Option `profile`:** same values as Device identity; on this build `recommended` resolves to the
-full Galaxy XR transport identity.
-
 Both entries run one shared factory body (`createDeviceIdentityPatch`) that branches per exact
 base; Morphe exposes one global `default` flag per patch object, so the recommended legacy scope
-and the optional native scope stay separate entries.
+and the optional native scope stay separate entries. Neither exposes any option.
 
 ---
 
@@ -693,7 +681,7 @@ and the optional native scope stay separate entries.
 | APK artifact | Patches that write to it |
 |---|---|
 | `lib/arm64-v8a/libvrlink_scene.so` | `disablePermissionPromptNativePatch` (layout-specific 8 B), native permission/gate patches, `hmdOnlyPatch` (hook + cave + velocity), `gxrFacebridgePatch` (5002363-only 24 B), `oledCalibrationPatch` (1087-byte GLSL block plus guarded swapchain instructions), `blueNoisePatch` (11 exact dependency/import/loader strings and sRGB8 instructions; finalizes after optional calibration) |
-| `assets/config/hmd_config.json` | `xrDeviceConfigBaselinePatch` (baseline), `deviceIdentityPatch`, `deviceIdentityNativeXrPatch` (profile overrides — intentional) |
+| `assets/config/hmd_config.json` | `deviceIdentityPatch` (legacy payload), `deviceIdentityNativeXrPatch` (native upsert) and the optional `galaxyXrVendorDriverPatch` (resource roots/controller rewrite; it also rewrites the headset model to `Galaxy XR`, so it must not be combined with the `xrvst2ue` routing) — one writer per base |
 | `AndroidManifest.xml` | `xrManifestCapabilityPackPatch`, `xrLauncherBootstrapPatch`, `xrStartupPermissionsPatch`, shared face-tracking declaration used by `gxrFacebridgePatch`, `unrestrictedBatteryUsagePatch`, `appearOnTopPatch`, `xrGalaxyXrHighResolutionPatch`, `changePackageNamePatch` |
 | `SteamLink.onCreate` (5002363) | `nativeBatterySettingsPatch`: battery-only settings hook; earlier builds use the guarded transparent bootstrap |
 | `lib/arm64-v8a/libgxr_ast.so` | `xrGalaxyXrHighResolutionPatch` |

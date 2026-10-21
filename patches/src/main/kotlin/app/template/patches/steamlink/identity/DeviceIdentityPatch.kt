@@ -5,22 +5,28 @@ import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.resourcePatch
-import app.morphe.patcher.patch.stringOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5002363
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_LEGACY
-import app.template.patches.shared.Constants.isLegacyRecommendedSteamLinkBuild
-import app.template.patches.shared.Constants.isModernTongueBridgeSteamLinkBuild
 import app.template.patches.shared.Constants.isNativeXrSteamLinkBuild
 import app.template.patches.steamlink.androidxr.adaptLegacyHmdConfigForBuild
 import app.template.patches.steamlink.androidxr.ensureIdsXml
 import app.template.patches.steamlink.androidxr.xrDeviceConfigBaselinePatch
 
-private fun identityResource(name: String): ByteArray =
-    (object {}.javaClass.getResourceAsStream("/steamlink/identity/$name")
-        ?: error("Missing bundled resource: steamlink/identity/$name"))
-        .use { it.readBytes() }
+/**
+ * The model number SteamVR sees, and therefore the `vrlink_<model>` settings section the VRLink
+ * driver reads. It equals this headset's `Build.PRODUCT`, which stock 2.0.23 reports from its own
+ * product-name lookup, so a patched legacy base routes to the same section as an unpatched native
+ * build and the Galaxy XR Companion only has to seed `vrlink_xrvst2ue`. Never change it to a
+ * friendly display name: the PC-side driver derives the section name from this string.
+ */
+internal const val GALAXY_XR_MODEL_NUMBER = "xrvst2ue"
 
 private val galaxyIdentityEntries = listOf("unknown", "xrvst2ue", "xrvst2")
+
+private fun galaxyIdentityResource(): ByteArray =
+    (object {}.javaClass.getResourceAsStream("/steamlink/androidxr/hmd_config.json")
+        ?: error("Missing bundled resource: steamlink/androidxr/hmd_config.json"))
+        .use { it.readBytes() }
 
 private fun findObjectValueRange(json: String, key: String, start: Int, endExclusive: Int): IntRange? {
     val matches = Regex("\\\"${Regex.escape(key)}\\\"\\s*:")
@@ -62,6 +68,93 @@ private fun findObjectValueRange(json: String, key: String, start: Int, endExclu
     throw PatchException("Unterminated HMD identity entry '$key'")
 }
 
+/**
+ * Refuse escaped spellings of the members [patchGalaxyIdentity] upserts.
+ *
+ * A JSON reader decodes `"\u0078rvst2ue"` to `xrvst2ue`, while a literal scan sees an unrelated
+ * member and appends a second, equivalent one: the stale model then stays in force. Only direct
+ * members of the `staticProps` object are inspected; plain duplicates remain
+ * [findObjectValueRange]'s job so their existing message is unchanged.
+ */
+private fun rejectEscapedIdentityEntries(json: String, staticProps: IntRange) {
+    fun decode(raw: String): String {
+        if (raw.indexOf('\\') < 0) return raw
+        val decoded = StringBuilder(raw.length)
+        var index = 0
+        while (index < raw.length) {
+            val character = raw[index]
+            if (character != '\\' || index == raw.lastIndex) {
+                decoded.append(character)
+                index++
+                continue
+            }
+            when (val escape = raw[index + 1]) {
+                '"', '\\', '/' -> decoded.append(escape)
+                'b' -> decoded.append('\u0008')
+                'f' -> decoded.append('\u000C')
+                'n' -> decoded.append('\n')
+                'r' -> decoded.append(Char(13))
+                't' -> decoded.append('\t')
+                'u' -> {
+                    val hex = if (index + 6 <= raw.length) raw.substring(index + 2, index + 6) else null
+                    val codePoint = hex?.toIntOrNull(16)
+                    if (codePoint == null) {
+                        decoded.append(escape)
+                    } else {
+                        decoded.append(Char(codePoint))
+                        index += 4
+                    }
+                }
+                else -> decoded.append(escape)
+            }
+            index += 2
+        }
+        return decoded.toString()
+    }
+
+    var index = staticProps.first + 1
+    var depth = 0
+    var inString = false
+    var escaped = false
+    var nameStart = -1
+    while (index < staticProps.last) {
+        val character = json[index]
+        if (inString) {
+            when {
+                escaped -> escaped = false
+                character == '\\' -> escaped = true
+                character == '"' -> {
+                    inString = false
+                    if (depth == 0) {
+                        var after = index + 1
+                        while (after < json.length && json[after].isWhitespace()) after++
+                        if (after < json.length && json[after] == ':') {
+                            val raw = json.substring(nameStart, index)
+                            val decoded = decode(raw)
+                            if (decoded != raw && decoded in galaxyIdentityEntries) {
+                                throw PatchException(
+                                    "Escaped or duplicate HMD identity entry '$decoded'",
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            index++
+            continue
+        }
+        when (character) {
+            '"' -> {
+                inString = true
+                if (depth == 0) nameStart = index + 1
+            }
+            '{', '[' -> depth++
+            '}', ']' -> depth--
+        }
+        index++
+    }
+}
+
 private fun lineIndentAt(json: String, index: Int): String {
     val lineStart = json.lastIndexOf('\n', index - 1).let { if (it < 0) 0 else it + 1 }
     return json.substring(lineStart, index).takeWhile { it == ' ' || it == '\t' }
@@ -71,28 +164,30 @@ private fun galaxyIdentityObject(indent: String, newline: String): String {
     val fieldIndent = "$indent  "
     return listOf(
         "{",
-        "${fieldIndent}\"sTrackingSystem\": \"androidxr\",",
+        "${fieldIndent}\"sTrackingSystem\": \"SamsungVST\",",
         "${fieldIndent}\"sSerialNumber\": \"VRLINKHMDGALAXYXR\",",
         "${fieldIndent}\"sManufacturerName\": \"Samsung\",",
-        "${fieldIndent}\"sModelNumber\": \"Galaxy XR\",",
-        "${fieldIndent}\"sRenderModelName\": \"{galaxyxrresources}/rendermodels/galaxy_xr_hmd\",",
-        "${fieldIndent}\"sResourceRoot\": \"galaxyxrresources\",",
-        "${fieldIndent}\"sInputProfilePath\": \"{galaxyxrresources}/input/galaxy_xr_hmd_profile.json\",",
+        "${fieldIndent}\"sModelNumber\": \"$GALAXY_XR_MODEL_NUMBER\",",
+        "${fieldIndent}\"sRenderModelName\": \"generic_hmd\",",
+        "${fieldIndent}\"sResourceRoot\": \"vrlink\",",
+        "${fieldIndent}\"sInputProfilePath\": \"{vrlink}/input/galaxy_xr_hmd_profile.json\",",
         "${fieldIndent}\"flLaserMouseHmdAngleDegrees\": 0,",
         "${fieldIndent}\"sControllerType\": \"galaxy_xr_hmd\",",
-        "${fieldIndent}\"sDeviceType\": \"androidxr/VRLINKHMDGALAXYXR\"",
+        "${fieldIndent}\"sDeviceType\": \"SamsungVST/VRLINKHMDGALAXYXR\"",
         "$indent}",
     ).joinToString(newline)
 }
 
 /**
- * Upsert the complete Galaxy XR transport identity into native-XR HMD entries.
+ * Upsert the complete Galaxy XR transport identity into the runtime-selected HMD entries.
  *
- * Valve's native builds already contain the correct OpenXR extensions, vendor profiles, head
- * offsets, and controller/hand routing. Only the three runtime-selected HMD entries are replaced;
- * every unrelated byte of hmd_config.json remains untouched.
+ * Valve's native builds select `staticProps` by the exact product name and construct a generic
+ * identity on a miss; explicit `xrvst2ue`/`xrvst2` entries keep that lookup on the Galaxy identity
+ * and make the reported model deterministic. Only these three entries are replaced; every
+ * unrelated byte of hmd_config.json (other products, head offsets, requested extensions, input
+ * bindings) remains untouched.
  */
-internal fun patchNativeGalaxyIdentity(json: String): String {
+internal fun patchGalaxyIdentity(json: String): String {
     val staticPropsMatch = Regex("\\\"staticProps\\\"\\s*:").find(json)
         ?: throw PatchException("Missing staticProps object")
     val initialStaticProps = findObjectValueRange(
@@ -104,6 +199,10 @@ internal fun patchNativeGalaxyIdentity(json: String): String {
     val newline = if (json.contains("\r\n")) "\r\n" else "\n"
     val parentIndent = lineIndentAt(json, staticPropsMatch.range.first)
     val entryIndent = "$parentIndent  "
+
+    // An escaped member name decodes to an identity name while the literal scan below cannot see
+    // it, so the upsert would append a second, equivalent entry instead of replacing the stale one.
+    rejectEscapedIdentityEntries(json, initialStaticProps)
 
     // Validate all existing target entries before constructing a result. This keeps malformed or
     // duplicate layouts atomic: either every requested identity is committed, or none is returned.
@@ -132,228 +231,6 @@ internal fun patchNativeGalaxyIdentity(json: String): String {
     return patched
 }
 
-/** Validate before range edits; do not normalize or serialize the caller's JSON. */
-private fun validateSpoofIdentityJson(json: String) {
-    var position = 0
-    fun invalid(): Nothing = throw PatchException("Malformed HMD config JSON at offset $position")
-    fun whitespace() {
-        while (position < json.length && json[position] in " \t\r\n") position++
-    }
-    fun string(): String {
-        if (position >= json.length || json[position++] != '"') invalid()
-        val decoded = StringBuilder()
-        while (position < json.length) {
-            val character = json[position++]
-            when {
-                character == '"' -> return decoded.toString()
-                character == '\\' -> {
-                    if (position >= json.length) invalid()
-                    when (val escape = json[position++]) {
-                        '"', '\\', '/' -> decoded.append(escape)
-                        'b' -> decoded.append('\b')
-                        'f' -> decoded.append('\u000c')
-                        'n' -> decoded.append('\n')
-                        'r' -> decoded.append('\r')
-                        't' -> decoded.append('\t')
-                        'u' -> {
-                            if (position + 4 > json.length) invalid()
-                            val digits = json.substring(position, position + 4)
-                            if (digits.any { it !in "0123456789abcdefABCDEF" }) invalid()
-                            decoded.append(digits.toInt(16).toChar())
-                            position += 4
-                        }
-                        else -> invalid()
-                    }
-                }
-                character < ' ' -> invalid()
-                else -> decoded.append(character)
-            }
-        }
-        invalid()
-    }
-    val number = Regex("-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
-    val literalTargetKeys = (galaxyIdentityEntries + listOf("staticProps", "sModelNumber")).toSet()
-    fun value(depth: Int) {
-        if (depth > 128) invalid()
-        whitespace()
-        if (position >= json.length) invalid()
-        when (json[position]) {
-            '{' -> {
-                position++
-                whitespace()
-                val keys = mutableSetOf<String>()
-                if (position < json.length && json[position] == '}') {
-                    position++
-                    return
-                }
-                while (true) {
-                    whitespace()
-                    val keyStart = position
-                    val key = string()
-                    if (!keys.add(key)) throw PatchException("Duplicate JSON property '$key'")
-                    // The byte-range editor intentionally accepts only literal target names.
-                    // Escaped aliases would otherwise be missed and a semantic duplicate inserted.
-                    if (key in literalTargetKeys && '\\' in json.substring(keyStart, position)) {
-                        throw PatchException("Escaped HMD identity property '$key' is unsupported")
-                    }
-                    whitespace()
-                    if (position >= json.length || json[position++] != ':') invalid()
-                    value(depth + 1)
-                    whitespace()
-                    if (position >= json.length) invalid()
-                    when (json[position++]) {
-                        '}' -> return
-                        ',' -> Unit
-                        else -> invalid()
-                    }
-                }
-            }
-            '[' -> {
-                position++
-                whitespace()
-                if (position < json.length && json[position] == ']') {
-                    position++
-                    return
-                }
-                while (true) {
-                    value(depth + 1)
-                    whitespace()
-                    if (position >= json.length) invalid()
-                    when (json[position++]) {
-                        ']' -> return
-                        ',' -> Unit
-                        else -> invalid()
-                    }
-                }
-            }
-            '"' -> string()
-            't', 'f', 'n' -> {
-                val token = when (json[position]) { 't' -> "true"; 'f' -> "false"; else -> "null" }
-                if (!json.startsWith(token, position)) invalid()
-                position += token.length
-            }
-            else -> {
-                val match = number.matchAt(json, position) ?: invalid()
-                position = match.range.last + 1
-            }
-        }
-    }
-    value(0)
-    whitespace()
-    if (position != json.length) invalid()
-}
-
-/** Change only the outward model in the runtime-selected HMD entries. */
-internal fun patchHmdModelIdentity(
-    json: String,
-    profile: String,
-    exactProductLookup: Boolean = false,
-): String {
-    val model = when (profile) {
-        "stock-no-change", "Stock identity (no change)",
-        "samsung-default", "Samsung Galaxy XR (default, no change)" -> return json
-        "samsung-galaxy-xr", "Samsung Galaxy XR" -> return patchNativeGalaxyIdentity(json)
-        "meta-quest-pro", "Meta Quest Pro" -> "Oculus Quest Pro"
-        "pico-4-pro", "PICO 4 Pro" -> "PICO 4 Pro"
-        else -> throw PatchException("Unknown device identity profile: $profile")
-    }
-
-    if (!exactProductLookup) {
-        // Preserve the verified older-build output exactly; modern builds need product upserts.
-        val targetKeys = if (Regex("\\\"xrvst2\\\"\\s*:").containsMatchIn(json)) {
-            listOf("xrvst2", "xrvst2ue", "unknown")
-        } else {
-            listOf("unknown")
-        }
-        return targetKeys.fold(json) { current, key ->
-            val entryAndModel = Regex(
-                "(?s)(\\\"${Regex.escape(key)}\\\"\\s*:\\s*\\{.*?" +
-                    "\\\"sModelNumber\\\"\\s*:\\s*\\\")([^\\\"]*)(\\\")",
-            )
-            val match = entryAndModel.find(current)
-                ?: throw PatchException("Missing HMD identity entry '$key' or sModelNumber")
-            current.replaceRange(match.groups[2]!!.range, model)
-        }
-    }
-
-    validateSpoofIdentityJson(json)
-    val staticProps = findObjectValueRange(json, "staticProps", 0, json.length)
-        ?: throw PatchException("Missing staticProps object")
-    val unknown = findObjectValueRange(json, "unknown", staticProps.first + 1, staticProps.last)
-        ?: throw PatchException("Missing HMD identity entry 'unknown'")
-    val newline = if (json.contains("\r\n")) "\r\n" else "\n"
-    val entryIndent = lineIndentAt(json, unknown.first)
-
-    fun withModel(entry: String, key: String): String {
-        val property = Regex("\\\"sModelNumber\\\"\\s*:").findAll(entry).toList()
-        if (property.size != 1) {
-            throw PatchException("Expected exactly one sModelNumber in HMD identity entry '$key'")
-        }
-        val valueStart = property.single().range.last + 1
-        val stringValue = Regex("\\s*\\\"(?:[^\\\"\\\\\\x00-\\x1f]|\\\\(?:[\\\"\\\\/bfnrt]|u[0-9a-fA-F]{4}))*\\\"")
-            .matchAt(entry, valueStart)
-            ?: throw PatchException("Invalid sModelNumber in HMD identity entry '$key'")
-        val remainder = entry.substring(stringValue.range.last + 1).trimStart()
-        if (!remainder.startsWith(',') && !remainder.startsWith('}')) {
-            throw PatchException("Invalid sModelNumber terminator in HMD identity entry '$key'")
-        }
-        var depth = 0
-        var inString = false
-        var escaped = false
-        entry.take(property.single().range.first).forEach { character ->
-            if (inString) {
-                when {
-                    escaped -> escaped = false
-                    character == '\\' -> escaped = true
-                    character == '"' -> inString = false
-                }
-            } else {
-                when (character) {
-                    '"' -> inString = true
-                    '{', '[' -> depth++
-                    '}', ']' -> depth--
-                }
-            }
-        }
-        if (depth != 1) throw PatchException("Missing direct sModelNumber in HMD identity entry '$key'")
-        val quoteStart = entry.indexOf('"', valueStart)
-        return entry.replaceRange(quoteStart + 1, stringValue.range.last, model)
-    }
-
-    // Native builds select staticProps by the exact product name, without consulting
-    // unknown on a miss. Clone that template for missing products; keep existing product
-    // fields and every unrelated byte intact. Validate every target before constructing output.
-    val template = withModel(json.substring(unknown), "unknown")
-    val edits = galaxyIdentityEntries.mapNotNull { key ->
-        findObjectValueRange(json, key, staticProps.first + 1, staticProps.last)?.let { range ->
-            range to withModel(json.substring(range), key)
-        }
-    }
-    val missing = galaxyIdentityEntries.filter { key ->
-        findObjectValueRange(json, key, staticProps.first + 1, staticProps.last) == null
-    }
-    var patched = json
-    edits.sortedByDescending { it.first.first }.forEach { (range, replacement) ->
-        patched = patched.replaceRange(range, replacement)
-    }
-    if (missing.isNotEmpty()) {
-        val additions = missing.joinToString("") { key ->
-            "$newline$entryIndent\"$key\": $template,"
-        }
-        patched = patched.replaceRange(staticProps.first + 1, staticProps.first + 1, additions)
-    }
-    return patched
-}
-
-// Resolve per execution: the shared profile option is one object across both val scopes, so the
-// selected value is resolved against the exact base being patched rather than pre-baked per bundle.
-internal fun resolveDeviceIdentityProfile(profile: String, version: String, versionCode: String): String =
-    if (profile == "recommended") {
-        if (isLegacyRecommendedSteamLinkBuild(version, versionCode)) "meta-quest-pro" else "samsung-galaxy-xr"
-    } else {
-        profile
-    }
-
 private val nativeIdentityResourceIdsPatch = resourcePatch {
     execute {
         // Standalone identity still reaches Morphe's resource processor through its legacy
@@ -372,7 +249,6 @@ private fun createDeviceIdentityPatch(
     description: String,
     default: Boolean,
     compatibilities: List<Compatibility>,
-    profileDescription: String,
 ) = rawResourcePatch(
     name = name,
     description = description,
@@ -381,44 +257,18 @@ private fun createDeviceIdentityPatch(
     category(PatchCategories.APP_AND_DEVICE_IDENTITY)
     compatibleWith(*compatibilities.toTypedArray())
     // Morphe executes dependencies without checking their compatibility. The legacy foundation is
-    // therefore build-aware and becomes a mutation no-op on native builds, while older builds retain the
-    // same automatic XR baseline that Device identity historically installed.
+    // therefore build-aware and becomes a mutation no-op on native builds.
     dependsOn(xrDeviceConfigBaselinePatch, nativeIdentityResourceIdsPatch)
-
-    val profile by stringOption(
-        key = "profile",
-        default = "recommended",
-        values = mapOf(
-            "Recommended for this build" to "recommended",
-            "Samsung Galaxy XR" to "samsung-galaxy-xr",
-            "Stock identity (no change)" to "stock-no-change",
-            "Meta Quest Pro" to "meta-quest-pro",
-            "PICO 4 Pro" to "pico-4-pro",
-        ),
-        title = "Headset identity",
-        description = profileDescription,
-        required = true,
-    )
 
     execute {
         val file = get("assets/config/hmd_config.json")
-        val selectedProfile = resolveDeviceIdentityProfile(
-            profile ?: throw PatchException("HMD identity profile is required"),
-            packageMetadata.versionName,
-            packageMetadata.versionCode,
-        )
         if (!isNativeXrSteamLinkBuild(packageMetadata.versionName, packageMetadata.versionCode)) {
-            val fileName = when (selectedProfile) {
-                "stock-no-change", "Stock identity (no change)",
-                "samsung-default", "Samsung Galaxy XR (default, no change)",
-                "samsung-galaxy-xr", "Samsung Galaxy XR" -> return@execute
-                "meta-quest-pro", "Meta Quest Pro" -> "hmd_config_meta_quest_pro.json"
-                "pico-4-pro", "PICO 4 Pro" -> "hmd_config_pico_4_pro.json"
-                else -> throw PatchException("Unknown device identity profile: $selectedProfile")
-            }
+            // Legacy bases ship per-product identity entries and select them by product name too.
+            // Install the same Galaxy identity the native upsert produces. Only 2.0.20/5001712 needs
+            // its headset-keyed requestedExtensions block adapted to these three products.
             file.writeBytes(
                 adaptLegacyHmdConfigForBuild(
-                    identityResource(fileName),
+                    galaxyIdentityResource(),
                     packageMetadata.versionName,
                     packageMetadata.versionCode,
                 ),
@@ -427,40 +277,28 @@ private fun createDeviceIdentityPatch(
         }
 
         val original = file.readText()
-        val patched = patchHmdModelIdentity(
-            original,
-            selectedProfile,
-            exactProductLookup = isModernTongueBridgeSteamLinkBuild(
-                packageMetadata.versionName,
-                packageMetadata.versionCode,
-            ),
-        )
+        val patched = patchGalaxyIdentity(original)
         if (patched != original) file.writeText(patched)
     }
 }
 
 // Morphe exposes one global `default` flag per patch object, so recommendation scope is expressed
-// with one object per scope over this single shared guarded body: the recommended `Device identity`
-// covers the 2.0.20/5001712 legacy base, while `Device identity (2.0.23/5002363)` stays optional so the native
-// build is never auto-selected the identity. The body itself branches per exact base.
+// with one object per scope over this single shared guarded body. Both scopes install the same
+// Galaxy XR identity; there is no headset selector.
 @Suppress("unused")
 val deviceIdentityPatch = createDeviceIdentityPatch(
     name = "Device identity",
-    description = "Sets the headset name SteamVR sees, with Meta Quest Pro as the recommended profile. " +
-        "Builds: 2.0.20/5001712.",
+    description = "Sets the Galaxy XR headset identity SteamVR sees (model xrvst2ue) and keeps the " +
+        "eye-tracking extension request. Builds: exact 2.0.20/5001712.",
     default = true,
     compatibilities = COMPATIBILITIES_STEAM_LINK_LEGACY,
-    profileDescription = "Recommended picks Meta Quest Pro for this build. Any other choice sets that headset " +
-        "directly, using the verified built-in data.",
 )
 
 @Suppress("unused")
 val deviceIdentityNativeXrPatch = createDeviceIdentityPatch(
     name = "Device identity (2.0.23/5002363)",
-    description = "Sets the headset name SteamVR sees; optional, so it stays out of the recommended set. " +
-        "Builds: exact 2.0.23/5002363.",
+    description = "Sets the Galaxy XR headset identity SteamVR sees (model xrvst2ue) on the native " +
+        "Android XR build; optional, so it stays out of the recommended set. Builds: exact 2.0.23/5002363.",
     default = false,
     compatibilities = COMPATIBILITIES_STEAM_LINK_5002363,
-    profileDescription = "Recommended picks the Galaxy XR headset identity for this build. Any other choice " +
-        "sets that headset directly.",
 )

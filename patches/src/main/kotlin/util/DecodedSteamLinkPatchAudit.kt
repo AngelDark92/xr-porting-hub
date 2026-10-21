@@ -42,7 +42,7 @@ import app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild
 import app.template.patches.steamlink.identity.changePackageNamePatch
 import app.template.patches.steamlink.identity.deviceIdentityNativeXrPatch
 import app.template.patches.steamlink.identity.deviceIdentityPatch
-import app.template.patches.steamlink.identity.patchHmdModelIdentity
+import app.template.patches.steamlink.identity.patchGalaxyIdentity
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -247,16 +247,7 @@ private suspend fun runSingleAudit(args: Array<String>) {
 }
 
 private fun configurePublicAuditOptions(patch: Patch<*>, fixture: HighResolutionFixture) {
-    when (patch) {
-        // The split identity patches each cover their own scope: the legacy patch pins the Quest
-        // Pro fallback profile for its legacy fixtures, while the native patch keeps its
-        // recommended default, which resolves to the Galaxy XR identity on 5002363.
-        deviceIdentityPatch -> {
-            if (fixture.versionCode != "5002363") patch.options["profile"] = "meta-quest-pro"
-        }
-        deviceIdentityNativeXrPatch -> Unit
-        else -> Unit
-    }
+    // Device identity exposes no options: both scopes install the same Galaxy XR identity.
 }
 
 private fun verifyPublicPatchOutput(outputApk: File, patch: Patch<*>, fixture: HighResolutionFixture) {
@@ -285,7 +276,7 @@ private fun verifyPublicPatchOutput(outputApk: File, patch: Patch<*>, fixture: H
 
             deviceIdentityPatch -> {
                 val hmdConfig = apk.requireEntryBytes("assets/config/hmd_config.json")
-                hmdConfig.requireEncodedString("\"sModelNumber\": \"Oculus Quest Pro\"")
+                hmdConfig.requireEncodedString("\"sModelNumber\": \"xrvst2ue\"")
                 if (fixture.versionCode == "5001712") hmdConfig.require5001712RequestedExtensionsObject()
                 else check(com.google.gson.JsonParser.parseString(hmdConfig.decodeToString()).asJsonObject["requestedExtensions"].isJsonArray)
             }
@@ -333,10 +324,8 @@ private fun verifyPublicPatchOutput(outputApk: File, patch: Patch<*>, fixture: H
             }
 
             xrDeviceConfigBaselinePatch -> {
-                val hmdConfig = apk.requireEntryBytes("assets/config/hmd_config.json")
-                hmdConfig.requireEncodedString("\"sModelNumber\": \"Galaxy XR\"")
-                if (fixture.versionCode == "5001712") hmdConfig.require5001712RequestedExtensionsObject()
-                else check(com.google.gson.JsonParser.parseString(hmdConfig.decodeToString()).asJsonObject["requestedExtensions"].isJsonArray)
+                // Headset identity is owned by Device identity; the baseline only writes the
+                // controller, default and dashboard files.
                 apk.requireEntryBytes("assets/config/default_config.json")
                     .requireEncodedString("\"ignore_microphone_muted\": false")
             }
@@ -395,7 +384,7 @@ private fun verifyModernPublicOutput(
             if (original.getEntry(path) == null) continue
             val bytes = original.requireEntryBytes(path)
             val expected = if (patch == deviceIdentityNativeXrPatch && name == "hmd_config.json") {
-                patchHmdModelIdentity(bytes.decodeToString(), "samsung-galaxy-xr", exactProductLookup = true).encodeToByteArray()
+                patchGalaxyIdentity(bytes.decodeToString()).encodeToByteArray()
             } else bytes
             check(result.requireEntryBytes(path).contentEquals(expected)) { "${patch.name}: changed $path unexpectedly" }
         }

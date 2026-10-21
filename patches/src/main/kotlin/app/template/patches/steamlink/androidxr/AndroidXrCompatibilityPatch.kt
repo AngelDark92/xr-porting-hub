@@ -122,7 +122,7 @@ val xrCoreRuntimePatch = bytecodePatch(
 @Suppress("unused")
 val xrDeviceConfigBaselinePatch = rawResourcePatch(
     name = "XR Device Config Baseline",
-    description = "Installs the default Galaxy XR headset and controller settings plus the dashboard files.",
+    description = "Installs the default Galaxy XR controller settings plus the dashboard files.",
     default = true,
 ) {
     category(PatchCategories.ADVANCED_XR_COMPATIBILITY)
@@ -134,13 +134,6 @@ val xrDeviceConfigBaselinePatch = rawResourcePatch(
         // The legacy controller_config.json has neither, so replacing it disables native hands.
         if (isNativeXrSteamLinkBuild(packageMetadata.versionName, packageMetadata.versionCode)) return@execute
 
-        get("assets/config/hmd_config.json").writeBytes(
-            adaptLegacyHmdConfigForBuild(
-                loadResource("hmd_config.json"),
-                packageMetadata.versionName,
-                packageMetadata.versionCode,
-            ),
-        )
         get("assets/config/controller_config.json").writeBytes(loadResource("controller_config.json"))
         // assets/config/default_config.json — preflight.ignore_microphone_muted=false
         get("assets/config/default_config.json").writeBytes(loadResource("default_config.json"))

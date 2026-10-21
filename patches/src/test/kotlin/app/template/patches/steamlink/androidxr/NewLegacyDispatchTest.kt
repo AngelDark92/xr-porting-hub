@@ -2,8 +2,8 @@ package app.template.patches.steamlink.androidxr
 
 import app.template.patches.shared.Constants.isMouseOnlySteamLinkBuild
 import app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild
+import app.template.patches.steamlink.identity.deviceIdentityNativeXrPatch
 import app.template.patches.steamlink.identity.deviceIdentityPatch
-import app.template.patches.steamlink.identity.resolveDeviceIdentityProfile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -55,16 +55,10 @@ class NewLegacyDispatchTest {
     }
 
     @Test
-    fun `recommended identity resolves to Quest Pro without changing explicit choices or option defaults`() {
-        legacyBuilds.forEach { (version, code) ->
-            assertEquals("meta-quest-pro", resolveDeviceIdentityProfile("recommended", version, code))
-            listOf("samsung-galaxy-xr", "meta-quest-pro", "pico-4-pro", "stock-no-change").forEach { profile ->
-                assertEquals(profile, resolveDeviceIdentityProfile(profile, version, code))
-            }
-        }
-        listOf("2.0.20" to "5002363", "2.0.23" to "5001712").forEach { (version, code) ->
-            assertEquals("samsung-galaxy-xr", resolveDeviceIdentityProfile("recommended", version, code))
-        }
-        assertEquals("recommended", deviceIdentityPatch.options["profile"].default)
+    fun `identity patch exposes no headset selector on any base`() {
+        assertTrue(deviceIdentityPatch.options.isEmpty(), "legacy identity has no options")
+        assertTrue(deviceIdentityNativeXrPatch.options.isEmpty(), "native identity has no options")
+        assertTrue(deviceIdentityPatch.default, "legacy identity stays recommended")
+        assertFalse(deviceIdentityNativeXrPatch.default, "native identity stays optional")
     }
 }
