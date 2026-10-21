@@ -255,7 +255,9 @@ void SwpVtsTestSetTable(BridgeFn fn);
 void SwpVtsTestSetArmed(bool armed);
 void SwpVtsTestSetRoot(void* root);
 void SwpVtsTestPublish(uint32_t value);
+void SwpVtsTestSetHalfRateRetired(bool retired);
 void SwpVtsTestResetAll();
+void SwpVtsNoteEndFrame();
 }  // extern "C"
 static int g_mockBridgeReads = 0;
 static bool g_mockBridgePresent = false;  // stock session: the carrier is unpublished
@@ -601,6 +603,7 @@ static void ResetAll() {
     SwpVtsTestPublish(1);
     g_mockBridgePresent = true;
     g_mockBridgeValue = 1;
+    SwpVtsTestSetHalfRateRetired(true);  // production default: half rate retired
     g_mockBridgeReads = 0;
     SwpSetEnabled(true);
     SwpEglResetArrivals();
@@ -1305,6 +1308,31 @@ static void CheckHundredOffCycles() {
           "the owner flag tracks the live set exactly");
 }
 
+static void CheckHalfRateRetired() {
+    ResetAll();
+    // Drive the real poll (NoteEndFrame -> PollCarrierLogged) instead of the test
+    // preset: the preset applies the same mapping, so a deleted production gate
+    // would leave a preset-based assertion green.
+    g_mockBridgePresent = true;
+    g_mockBridgeValue = 2;
+    for (int i = 0; i < 130; i++) SwpVtsNoteEndFrame();
+    CHECK(g_mockBridgeReads >= 2, "the carrier cadence actually polled the bridge");
+    CHECK(SwpVtsMode() == 1, "retired: a bridge carrier 2 reads as late frames only");
+
+    SwpVtsTestSetHalfRateRetired(false);
+    for (int i = 0; i < 130; i++) SwpVtsNoteEndFrame();
+    CHECK(SwpVtsMode() == 2, "revival: carrier 2 reaches the half-rate code when un-retired");
+
+    SwpVtsTestSetHalfRateRetired(true);
+    for (int i = 0; i < 130; i++) SwpVtsNoteEndFrame();
+    CHECK(SwpVtsMode() == 1, "retirement is restored for the next session");
+
+    g_mockBridgeValue = 7;
+    for (int i = 0; i < 130; i++) SwpVtsNoteEndFrame();
+    CHECK(SwpVtsMode() == 1, "undefined carrier values still read as late frames");
+    g_mockBridgeValue = 1;
+}
+
 int main() {
     CheckPoseMatrix();
     CheckScaleFactor();
@@ -1321,6 +1349,7 @@ int main() {
     CheckResizeRetiresOldSet();
     CheckDestroyDefersWithoutContext();
     CheckHundredOffCycles();
+    CheckHalfRateRetired();
     std::printf("gxr-spacewarp dispatch host tests: %d checks, %d failures\n", g_checks,
                 g_failures);
     return g_failures == 0 ? 0 : 1;

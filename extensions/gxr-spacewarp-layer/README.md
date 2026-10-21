@@ -51,13 +51,16 @@ brief (08-ESTIMATOR-B1a); the two are joined by the shared interface contract in
   arrivals converted into XrTime through the `xrBeginFrame` monotonic/paired-anchor
   ring), clamped to `[0.05, 3.0]`, and at most **2 consecutive** extrapolated ticks
   before the layer passes stock again.
-- **Synthesis modes (2026-10-20, owner directive).** The carrier value is the mode:
-  `0` off, `1` late frames only (the original behavior), `2` half rate. In half-rate
-  mode every second presented tick is synthesized from the previously presented frame
-  instead of showing the fresh decode, so real frames update at half the display rate;
-  the client still decodes every frame. Any other value reads as late-frames-only and
-  never rewrites the host's saved setting. A mode flip mid-session behaves like a fresh
-  enablement: stale maps are dropped and the next real tick regenerates them.
+- **Synthesis modes.** The carrier value is the mode: `0` off, `1` late frames only
+  (the original behavior), `2` half rate. **Half rate is retired since 2026-10-21:**
+  the host no longer publishes `2`, and this layer maps a `2` from an older host to
+  late frames while `g_halfRateRetired` is true, so a stale driver cannot enter the
+  mode. Any value above `2` also reads as late-frames-only, and nothing rewrites the
+  host's saved setting. In half-rate mode (un-retired) every second presented tick is
+  synthesized from the previously presented frame instead of showing the fresh
+  decode, so real frames update at half the display rate; the client still decodes
+  every frame. A mode flip mid-session behaves like a fresh enablement: stale maps are
+  dropped and the next real tick regenerates them.
 - Any failure stands down **this tick only** (contract status 16), logged **once per 30
   occurrences**; the already-rendered client content still reaches the compositor, so
   the worst case equals stock. Estimator-init failure stands the session down
