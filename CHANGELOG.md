@@ -1,3 +1,15 @@
+## [2.0.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.33.0-dev.1...v2.0.0-dev.1) (2026-10-21)
+
+### ⚠ BREAKING CHANGES
+
+* Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 are
+no longer supported, and the patches "Full-FOV foveal canvas (experimental)" and
+"OpenXR CPU and GPU BOOST (2.0.21/2.0.22)" no longer exist.
+
+### ✨ New Features
+
+* retire Steam Link 5001812, 5001968 and 5002244 support ([6d19288](https://github.com/AngelDark92/xr-porting-hub/commit/6d19288bcc91a223ca6277c98f7428fbde19c528))
+
 ## [1.33.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.1...v1.33.0-dev.1) (2026-10-21)
 
 ### ✨ New Features
