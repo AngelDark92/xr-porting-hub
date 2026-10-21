@@ -1,3 +1,9 @@
+## [1.33.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.1...v1.33.0-dev.1) (2026-10-21)
+
+### ✨ New Features
+
+* **spacewarp:** implement dormant fast path and carrier generation tracking ([68e9d1a](https://github.com/AngelDark92/xr-porting-hub/commit/68e9d1adbec53b98f218c354505b93cf27ddd8c3))
+
 ## [1.32.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.0...v1.32.1) (2026-10-20)
 
 ### 🐛 Bug Fixes
