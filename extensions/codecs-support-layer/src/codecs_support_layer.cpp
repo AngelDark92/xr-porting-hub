@@ -62,7 +62,7 @@ using gxr::PatchAv1SeqHeaders;
 using gxr::Sniffed;
 
 constexpr const char* kLayerName = "XR_APILAYER_local_GalaxyXR_codecs_support";
-constexpr const char* kBuild = "codecs-support-v7-20261021";
+constexpr const char* kBuild = "codecs-support-v8-20261021";
 constexpr const char* kDisableEnv = "GXR_DISABLE_CODECS_SUPPORT";
 constexpr const char* kSceneSoname = "libvrlink_scene.so";
 constexpr const char* kMediaNdkSoname = "libmediandk.so";
@@ -775,6 +775,13 @@ XrResult XRAPI_PTR LayerGetInstanceProcAddr(XrInstance instance, const char* nam
     ROUTE("xrWaitFrame", WrapWaitFrame);
     ROUTE("xrEndFrame", WrapEndFrame);
 #undef ROUTE
+    // ApiLayerInterface::LoadApiLayers probes xrInitializeLoaderKHR with
+    // XR_NULL_HANDLE before any chain for this instance exists. This library is
+    // pinned, so g.get still holds the previous instance's link, whose target was
+    // unloaded together with that instance: never branch through it here. On the
+    // first instance g.get is null and this same answer is what the loader already
+    // accepts.
+    if (instance == XR_NULL_HANDLE) return XR_ERROR_FUNCTION_UNSUPPORTED;
     return g.get ? g.get(instance, name, function) : XR_ERROR_FUNCTION_UNSUPPORTED;
 }
 

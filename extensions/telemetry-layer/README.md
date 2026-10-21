@@ -21,8 +21,8 @@ each retained decoded base. `profiles.tsv` is the canonical two-build admission
 record; its generated C++ header stays in the external build directory. Extra
 five-build investigation evidence is retained externally but is not compatibility.
 
-The codec helper is version 7, SHA-256
-`8b2b80d7c24e05111885fcd9bf6c881b227fabd05122aa531b392209763be431`.
+The codec helper is version 8, SHA-256
+`c5cac4cae84d76fa35200efc70fc91e5d456d24a0a05e5b88b21177d4c8f24a0`.
 Telemetry has private state and hooks actual `libmediandk.so` function entries,
 so it observes successful decoder calls even when the codec helper replaces a
 decoder internally. It never selects codecs, rewrites video, retries queues or
