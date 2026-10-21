@@ -1,3 +1,9 @@
+## [2.0.0-dev.6](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.5...v2.0.0-dev.6) (2026-10-21)
+
+### ✨ New Features
+
+* update codecs support to version 7 with enhanced stability and crash fixes ([ba5c178](https://github.com/AngelDark92/xr-porting-hub/commit/ba5c178ff463717208abc33bd1edea67841bb669))
+
 ## [2.0.0-dev.5](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-21)
 
 ### ✨ New Features
