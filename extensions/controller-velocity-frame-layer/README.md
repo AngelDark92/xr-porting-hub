@@ -1,8 +1,8 @@
 # Controller velocity frame layer (2026-10-04)
 
 Source of `libgxr_controller_velocity_frame.so`, installed by the default-on patch
-**Controller velocity frame** for exact Steam Link 2.0.23/5002363 and the legacy bases
-(2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.0.22/5002244). The angular velocity frame it
+**Controller velocity frame** for exact Steam Link 2.0.23/5002363 and
+2.0.20/5001712. The angular velocity frame it
 writes into the library's config block differs between 2.0.23 and the legacy bases.
 
 ## What it changes
@@ -19,7 +19,7 @@ The layer wraps `xrLocateSpace` for the action spaces of VRLink's controller pos
 - linear: pitched by -62.85 degrees about X in the located pose's frame, then rotated by
   the located orientation into the base space;
 - angular: pitched by -42.25 degrees about X and left local to the pose, which is how
-  SteamVR reads what VRLink 2.0.23 forwards. VRLink 2.0.20 - 2.0.22 hands it to SteamVR as a
+  SteamVR reads what VRLink 2.0.23 forwards. VRLink 2.0.20 hands it to SteamVR as a
   base-space vector instead (measured on 2.0.20/5001712 with the controller HAL pose layer,
   which reports the same frames, see its notes), so there it is also rotated by the located
   orientation into the base space. The frame is a field of a config block in the library,

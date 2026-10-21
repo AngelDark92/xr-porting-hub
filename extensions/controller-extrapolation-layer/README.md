@@ -1,8 +1,8 @@
 # Controller pose extrapolation layer (2026-10-04)
 
 Source of `libgxr_controller_extrapolation.so`, installed by the opt-in patch
-**Controller pose extrapolation** for exact Steam Link 2.0.23/5002363 and the legacy
-2.0.20 - 2.0.22 bases (measured on 5002363 only).
+**Controller pose extrapolation** for exact Steam Link 2.0.23/5002363 and
+2.0.20/5001712 (measured on 5002363 only).
 
 ## What it changes
 

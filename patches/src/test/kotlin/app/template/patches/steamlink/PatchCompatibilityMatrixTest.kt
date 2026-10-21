@@ -6,7 +6,6 @@ import app.template.patches.steamlink.androidxr.androidXrUiExtensionPatch
 import app.template.patches.steamlink.androidxr.gxrFacebridgePatch
 import app.template.patches.steamlink.androidxr.unrestrictedBatteryUsagePatch
 import app.template.patches.steamlink.androidxr.performanceBoostPatch
-import app.template.patches.steamlink.androidxr.performanceBoostOptionalPatch
 import app.template.patches.steamlink.androidxr.xrCodecsSupportPatch
 import app.template.patches.steamlink.androidxr.xrCoreRuntimePatch
 import app.template.patches.steamlink.androidxr.xrDeviceConfigBaselinePatch
@@ -44,17 +43,6 @@ class PatchCompatibilityMatrixTest {
             recommendedFor("2.0.20", 5001712).toSet(),
             "2.0.20/5001712",
         )
-        assertEquals(legacyRecommendedPatches + performanceBoostPatch, recommendedFor("2.0.20", 5001812).toSet())
-        listOf(
-            "2.0.21" to 5001968,
-            "2.0.22" to 5002244,
-        ).forEach { (version, versionCode) ->
-            assertEquals(
-                legacyRecommendedPatches,
-                recommendedFor(version, versionCode).toSet(),
-                "$version/$versionCode",
-            )
-        }
         assertEquals(
             nativeRecommendedPatches,
             recommendedFor("2.0.23", 5002363).toSet(),
@@ -71,28 +59,15 @@ class PatchCompatibilityMatrixTest {
             recommendedFor("2.0.20", 5001712).toSet(),
         )
         assertEquals(
-            legacyRecommendedPatches + performanceBoostPatch,
-            recommendedFor("2.0.20", 5001812).toSet(),
-        )
-        assertEquals(
-            legacyRecommendedPatches,
-            recommendedFor("2.0.21", 5001968).toSet(),
-        )
-        assertEquals(
-            legacyRecommendedPatches,
-            recommendedFor("2.0.22", 5002244).toSet(),
-        )
-        assertEquals(
             nativeRecommendedPatches,
             recommendedFor("2.0.23", 5002363).toSet(),
         )
         listOf(
             "2.0.20" to 5001740,
             "2.0.20" to 5001813,
-            "2.0.20" to 5001968,
-            "2.0.21" to 5001812,
+            "2.0.20" to 5002363,
+            "2.0.23" to 5001712,
             "2.0.21" to 5001969,
-            "2.0.22" to 5001968,
             "2.0.20" to 5002322,
             "2.0.22" to 5002243,
             "2.0.22" to 5002296,
@@ -176,7 +151,7 @@ class PatchCompatibilityMatrixTest {
                 }
             }
         val excludedPublicPatches = allIndividualPatches.toSet() - expected
-        assertEquals(14, excludedPublicPatches.size)
+        assertEquals(13, excludedPublicPatches.size)
         val modernClosure = nativeRecommendedPatches.flatMap { it.dependencyClosure() }.toSet()
         // Identity is optional on the native build (not in the recommended set), so the recommended
         // closure does not reach the excluded legacy XR baseline chain.
@@ -218,32 +193,23 @@ class PatchCompatibilityMatrixTest {
     }
 
     @Test
-    fun new_legacy_bases_preserve_all_21_standalone_patches_and_optional_defaults() {
+    fun `legacy base preserves standalone patches and optional defaults`() {
         val completeCatalog = allIndividualPatches
         val reference = completeCatalog.filter { it.supports("2.0.20", 5001712) }.toSet()
         assertEquals(22, reference.size)
-        listOf("2.0.20" to 5001812, "2.0.21" to 5001968).forEach { (version, code) ->
-            val supported = completeCatalog.filter { it.supports(version, code) }.toSet()
-            // Codecs Support stays exact to 5001712 on the 2.0.20 line; the intermediate
-            // bases keep every other standalone patch.
-            val expected = if (code == 5001812) reference - xrCodecsSupportPatch
-                else reference - xrCodecsSupportPatch - performanceBoostPatch + performanceBoostOptionalPatch
-            val recommended = if (code == 5001812) legacyRecommendedPatches + performanceBoostPatch
-                else legacyRecommendedPatches
-            assertEquals(expected, supported, "$version/$code")
-            assertEquals(recommended, recommendedFor(version, code).toSet(), "$version/$code")
-            recommended.forEach { assertTrue(it.default, "${it.name}: $version/$code") }
-            (supported - recommended).forEach { patch ->
-                assertFalse(patch.default, "${patch.name}: $version/$code")
-            }
+        assertEquals(
+            legacyRecommendedPatches5001712,
+            recommendedFor("2.0.20", 5001712).toSet(),
+        )
+        recommendedFor("2.0.20", 5001712).forEach { assertTrue(it.default, it.name) }
+        (reference - legacyRecommendedPatches5001712).forEach { patch ->
+            assertFalse(patch.default, patch.name)
         }
         listOf(
-            "2.0.20" to 5001968,
-            "2.0.21" to 5001812,
-            "2.0.22" to 5001812,
-            "2.0.22" to 5001968,
-            "2.0.20" to 5001813,
-            "2.0.21" to 5001969,
+            "2.0.20" to 5002363,
+            "2.0.23" to 5001712,
+            "2.0.20" to 5001740,
+            "2.0.23" to 5002364,
         ).forEach { (version, code) ->
             completeCatalog.forEach { patch ->
                 assertFalse(patch.supports(version, code), "${patch.name}: $version/$code")
@@ -254,7 +220,6 @@ class PatchCompatibilityMatrixTest {
     @Test
     fun previous_verified_compatibility_is_preserved() {
         assertTrue(xrGalaxyXrHighResolutionPatch.supports("2.0.20", 5001712))
-        assertTrue(xrGalaxyXrHighResolutionPatch.supports("2.0.22", 5002244))
         assertTrue(xrGalaxyXrHighResolutionPatch.supports("2.0.23", 5002363))
         assertFalse(xrGalaxyXrHighResolutionPatch.supports("2.0.20", 5001740))
         listOf(5002296, 5002313, 5002318, 5002322).forEach { versionCode ->
@@ -272,7 +237,6 @@ class PatchCompatibilityMatrixTest {
         )
         legacyCommon.forEach { patch ->
             assertTrue(patch.supports("2.0.20", 5001712), patch.name)
-            assertTrue(patch.supports("2.0.22", 5002244), patch.name)
         }
         legacyCommon.forEach { patch ->
             assertFalse(patch.supports("2.0.20", 5001740), patch.name)
@@ -280,7 +244,6 @@ class PatchCompatibilityMatrixTest {
             assertFalse(patch.supports("2.0.22", 5002318), patch.name)
         }
         assertTrue(hmdOnlyPatch.supports("2.0.20", 5001712))
-        assertTrue(hmdOnlyPatch.supports("2.0.22", 5002244))
         assertTrue(hmdOnlyPatch.supports("2.0.23", 5002363))
         assertFalse(hmdOnlyPatch.supports("2.0.20", 5001740))
         listOf(5002313, 5002318, 5002322).forEach { versionCode ->
@@ -345,7 +308,6 @@ class PatchCompatibilityMatrixTest {
             networkOptimizationsPatch, blueNoisePatch,
             xrCodecsSupportPatch,
             performanceBoostPatch,
-            performanceBoostOptionalPatch,
             oledCalibrationPatch,
             unrestrictedBatteryUsagePatch,
             hmdOnlyPatch,
@@ -378,7 +340,7 @@ class PatchCompatibilityMatrixTest {
             deviceIdentityPatch, blueNoisePatch,
         )
 
-        // Codecs Support retains its exact legacy base; BOOST also recommends 5001812.
+        // Codecs Support retains its exact 5001712 legacy base.
         val legacyRecommendedPatches5001712 = legacyRecommendedPatches + xrCodecsSupportPatch + performanceBoostPatch
 
         val nativeRecommendedPatches = setOf(

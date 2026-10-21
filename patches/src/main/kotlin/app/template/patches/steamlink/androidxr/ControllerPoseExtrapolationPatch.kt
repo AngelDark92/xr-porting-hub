@@ -19,9 +19,6 @@ private data class ControllerExtrapolationBuild(val version: String, val version
 // not depend on the base. Its effect was measured on 5002363 only.
 private val CONTROLLER_EXTRAPOLATION_BUILDS = listOf(
     ControllerExtrapolationBuild("2.0.20", 5001712, measured = false),
-    ControllerExtrapolationBuild("2.0.20", 5001812, measured = false),
-    ControllerExtrapolationBuild("2.0.21", 5001968, measured = false),
-    ControllerExtrapolationBuild("2.0.22", 5002244, measured = false),
     ControllerExtrapolationBuild("2.0.23", 5002363, measured = true),
 )
 
@@ -38,7 +35,7 @@ internal fun controllerExtrapolationResource(name: String): ByteArray =
 @Suppress("unused")
 val controllerPoseExtrapolationPatch = rawResourcePatch(
     name = "Controller pose extrapolation",
-    description = "Makes Galaxy XR predict controller poses to the moment the app asks, instead of repeating one sample per frame, and smooths out jitter. Builds: 5001712 to 5002363 (measured on 2.0.23). Needs: nothing. " +
+    description = "Makes Galaxy XR predict controller poses to the moment the app asks, instead of repeating one sample per frame, and smooths out jitter. Builds: 2.0.20/5001712, 2.0.23/5002363 (measured on 2.0.23). Needs: nothing. " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = false,
 ) {

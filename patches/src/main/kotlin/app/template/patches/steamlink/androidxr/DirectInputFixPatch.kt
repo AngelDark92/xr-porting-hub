@@ -90,9 +90,8 @@ internal val xrDirectInputFixPatch = bytecodePatch {
                 packageMetadata.versionCode,
             )) return@execute
 
-        // These exact legacy SDL builds need mouse-only wrappers: 5001812/5001968
-        // also lack the modern synthetic-pad JNI signatures. On 5001712, PAD_A
-        // can activate Connect before the pointed-at PC is selected.
+        // The exact 2.0.20/5001712 legacy build needs the mouse-only wrappers: its
+        // PAD_A can activate Connect before the pointed-at PC is selected.
         val pointerRoutes = xrPointerRouteMethodsFor(
             packageMetadata.versionName,
             packageMetadata.versionCode,

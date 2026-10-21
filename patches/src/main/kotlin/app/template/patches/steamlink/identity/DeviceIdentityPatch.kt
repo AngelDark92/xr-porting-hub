@@ -441,13 +441,13 @@ private fun createDeviceIdentityPatch(
 
 // Morphe exposes one global `default` flag per patch object, so recommendation scope is expressed
 // with one object per scope over this single shared guarded body: the recommended `Device identity`
-// covers the 4 legacy bases, while `Device identity (2.0.23/5002363)` stays optional so the native
+// covers the 2.0.20/5001712 legacy base, while `Device identity (2.0.23/5002363)` stays optional so the native
 // build is never auto-selected the identity. The body itself branches per exact base.
 @Suppress("unused")
 val deviceIdentityPatch = createDeviceIdentityPatch(
     name = "Device identity",
     description = "Sets the headset name SteamVR sees, with Meta Quest Pro as the recommended profile. " +
-        "Builds: 5001712 to 5002244.",
+        "Builds: 2.0.20/5001712.",
     default = true,
     compatibilities = COMPATIBILITIES_STEAM_LINK_LEGACY,
     profileDescription = "Recommended picks Meta Quest Pro for this build. Any other choice sets that headset " +

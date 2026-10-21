@@ -59,22 +59,17 @@ private val permissionOriginal = "ff8301d1fd7b01a9".hexBytes()
 
 private val highResolutionFixtures = listOf(
     HighResolutionFixture("2.0.20", "5001712", 0x142c0c, true),
-    HighResolutionFixture("2.0.22", "5002244", 0x1422c4, true),
     HighResolutionFixture("2.0.23", "5002363", 0x149874, false),
-    HighResolutionFixture("2.0.20", "5001812", 0x142c84, true),
-    HighResolutionFixture("2.0.21", "5001968", 0x13ec7c, true),
 )
 
 private val visualDelayFixtures = highResolutionFixtures
 
-private val legacyPublicFixtures = highResolutionFixtures.filter { it.versionCode in setOf("5001712", "5001812", "5001968") }
+private val legacyPublicFixtures = highResolutionFixtures.filter { it.versionCode in setOf("5001712") }
 
 // Independent expected offsets from symbol/disassembly receipts, not production tables.
 private data class LegacyNativeSites(val face: Int, val eye: Int, val mic: Int, val hook: Int, val gates: List<Int>)
 private val legacySites = mapOf(
     "5001712" to LegacyNativeSites(0x99924, 0xa1a7f, 0xf4584, 0x1014e8, listOf(0xffe20, 0xffe28, 0x10db10, 0x116564, 0x11656c, 0x116620)),
-    "5001812" to LegacyNativeSites(0x99862, 0xa1985, 0xf4484, 0x101648, listOf(0xffc5c, 0xffc64, 0x10dc70, 0x1166c4, 0x1166cc, 0x116780)),
-    "5001968" to LegacyNativeSites(0x9334f, 0x9b7ab, 0xefdb4, 0xfd5f0, listOf(0xfbc04, 0xfbc0c, 0x109bf0, 0x112644, 0x11264c, 0x112700)),
 )
 
 private val publicPatchesFor5002363: List<Patch<*>> = listOf(

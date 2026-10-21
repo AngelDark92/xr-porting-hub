@@ -37,8 +37,8 @@ class GxrSpacewarpLayerPatchTest {
         // 5001712 becoming positive).
         assertTrue(isGxrSpacewarpSteamLinkBuild("2.0.20", "5001712"))
         assertTrue(isGxrSpacewarpSteamLinkBuild("2.0.23", "5002363"))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968",
-            "2.0.22" to "5002244", "2.0.23" to "5002322").forEach { (version, code) ->
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712",
+            "2.0.23" to "5002322").forEach { (version, code) ->
             assertFalse(isGxrSpacewarpSteamLinkBuild(version, code))
         }
         // Repo voice: the description states the fail-safe stand-down and the
@@ -51,7 +51,7 @@ class GxrSpacewarpLayerPatchTest {
     @Test
     fun `excluded exact pairs return unchanged before file or payload access`() = withTemporaryRoot { root ->
         val missing = File(root, "must-stay-absent")
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712",
             "2.0.23" to "5002322")
             .forEach { (version, code) ->
                 assertFalse(

@@ -21,7 +21,6 @@ class VideoOutputPrecisionTest {
 
     private val layouts = listOf(
         Layout("2.0.20", "5001712", VIDEO_LIBRARY_SIZE_5001712, SWAPCHAIN_FORMAT_OFFSETS_5001712),
-        Layout("2.0.22", "5002244", VIDEO_LIBRARY_SIZE_5002244, SWAPCHAIN_FORMAT_OFFSETS_5002244),
         Layout("2.0.23", "5002363", VIDEO_LIBRARY_SIZE_5002363, SWAPCHAIN_FORMAT_OFFSETS_5002363),
     )
 
@@ -146,12 +145,12 @@ class VideoOutputPrecisionTest {
         VideoOutputPrecision.entries.forEach { first ->
             VideoOutputPrecision.entries.filter { it != first }.forEach { second ->
                 val mixed = syntheticLibrary().apply {
-                    SWAPCHAIN_FORMAT_OFFSETS_5002244.forEach { formatInstruction(first).copyInto(this, it) }
-                    formatInstruction(second).copyInto(this, SWAPCHAIN_FORMAT_OFFSETS_5002244.last())
+                    SWAPCHAIN_FORMAT_OFFSETS_5002363.forEach { formatInstruction(first).copyInto(this, it) }
+                    formatInstruction(second).copyInto(this, SWAPCHAIN_FORMAT_OFFSETS_5002363.last())
                 }
                 val snapshot = mixed.copyOf()
                 VideoOutputPrecision.entries.forEach { target ->
-                    assertFailsWith<PatchException> { setProjectionSwapchainFormat(mixed, target, "2.0.22", "5002244") }
+                    assertFailsWith<PatchException> { setProjectionSwapchainFormat(mixed, target, "2.0.23", "5002363") }
                     assertContentEquals(snapshot, mixed)
                 }
             }
@@ -270,14 +269,14 @@ class VideoOutputPrecisionTest {
     fun `swapchain format patch rejects mixed states`() {
         val mixed = syntheticLibrary()
         byteArrayOf(0x29, 0x0b, 0x90.toByte(), 0x52)
-            .copyInto(mixed, SWAPCHAIN_FORMAT_OFFSETS_5002244.first())
+            .copyInto(mixed, SWAPCHAIN_FORMAT_OFFSETS_5002363.first())
 
         assertFailsWith<PatchException> {
             setProjectionSwapchainFormat(
                 mixed,
                 VideoOutputPrecision.RGB10_A2_EXPERIMENTAL,
-                "2.0.22",
-                "5002244",
+                "2.0.23",
+                "5002363",
             )
         }
     }
@@ -291,7 +290,7 @@ class VideoOutputPrecisionTest {
                 input,
                 VideoOutputPrecision.RGB10_A2_EXPERIMENTAL,
                 "2.0.20",
-                "5002244",
+                "5002363",
             ),
         )
     }
@@ -302,8 +301,8 @@ class VideoOutputPrecisionTest {
             setProjectionSwapchainFormat(
                 ByteArray(1024),
                 VideoOutputPrecision.SRGB8_HIGHP,
-                "2.0.22",
-                "5002244",
+                "2.0.23",
+                "5002363",
             )
         }
     }
@@ -311,14 +310,14 @@ class VideoOutputPrecisionTest {
     @Test
     fun `swapchain format patch rejects changed instruction context`() {
         val changedContext = syntheticLibrary().apply {
-            this[SWAPCHAIN_FORMAT_OFFSETS_5002244.first() - 1] = 0
+            this[SWAPCHAIN_FORMAT_OFFSETS_5002363.first() - 1] = 0
         }
         assertFailsWith<PatchException> {
             setProjectionSwapchainFormat(
                 changedContext,
                 VideoOutputPrecision.RGB10_A2_EXPERIMENTAL,
-                "2.0.22",
-                "5002244",
+                "2.0.23",
+                "5002363",
             )
         }
     }
@@ -328,16 +327,16 @@ class VideoOutputPrecisionTest {
         val extraOffset = 0x100
         val duplicated = syntheticLibrary().apply {
             copyOfRange(
-                SWAPCHAIN_FORMAT_OFFSETS_5002244.first() - 16,
-                SWAPCHAIN_FORMAT_OFFSETS_5002244.first() + 16,
+                SWAPCHAIN_FORMAT_OFFSETS_5002363.first() - 16,
+                SWAPCHAIN_FORMAT_OFFSETS_5002363.first() + 16,
             ).copyInto(this, extraOffset - 16)
         }
         assertFailsWith<PatchException> {
             setProjectionSwapchainFormat(
                 duplicated,
                 VideoOutputPrecision.RGB10_A2_EXPERIMENTAL,
-                "2.0.22",
-                "5002244",
+                "2.0.23",
+                "5002363",
             )
         }
     }
@@ -393,8 +392,8 @@ class VideoOutputPrecisionTest {
         }}
 
     private fun syntheticLibrary(
-        size: Int = VIDEO_LIBRARY_SIZE_5002244,
-        offsets: IntArray = SWAPCHAIN_FORMAT_OFFSETS_5002244,
+        size: Int = VIDEO_LIBRARY_SIZE_5002363,
+        offsets: IntArray = SWAPCHAIN_FORMAT_OFFSETS_5002363,
     ): ByteArray = ByteArray(size).apply {
         val before = byteArrayOf(
             0xe1.toByte(), 0xa3.toByte(), 0x00, 0x91.toByte(),

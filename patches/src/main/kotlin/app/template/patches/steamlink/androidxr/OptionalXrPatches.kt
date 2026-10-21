@@ -309,7 +309,7 @@ private val androidSurfaceTriggerResourcesPatch = androidSurfaceTriggerResources
 val xrGalaxyXrHighResolutionPatch = resourcePatch(
     name = "Galaxy XR high-resolution 3-projection fix",
     description = "Permission-free high-resolution fix: adds a small Android-surface trigger and leaves the renderer's own " +
-        "formats, including future RGB10_A2, untouched. No image copy. Builds: 5001712, 5001812, 5001968, 5002244, 5002363.",
+        "formats, including future RGB10_A2, untouched. No image copy. Builds: 2.0.20/5001712, 2.0.23/5002363.",
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

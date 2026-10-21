@@ -16,18 +16,15 @@ private data class ControllerVelocityFrameBuild(
 )
 
 // The layer edits no Steam Link code, but it keys on VRLink's pose action name and its angles
-// depend on the controller pose offset. All 5 bases use the same action name and, with this
+// depend on the controller pose offset. Both bases use the same action name and, with this
 // repository's controller_config.json, the same offset; the angles were measured on 5002363 only.
-// One patch covers all 5 bases; the angular-velocity frame written into the bundled layer differs
-// per build (2.0.23: the streamed-pose frame; the legacy bases: the base-space frame). Because the
+// One patch covers both bases; the angular-velocity frame written into the bundled layer differs
+// per build (2.0.23: the streamed-pose frame; 2.0.20/5001712: the base-space frame). Because the
 // 2.0.23 layer already reports the angular velocity local to the streamed pose, no separate
 // world-to-local adapter is needed on that base.
 private val CONTROLLER_VELOCITY_FRAME_BUILDS = listOf(
     ControllerVelocityFrameBuild("2.0.23", 5002363, angularWorld = false),
     ControllerVelocityFrameBuild("2.0.20", 5001712, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.20", 5001812, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.21", 5001968, angularWorld = true),
-    ControllerVelocityFrameBuild("2.0.22", 5002244, angularWorld = true),
 )
 
 private fun List<ControllerVelocityFrameBuild>.has(version: String, versionCode: String): Boolean =
@@ -58,7 +55,7 @@ private const val CONTROLLER_VELOCITY_FRAME_DESCRIPTION =
 val controllerVelocityFramePatch = rawResourcePatch(
     name = "Controller velocity frame",
     description = "$CONTROLLER_VELOCITY_FRAME_DESCRIPTION Builds: 2.0.23, angular velocity is " +
-        "reported local to the streamed pose; 2.0.20 - 2.0.22, it is reported in the base space. " +
+        "reported local to the streamed pose; 2.0.20/5001712, it is reported in the base space. " +
         "Angles measured on 2.0.23/5002363. Needs: nothing. The root Velocity Frame and Steam Link " +
         "Pose Time modules do not run while this layer is loaded. " +
         STEAM_LINK_CONTROLLER_CREDIT,

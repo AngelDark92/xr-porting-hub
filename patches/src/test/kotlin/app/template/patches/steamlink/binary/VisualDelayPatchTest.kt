@@ -246,7 +246,7 @@ class VisualDelayPatchTest {
             val fileSize: Int,
             val hookOffset: Int,
             val velocityStores: List<Triple<Int, Int, Boolean>>,
-            val segmentAlignment: Long = if (versionCode >= 5002244) 0x4000 else 0x1000,
+            val segmentAlignment: Long = if (versionCode >= 5002363) 0x4000 else 0x1000,
         )
 
         val layout5002363 = TestLayout(

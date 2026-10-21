@@ -2,7 +2,7 @@
 
 Kotlin morphe-patcher patch library for several Galaxy XR apps. Steam Link VR
 (`com.valvesoftware.steamlinkvr`) targets the exact `(versionName, versionCode)` bases
-2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.0.22/5002244 and 2.0.23/5002363; 4XVR
+2.0.20/5001712 and 2.0.23/5002363; 4XVR
 (`cn.vr4p.oculus4xvrplayerov`) targets 2.0.22/20022. Read repository-root `AGENTS.md`
 first — its app registry maps each app to its package, bases, sources, resources and
 extension payload.

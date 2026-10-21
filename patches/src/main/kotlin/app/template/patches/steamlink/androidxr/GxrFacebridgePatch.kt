@@ -10,7 +10,7 @@ import app.template.patches.shared.Constants.isModernTongueBridgeSteamLinkBuild
 import org.w3c.dom.Element
 import java.io.File
 
-// One patch covers all 5 bases; builds up to 5002318 get the face-tracking layer (face bridge
+// One patch covers both bases: 2.0.20/5001712 gets the face-tracking layer (face bridge
 // library + FACE_TRACKING permission) and 2.0.23/5002363 gets the tongue transport edit.
 private fun facebridgeResource(name: String): ByteArray =
     (object {}.javaClass.getResourceAsStream("/steamlink/androidxr/$name")
@@ -81,7 +81,7 @@ internal val gxrFaceTrackingManifestPatch = resourcePatch {
 val gxrFacebridgePatch = rawResourcePatch(
     name = "GXR face and tongue bridge",
     description = "Face and tongue feed for the VRCFT module: the face bridge " +
-        "on 5001712/5001812/5001968/5002244, tongue out/left/right/up/down slots on 2.0.23/5002363; " +
+        "on 2.0.20/5001712, tongue out/left/right/up/down slots on 2.0.23/5002363; " +
         "Valve's own expressions and tongue-out keep working.",
     default = true,
 ) {

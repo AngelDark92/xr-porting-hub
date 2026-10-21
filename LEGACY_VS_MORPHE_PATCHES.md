@@ -15,7 +15,7 @@ Manifest Capability Pack; and Device identity with the Meta Quest Pro spoof (`Oc
 model).
 
 Leave HMD identity on **Recommended**, or explicitly choose **Meta Quest Pro**. Recommended
-resolves to the Quest spoof for the exact legacy targets 2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, and 2.0.22/5002244. The config baseline runs before Device identity; the legacy Quest payload changes
+resolves to the Quest spoof for the exact legacy target 2.0.20/5001712. The config baseline runs before Device identity; the legacy Quest payload changes
 only the 3 HMD model values while preserving SamsungVST tracking and Galaxy XR controller/eye
 routing. Saved explicit Samsung, Stock, or PICO profiles remain respected rather than silently
 overridden.
@@ -416,7 +416,7 @@ These edits force execution through paths that stock code conditionally skips. T
 
 The exact high-level field represented by each register cannot be proven from stripped local-variable information alone. Implement these as separate toggles initially and verify with logcat/OpenXR traces rather than combining all six into one opaque patch.
 
-### Recommended native patch implementation
+### Recommended native patch implementation (historical design note for the retired 5002244 base)
 
 Create a guarded `rawResourcePatch` for the 5002244 layout:
 

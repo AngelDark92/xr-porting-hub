@@ -9,21 +9,13 @@ import app.template.patches.shared.PatchCategories
 internal const val PERFORMANCE_BOOST_LIBRARY = "libgxr_performance_boost.so"
 internal const val PERFORMANCE_BOOST_MANIFEST = "XR_APILAYER_local_GalaxyXR_performance_boost.json"
 private val recommendedPerformanceBoostBuilds = setOf(
-    "2.0.20" to 5001712, "2.0.20" to 5001812, "2.0.23" to 5002363,
+    "2.0.20" to 5001712, "2.0.23" to 5002363,
 )
 private val recommendedPerformanceBoostCompatibilities = COMPATIBILITIES_STEAM_LINK.filter { compatibility ->
     compatibility.targets.any { target ->
         target.versionCodes?.values?.any { (target.version to it) in recommendedPerformanceBoostBuilds } == true
     }
 }
-private val optionalPerformanceBoostCompatibilities =
-    COMPATIBILITIES_STEAM_LINK.filter { compatibility ->
-        compatibility.targets.any { target ->
-            target.versionCodes?.values?.any {
-                (target.version to it) in setOf("2.0.21" to 5001968, "2.0.22" to 5002244)
-            } == true
-        }
-    }
 
 private fun matchesPerformanceBoostTarget(
     compatibilities: List<Compatibility>, packageName: String, version: String, code: String,
@@ -36,8 +28,6 @@ internal fun isPerformanceBoostTarget(packageName: String, version: String, code
     matchesPerformanceBoostTarget(COMPATIBILITIES_STEAM_LINK, packageName, version, code)
 internal fun isRecommendedPerformanceBoostTarget(packageName: String, version: String, code: String): Boolean =
     matchesPerformanceBoostTarget(recommendedPerformanceBoostCompatibilities, packageName, version, code)
-internal fun isOptionalPerformanceBoostTarget(packageName: String, version: String, code: String): Boolean =
-    matchesPerformanceBoostTarget(optionalPerformanceBoostCompatibilities, packageName, version, code)
 internal fun performanceBoostResource(name: String): ByteArray =
     (object {}.javaClass.getResourceAsStream("/steamlink/androidxr/$name")
         ?: throw PatchException("Missing performance boost resource: $name")).use { it.readBytes() }
@@ -75,11 +65,4 @@ val performanceBoostPatch = createPerformanceBoostPatch(
     name = "OpenXR CPU and GPU BOOST",
     default = true,
     compatibilities = recommendedPerformanceBoostCompatibilities,
-)
-
-@Suppress("unused")
-val performanceBoostOptionalPatch = createPerformanceBoostPatch(
-    name = "OpenXR CPU and GPU BOOST (2.0.21/2.0.22)",
-    default = false,
-    compatibilities = optionalPerformanceBoostCompatibilities,
 )

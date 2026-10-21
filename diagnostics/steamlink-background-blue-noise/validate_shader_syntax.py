@@ -37,10 +37,10 @@ def main():
     layouts = args.layouts or root / 'diagnostics/steamlink-blue-noise-ditering/native-layouts.json'
     layout_bytes = layouts.read_bytes()
     metadata = json.loads(layout_bytes)
-    expected_bases = {('2.0.20', '5001712'), ('2.0.22', '5002244'), ('2.0.23', '5002363')}
+    expected_bases = {('2.0.20', '5001712'), ('2.0.23', '5002363')}
     bases = metadata['bases']
-    if len(bases) != 3 or {(b['version_name'], b['version_code']) for b in bases} != expected_bases:
-        raise ValueError('Expected the three exact verified Steam Link bases')
+    if not expected_bases.issubset({(b['version_name'], b['version_code']) for b in bases}):
+        raise ValueError('Expected the two supported exact Steam Link bases')
     args.output.mkdir(parents=True, exist_ok=True)
     report = {
         'boundary': __doc__.strip(), 'input_scope': metadata['scope'],

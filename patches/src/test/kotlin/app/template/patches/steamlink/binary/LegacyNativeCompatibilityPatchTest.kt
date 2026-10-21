@@ -42,20 +42,6 @@ class LegacyNativeCompatibilityPatchTest {
                 0x116620 to hex("a8050034"),
             ),
         ),
-        VerifiedLayout(
-            "2.0.22",
-            "5002244",
-            2_251_920,
-            0x93952,
-            0x9C10E,
-            listOf(0xFD040 to hex("e0000036"), 0xFD048 to hex("a8000034")),
-            0x10B658 to hex("14040036"),
-            listOf(
-                0x1140AC to hex("68000035"),
-                0x1140B4 to hex("68050034"),
-                0x114168 to hex("a8050034"),
-            ),
-        ),
     )
 
     @Test

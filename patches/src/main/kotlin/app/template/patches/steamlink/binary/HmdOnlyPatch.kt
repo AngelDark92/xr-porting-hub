@@ -36,30 +36,6 @@ private data class HmdLayout(
 )
 
 private val HMD_LAYOUTS = listOf(
-    // Independently disassembled GetPose routines; 5001968 schedules the paired
-    // store after the +36 store. Addresses are not inferred from another build.
-    HmdLayout(
-        "2.0.20", 5001812, 2_220_872, 0x101648L,
-        listOf(
-            VelocityPatch(0x101674L, 28, paired = true),
-            VelocityPatch(0x101690L, 36),
-            VelocityPatch(0x101770L, 40),
-            VelocityPatch(0x101774L, 44),
-            VelocityPatch(0x101780L, 48),
-        ),
-        "eebf7eabfb299ab7b9e5bba1612d4a32b27c51f451efc2bd206ba6fc6ac5205a",
-    ),
-    HmdLayout(
-        "2.0.21", 5001968, 2_234_048, 0xFD5F0L,
-        listOf(
-            VelocityPatch(0xFD6ACL, 28, paired = true),
-            VelocityPatch(0xFD658L, 36),
-            VelocityPatch(0xFD6E0L, 40),
-            VelocityPatch(0xFD6E4L, 44),
-            VelocityPatch(0xFD6E8L, 48),
-        ),
-        "596b5680aa6c217daf5c151de517b1ad61b3999c6fd864ff59a718136ca40192",
-    ),
     HmdLayout(
         versionName = "2.0.20",
         versionCode = 5001712,
@@ -71,20 +47,6 @@ private val HMD_LAYOUTS = listOf(
             VelocityPatch(0x00101610L, 40),
             VelocityPatch(0x00101614L, 44),
             VelocityPatch(0x00101620L, 48),
-        ),
-    ),
-    HmdLayout(
-        versionName = "2.0.22",
-        versionCode = 5002244,
-        fileSize = 2_251_920,
-        hookVaddr = 0x000FEAD8L,
-        velocityPatches = listOf(
-            VelocityPatch(0x000FED48L, 28),
-            VelocityPatch(0x000FED4CL, 32),
-            VelocityPatch(0x000FED50L, 36),
-            VelocityPatch(0x000FED5CL, 40),
-            VelocityPatch(0x000FED60L, 44),
-            VelocityPatch(0x000FED6CL, 48),
         ),
     ),
     // Independently decoded 2.0.23/5002363: GetPose starts at 0x101eb4. The hook
@@ -329,7 +291,7 @@ internal fun patchVisualDelay(
             it.versionName == versionName && it.versionCode.toString() == versionCode
         }
     } else {
-        HMD_LAYOUTS.singleOrNull { it.fileSize == mutable.size && it.versionCode in setOf(5001712, 5002244) }
+        HMD_LAYOUTS.singleOrNull { it.fileSize == mutable.size && it.versionCode in setOf(5001712) }
     } ?: return mutable
     if (mutable.size != layout.fileSize) {
         val sha256 = MessageDigest.getInstance("SHA-256").digest(mutable).toHex()
@@ -339,8 +301,7 @@ internal fun patchVisualDelay(
                 "stockSha256=${layout.stockSha256 ?: "see native compatibility audit"}",
         )
     }
-    verifyAddedLegacyNativeCode(bytes, versionName, versionCode)
-    val guardedTransitions = layout.versionCode in setOf(5001812, 5001968, 5002363)
+    val guardedTransitions = layout.versionCode in setOf(5002363)
     if (guardedTransitions && offsetMs !in 0L..4000L) {
         throw PatchException("Visual Delay offset must be within 0..4000 ms")
     }
@@ -427,8 +388,8 @@ internal fun patchVisualDelay(
 val hmdOnlyPatch = rawResourcePatch(
     name = "Visual Delay Fix",
     description = "Re-times the headset's position report so head movement shows up sooner; " +
-        "controller movement is untouched. Builds: 2.0.20/5001712, 2.0.20/5001812, " +
-        "2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
+        "controller movement is untouched. Builds: 2.0.20/5001712, " +
+        "2.0.23/5002363.",
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)

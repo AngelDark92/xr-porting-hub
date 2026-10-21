@@ -115,7 +115,7 @@
 
     const-string v1, "SteamLinkGXR"
 
-    const-string v2, "XR panel select -> PRIMARY_MOUSE down (generic); preserving stock 5002244 route"
+    const-string v2, "XR panel select -> PRIMARY_MOUSE down (generic); preserving stock route"
 
     invoke-static {v1, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
 
@@ -140,7 +140,7 @@
 
     const-string v1, "SteamLinkGXR"
 
-    const-string v2, "XR panel select -> PRIMARY_MOUSE up (generic); preserving stock 5002244 route"
+    const-string v2, "XR panel select -> PRIMARY_MOUSE up (generic); preserving stock route"
 
     invoke-static {v1, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
 
@@ -211,7 +211,7 @@
 
     move-result p1
 
-    # Preserve the stock 5002244 generic-motion route after the mouse side effect.
+    # Preserve the stock generic-motion route after the mouse side effect.
     .line 821
     invoke-virtual {p2}, Landroid/view/MotionEvent;->getSource()I
 

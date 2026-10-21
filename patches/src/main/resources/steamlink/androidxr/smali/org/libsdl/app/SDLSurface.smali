@@ -246,7 +246,7 @@
 
     const-string v3, "SteamLinkGXR"
 
-    const-string v6, "XR panel select -> PRIMARY_MOUSE up; preserving stock 5002244 touch"
+    const-string v6, "XR panel select -> PRIMARY_MOUSE up; preserving stock touch"
 
     invoke-static {v3, v6}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
 
@@ -267,7 +267,7 @@
 
     const-string v3, "SteamLinkGXR"
 
-    const-string v6, "XR panel select -> PRIMARY_MOUSE down; preserving stock 5002244 touch"
+    const-string v6, "XR panel select -> PRIMARY_MOUSE down; preserving stock touch"
 
     invoke-static {v3, v6}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
 
@@ -906,7 +906,7 @@
 
     move-result v2
 
-    # Preserve the 5002244 SDL touch route after emitting the mouse side effect.
+    # Preserve the stock SDL touch route after emitting the mouse side effect.
     move-object/from16 v0, p0
 
     move-object/from16 v1, p2

@@ -28,7 +28,7 @@ class NetworkOptimizationsPatchTest {
         assertEquals(true, networkOptimizationsPatch.default)
         assertEquals(PatchCategories.STREAMING_AND_NETWORK, networkOptimizationsPatch.category)
         assertTrue(networkOptimizationsPatch.supports("2.0.23", 5002363))
-        assertFalse(networkOptimizationsPatch.supports("2.0.22", 5002244))
+        assertFalse(networkOptimizationsPatch.supports("2.0.22", 5002363))
         assertFalse(networkOptimizationsPatch.supports("2.0.20", 5001712))
     }
 

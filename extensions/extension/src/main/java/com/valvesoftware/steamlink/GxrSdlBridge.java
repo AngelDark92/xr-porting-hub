@@ -87,11 +87,11 @@ public final class GxrSdlBridge {
             if (action == 0 || action == 5) {           // ACTION_DOWN / ACTION_POINTER_DOWN
                 sendGxrSyntheticPad(true);
                 sOnNativeMouse.invoke(null, 1, 0, x, y, false);
-                Log.i(TAG, "XR panel select -> PRIMARY_MOUSE down; preserving stock 5002244 touch");
+                Log.i(TAG, "XR panel select -> PRIMARY_MOUSE down; preserving stock touch");
             } else if (action == 1 || action == 6 || action == 3) { // UP / POINTER_UP / CANCEL
                 sendGxrSyntheticPad(false);
                 sOnNativeMouse.invoke(null, 0, 1, x, y, false);
-                Log.i(TAG, "XR panel select -> PRIMARY_MOUSE up; preserving stock 5002244 touch");
+                Log.i(TAG, "XR panel select -> PRIMARY_MOUSE up; preserving stock touch");
             }
         } catch (Exception e) {
             Log.e(TAG, "routeXrPointerAsMouse: SDL call failed", e);

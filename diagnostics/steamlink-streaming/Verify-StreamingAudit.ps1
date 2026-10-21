@@ -5,7 +5,6 @@ $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $script = Join-Path $PSScriptRoot 'audit_streaming_controls.py'
 $bases = @(
     @('2.0.20', '5001712', '80b62797c7e26d6b67b0cca00693b076a336bdb48ebc1383a16cccb1616ed495'),
-    @('2.0.22', '5002244', '4b2fa5e1b5d9d5c938873f692b0e5e18159e1199dee1253dd6eccc8fa43dfa12'),
     @('2.0.22', '5002296', '879694c57f0ca7e74017c174c24da619b1d1e909f4491edd9b2423513f0f87a6'),
     @('2.0.22', '5002313', 'e4d3575a130dc013e4c8fe4fb965217028229f89b13ba821c01b492e457398bb'),
     @('2.0.22', '5002318', '3c8d1ce13fd61edff5ce65efe6eedcc8565c89b66bab371550986a5c75407e56'),

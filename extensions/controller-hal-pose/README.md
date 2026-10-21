@@ -2,8 +2,7 @@
 
 Source of `libgxr_controller_hal_pose.so` and `extensions/controller-hal-pose.mpe`, installed
 by the opt-in patch **Controller tracking from the controller HAL through Shizuku** for exact
-Steam Link 2.0.23/5002363 and the legacy bases (2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968,
-2.0.22/5002244). The angular velocity frame it writes into the library's config block differs
+Steam Link 2.0.23/5002363 and 2.0.20/5001712. The angular velocity frame it writes into the library's config block differs
 between 2.0.23 and the legacy bases (see "Velocities").
 
 ## What it changes
@@ -176,8 +175,7 @@ The 2 ms were chosen by feel on the headset (20 and 5 were tried the same day).
 
 ## Limits
 
-- Run on 2.0.23/5002363 and 2.0.20/5001712. 5001812, 5001968 and 5002244 create the same
-  pose action and get the 2.0.20 angular frame, but were not run.
+- Run on 2.0.23/5002363 and 2.0.20/5001712.
 - The velocities for the pose's time were measured on 2.0.20/5001712 only; on 2.0.23 they
   are on by default as well, but its throws were not measured with them.
 - The stock controller service reads the HAL 90 times per second; this layer adds two HAL

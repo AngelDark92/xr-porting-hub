@@ -27,14 +27,6 @@ class LegacyHmdConfigTest {
     }
 
     @Test
-    fun `5002244 retains the array payload byte for byte`() {
-        assertContentEquals(
-            galaxyPayload,
-            adaptLegacyHmdConfigForBuild(galaxyPayload, "2.0.22", "5002244"),
-        )
-    }
-
-    @Test
     fun `5001712 identity payloads use the same keyed schema`() {
         listOf("hmd_config_meta_quest_pro.json", "hmd_config_pico_4_pro.json").forEach { name ->
             val payload = requireNotNull(javaClass.getResource("/steamlink/identity/$name")).readBytes()

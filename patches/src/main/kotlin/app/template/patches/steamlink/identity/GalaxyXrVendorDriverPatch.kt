@@ -230,7 +230,7 @@ internal fun patchControllerConfigForVendorDriver(
 val galaxyXrVendorDriverPatch = rawResourcePatch(
     name = "Galaxy XR SteamVR driver (galaxyxr)",
     description = "Sets Galaxy XR headset and controller names in SteamVR, replacing the Meta Quest Pro spoof. " +
-        "Builds: 5001712 to 5002363. Needs: Galaxy XR VRLink Setup on the PC, or controllers show no model." +
+        "Builds: 2.0.20/5001712, 2.0.23/5002363. Needs: Galaxy XR VRLink Setup on the PC, or controllers show no model." +
         " Details: https://github.com/4uva4ek/steamlink-patches.",
     default = false,
 ) {

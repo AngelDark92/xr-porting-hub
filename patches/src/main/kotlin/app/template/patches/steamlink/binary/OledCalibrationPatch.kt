@@ -15,12 +15,9 @@ private val SHADER_EXTENSION =
 private val SHADER_VERSION = "#version 300 es\n".toByteArray(Charsets.US_ASCII)
 internal const val VIDEO_SHADER_SIZE = 1087
 internal const val VIDEO_LIBRARY_SIZE_5001712 = 2_221_072
-internal const val VIDEO_LIBRARY_SIZE_5002244 = 2_251_920
 internal const val VIDEO_LIBRARY_SIZE_5002363 = 2_292_008
 private const val VIDEO_LIBRARY_SHA256_5001712 =
     "80b62797c7e26d6b67b0cca00693b076a336bdb48ebc1383a16cccb1616ed495"
-private const val VIDEO_LIBRARY_SHA256_5002244 =
-    "4b2fa5e1b5d9d5c938873f692b0e5e18159e1199dee1253dd6eccc8fa43dfa12"
 private const val VIDEO_LIBRARY_SHA256_5002363 =
     "628821feab199d7712be8a51273eb9a21ec440a7c91aa6a768cc7307a4fe22f0"
 
@@ -40,7 +37,6 @@ private val SWAPCHAIN_CONTEXT_AFTER = byteArrayOf(
     0xe8.toByte(), 0x3b, 0x00, 0xb9.toByte(),
 )
 internal val SWAPCHAIN_FORMAT_OFFSETS_5001712 = intArrayOf(0x10a9c4, 0x10aa34)
-internal val SWAPCHAIN_FORMAT_OFFSETS_5002244 = intArrayOf(0x10826c, 0x1082dc, 0x10834c)
 internal val SWAPCHAIN_FORMAT_OFFSETS_5002363 = intArrayOf(0x10c840, 0x10c8b0, 0x10c920)
 
 private data class VideoLibraryLayout(
@@ -52,22 +48,12 @@ private data class VideoLibraryLayout(
 )
 
 private val VIDEO_LIBRARY_LAYOUTS = listOf(
-    VideoLibraryLayout("2.0.20", 5001812, 2220872, "eebf7eabfb299ab7b9e5bba1612d4a32b27c51f451efc2bd206ba6fc6ac5205a", intArrayOf(0x10ab24, 0x10ab94)),
-    VideoLibraryLayout("2.0.21", 5001968, 2234048, "596b5680aa6c217daf5c151de517b1ad61b3999c6fd864ff59a718136ca40192", intArrayOf(0x106a94, 0x106b04)),
-
     VideoLibraryLayout(
         "2.0.20",
         5001712,
         VIDEO_LIBRARY_SIZE_5001712,
         VIDEO_LIBRARY_SHA256_5001712,
         SWAPCHAIN_FORMAT_OFFSETS_5001712,
-    ),
-    VideoLibraryLayout(
-        "2.0.22",
-        5002244,
-        VIDEO_LIBRARY_SIZE_5002244,
-        VIDEO_LIBRARY_SHA256_5002244,
-        SWAPCHAIN_FORMAT_OFFSETS_5002244,
     ),
     VideoLibraryLayout(
         "2.0.23",
@@ -327,18 +313,12 @@ internal fun setProjectionSwapchainFormat(
     }
 }
 
-// Guarded A/B generator is pinned to its decoded 2.0.22/5002244 source.
-internal fun setProjectionSwapchainFormat(
-    bytes: ByteArray,
-    outputPrecision: VideoOutputPrecision,
-): ByteArray = setProjectionSwapchainFormat(bytes, outputPrecision, "2.0.22", "5002244")
-
 @Suppress("unused")
 val oledCalibrationPatch = rawResourcePatch(
     name = "OLED color calibration",
     description = "Tunes the OLED headset's color with gamma and saturation presets, plus optional " +
         "center-of-view tweaks; visible improvement needs headset verification. " +
-        "Builds: 5001712, 5001812, 5001968, 5002244, 5002363.",
+        "Builds: 2.0.20/5001712, 2.0.23/5002363.",
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

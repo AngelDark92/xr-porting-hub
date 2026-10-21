@@ -121,7 +121,7 @@ private val changePackageNameBytecodePatch = bytecodePatch {
 @Suppress("unused")
 val changePackageNamePatch = resourcePatch(
     name = "Change package name",
-    description = "Renames the app so the patched Steam Link can install next to the original. Builds: 5001712 to 5002244.",
+    description = "Renames the app so the patched Steam Link can install next to the original. Builds: 2.0.20/5001712.",
     default = false,
 ) {
     category(PatchCategories.APP_AND_DEVICE_IDENTITY)

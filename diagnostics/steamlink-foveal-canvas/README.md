@@ -1,5 +1,9 @@
 # Full-FOV foveal canvas experiment — 2026-10-01
 
+> **Retired 2026-10-21.** The patch and this harness were removed with the 5001812 base. See
+> [RETIRED-2026-10-21.md](RETIRED-2026-10-21.md). This page is a historical record.
+
+
 > Update 2026-10-12: first device run crashed Steam Link at every start; root cause found in the layer's pre-instance `getInstanceProcAddr` path and fixed ([crash RCA and fix](2026-10-12-loader-crash-rca-and-fix.md)). Device re-validation pending.
 
 Target: **Steam Link 2.0.20/5001812**, the latest 2.0.20 original APK available in this workspace. This is a new, default-off experiment; no headset outcome is recorded. Existing resolution helpers, recommendation bundles and older exact adaptations are preserved.

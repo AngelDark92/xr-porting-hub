@@ -30,8 +30,9 @@ class CodecsSupportPatchTest {
         assertEquals(setOf("2.0.20" to 5001712, "2.0.23" to 5002363), targets)
         assertTrue(isCodecsSupportSteamLinkBuild("2.0.20", "5001712"))
         assertTrue(isCodecsSupportSteamLinkBuild("2.0.23", "5002363"))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
-            "2.0.23" to "5002322").forEach { (version, code) ->
+        listOf("2.0.20" to "5002363", "2.0.23" to "5002322",
+            "2.0.23" to "5002296", "2.0.23" to "5002313",
+            "2.0.23" to "5002318", "2.0.23" to "5002364").forEach { (version, code) ->
             assertFalse(isCodecsSupportSteamLinkBuild(version, code))
         }
     }
@@ -39,7 +40,7 @@ class CodecsSupportPatchTest {
     @Test
     fun `excluded exact pairs return unchanged before file or payload access`() = withTemporaryRoot { root ->
         val missing = File(root, "must-stay-absent")
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.20" to "5001713")
+        listOf("2.0.20" to "5001713")
             .forEach { (version, code) ->
                 assertFalse(installCodecsSupportResources(missing, version, code,
                     byteArrayOf(1), byteArrayOf(2)))

@@ -15,8 +15,8 @@ import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 val blueNoisePatch = rawResourcePatch(
     name = "Blue-noise dithering",
     description = "Adds fine grain that hides harsh color steps, with separate on/off choices " +
-        "for the center and the background. Builds: 2.0.20/5001712, 2.0.20/5001812, " +
-        "2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
+        "for the center and the background. Builds: 2.0.20/5001712, " +
+        "2.0.23/5002363.",
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

@@ -13,7 +13,7 @@ import app.template.patches.shared.Constants.isNativeXrSteamLinkBuild
 //     mov w1, #preset
 //
 // The surrounding instruction is intentionally part of the signature. It is
-// unique in the tested 5002244 library and also survives later Valve layouts,
+// unique in the tested native library and also survives later Valve layouts,
 // unlike the file offset of the MOV instruction.
 private val INPUT_PRESET_PREFIX = byteArrayOf(
     0xe0.toByte(), 0x0b, 0x40, 0xf9.toByte(),
@@ -33,17 +33,13 @@ private data class NativeMicrophoneLayout(
 
 private val NATIVE_MICROPHONE_LAYOUTS = mapOf(
     // Independently traced QSVLClientAudioNdk::Init on each exact legacy base.
-    "5001812" to NativeMicrophoneLayout(2_220_872, 0xF4484),
-    "5001968" to NativeMicrophoneLayout(2_234_048, 0xEFDB4),
     // SHA-256: 628821feab199d7712be8a51273eb9a21ec440a7c91aa6a768cc7307a4fe22f0.
     // Symbol-derived QSVLClientAudioNdk::Init -> AAudioStreamBuilder_setInputPreset.
     "5002363" to NativeMicrophoneLayout(2_292_008, 0xF44C0),
 )
 
 private fun hasExactMicrophoneLayout(version: String, code: String): Boolean =
-    isNativeXrSteamLinkBuild(version, code) ||
-        (version == "2.0.20" && code == "5001812") ||
-        (version == "2.0.21" && code == "5001968")
+    isNativeXrSteamLinkBuild(version, code)
 
 private fun movW1Immediate(value: Int): ByteArray {
     require(value in 0..0xffff)
@@ -74,7 +70,6 @@ internal fun patchNativeMicrophonePreset(
     if (bytes.size != layout.librarySize) {
         throw PatchException("Unsupported native microphone library size=${bytes.size}; expected ${layout.librarySize}")
     }
-    verifyAddedLegacyNativeCode(bytes, versionName, versionCode)
     if (!bytes.matchesAt(layout.instructionOffset - INPUT_PRESET_PREFIX.size, INPUT_PRESET_PREFIX) ||
         SUPPORTED_PRESETS.values.none { bytes.matchesAt(layout.instructionOffset, movW1Immediate(it)) }
     ) {
@@ -87,8 +82,7 @@ internal fun patchNativeMicrophonePreset(
 val microphoneInputPresetPatch = rawResourcePatch(
     name = "Microphone input preset",
     description = "Switches the microphone's capture mode; Voice Recognition tested clearest and " +
-        "loudest on Galaxy XR. Builds: 2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, " +
-        "2.0.22/5002244, 2.0.23/5002363.",
+        "loudest on Galaxy XR. Builds: 2.0.20/5001712, 2.0.23/5002363.",
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)

@@ -19,7 +19,6 @@ implementation and does not need membership changes. Repatch the APK using the u
 
 ## Behavior and scope
 
-- `libgxr_ast.so`: helper v1.4 for exact Steam Link 2.0.22/5002244 (3 native projections plus 1 quad).
 - `libgxr_ast_5001712.so`: helper v1.2 for exact Steam Link 2.0.20/5001712
   (2 native projections plus 1 quad), installed under the same `libgxr_ast.so` name.
 - Other builds retain their existing guards. This update does not add compatibility.
