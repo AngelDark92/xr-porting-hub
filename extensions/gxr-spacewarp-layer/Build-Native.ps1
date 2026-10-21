@@ -46,7 +46,7 @@ if (Test-Path $worker -PathType Leaf) { $sources += $worker }
 & (Join-Path $swBin 'aarch64-linux-android29-clang++.cmd') -std=c++17 -O2 -fPIC -shared -fvisibility=hidden -static-libstdc++ -Wall -Wextra -Werror -Wno-missing-field-initializers `
     -DXR_USE_PLATFORM_ANDROID -DXR_USE_GRAPHICS_API_OPENGL_ES "-I$OpenXrDirectory/include" `
     $sources -o $swLibrary `
-    '-Wl,-soname,libgxr_spacewarp.so' '-Wl,-z,max-page-size=16384' '-Wl,--exclude-libs,ALL' -llog -lEGL -lGLESv3
+    '-Wl,-soname,libgxr_spacewarp.so' '-Wl,-z,max-page-size=16384' '-Wl,--exclude-libs,ALL' -llog -lEGL -lGLESv3 -ldl
 if ($LASTEXITCODE -ne 0) { throw 'GXR spacewarp Android compilation failed' }
 & (Join-Path $swBin 'llvm-strip.exe') --strip-unneeded $swLibrary
 if ($LASTEXITCODE -ne 0) { throw 'GXR spacewarp strip failed' }

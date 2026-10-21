@@ -70,6 +70,9 @@
 // atomic svlRoot pointer; arm() latches atomically.
 
 #include <android/log.h>
+#if !defined(SWP_HOST_TESTS)
+#include <dlfcn.h>
+#endif
 #include <link.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -305,14 +308,61 @@ bool AnchorMatches(uintptr_t offset, const char* expectedSha, const char* label)
 // mprotect the page RW, write the wrapper, restore PROT_READ. Returns false on
 // any failure (fail closed; the slot stays untouched when the original is
 // unresolved).
-bool PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* label,
-                      void** outOriginal) {
-    void* original = *reinterpret_cast<void**>(g_sceneBase + slotRuntimeVaddr);
-    if (!original) {
+#if defined(SWP_HOST_TESTS)
+// Host tests drive a synthetic scene mapping; there is no dynamic linker, so the
+// residency and slot-owner probes degrade to the pre-existing patch path.
+bool IsOwnAddress(void*) { return false; }
+bool IsSceneAddress(void*) { return true; }
+#else
+// A layer copy is dlclosed together with the XR instance that mounted it while
+// its wrappers stay in the scene GOT. Keep this copy mapped so a later instance
+// can adopt it instead of capturing a dead pointer out of the slot.
+bool PinSelfResident() {
+    static void* const pin = []() -> void* {
+        Dl_info self{};
+        if (!dladdr(reinterpret_cast<void*>(&PinSelfResident), &self) || !self.dli_fname) {
+            return nullptr;
+        }
+        return dlopen(self.dli_fname, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+    }();
+    return pin != nullptr;
+}
+
+bool IsOwnAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, "libgxr_spacewarp.so");
+}
+
+bool IsSceneAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, kSceneSoname);
+}
+#endif  // SWP_HOST_TESTS
+
+enum class SlotPatch { Patched, Adopted, Failed };
+
+SlotPatch PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* label,
+                           void** outOriginal) {
+    void* current = *reinterpret_cast<void**>(g_sceneBase + slotRuntimeVaddr);
+    if (!current) {
         LOG("GOT slot for %s unresolved; capture not installed (fail closed)", label);
-        return false;
+        return SlotPatch::Failed;
     }
-    *outOriginal = original;
+    if (IsOwnAddress(current)) {
+        // A self-pinned copy of this layer already intercepts this slot and its
+        // captured originals are valid. Taking the slot again would record our own
+        // wrapper as the "original" and chain into a copy a later instance unmaps.
+        *outOriginal = nullptr;
+        return SlotPatch::Adopted;
+    }
+    if (!IsSceneAddress(current)) {
+        LOG("GOT slot for %s holds a foreign pointer; capture not installed (fail closed)",
+            label);
+        return SlotPatch::Failed;
+    }
+    *outOriginal = current;
     const long pageSize = sysconf(_SC_PAGESIZE);
     const uintptr_t slotAddr = g_sceneBase + slotRuntimeVaddr;
     const uintptr_t mapStart = slotAddr & ~static_cast<uintptr_t>(pageSize - 1);
@@ -321,11 +371,11 @@ bool PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* lab
     if (mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart,
                  PROT_READ | PROT_WRITE) != 0) {
         LOG("mprotect(RW) failed for %s; capture not installed (fail closed)", label);
-        return false;
+        return SlotPatch::Failed;
     }
     *reinterpret_cast<void**>(slotAddr) = wrapper;
     mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart, PROT_READ);
-    return true;
+    return SlotPatch::Patched;
 }
 
 // The carrier read (per-cadence). Tri-state caching per the brief: unknown
@@ -462,8 +512,15 @@ bool SwpVtsArm() {
     // Log context (host tests arm without a real scene lib: report the original
     // 5002363 profile there; the shipped path re-selects below).
     const VtsProfile* profile = &kVtsProfile5002363;
+    bool adopted = false;  // set when a pinned copy of this layer already owns the slots
 
 #if !defined(SWP_HOST_TESTS)
+    if (!PinSelfResident()) {
+        LOG("cannot keep this layer resident; VTS capture not installed (fail closed)");
+        g_state.store(kVtsStateFailed);
+        g_busy.store(false);
+        return false;
+    }
     g_sceneBase = 0;
     dl_iterate_phdr(PhdrCallback, nullptr);
     if (!g_sceneBase) {
@@ -499,31 +556,36 @@ bool SwpVtsArm() {
     // armed state unusable either way).
     g_vtsEmbedOffset = profile->vtsEmbedOffset;
     g_readReturn = profile->readReturn;
-    if (!PatchCaptureSlot(profile->captureParsePeerSlot,
-                          reinterpret_cast<void*>(&SwpWrapVtsParsePeerValueSettings),
-                          "ParsePeerValueSettings",
-                          reinterpret_cast<void**>(&g_originalParsePeer))) {
+    const SlotPatch peerPatch =
+        PatchCaptureSlot(profile->captureParsePeerSlot,
+                         reinterpret_cast<void*>(&SwpWrapVtsParsePeerValueSettings),
+                         "ParsePeerValueSettings",
+                         reinterpret_cast<void**>(&g_originalParsePeer));
+    if (peerPatch == SlotPatch::Failed) {
         g_state.store(kVtsStateFailed);
         g_busy.store(false);
         return false;
     }
-    if (!PatchCaptureSlot(profile->captureRxUnreliableSlot,
-                          reinterpret_cast<void*>(&SwpWrapVtsRxUnreliableStream),
-                          "RXUnreliableStream",
-                          reinterpret_cast<void**>(&g_originalRxUnreliable))) {
+    const SlotPatch rxPatch =
+        PatchCaptureSlot(profile->captureRxUnreliableSlot,
+                         reinterpret_cast<void*>(&SwpWrapVtsRxUnreliableStream),
+                         "RXUnreliableStream",
+                         reinterpret_cast<void**>(&g_originalRxUnreliable));
+    if (rxPatch == SlotPatch::Failed) {
         g_state.store(kVtsStateFailed);
         g_busy.store(false);
         return false;
     }
+    adopted = peerPatch == SlotPatch::Adopted || rxPatch == SlotPatch::Adopted;
     g_bGetRemoteValue = reinterpret_cast<BGetRemoteValueFn>(g_sceneBase + profile->readVa);
 #endif
 
     g_state.store(kVtsStateArmed);
     g_busy.store(false);
-    LOG("bridge armed on %s: carrier 0x%x direct-read via %s (runtime vaddr"
+    LOG("bridge armed on %s (%s): carrier 0x%x direct-read via %s (runtime vaddr"
         " 0x%zx); synthesis stays disabled until the host publishes the carrier",
-        profile->build, kCarrierId, profile->readApiName,
-        static_cast<size_t>(profile->readVa));
+        profile->build, adopted ? "resident generation adopted" : "capture installed",
+        kCarrierId, profile->readApiName, static_cast<size_t>(profile->readVa));
     return true;
 }
 

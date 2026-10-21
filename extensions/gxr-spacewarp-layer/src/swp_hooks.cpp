@@ -36,6 +36,9 @@
 //     .dynsym import, occurrence count 1; same non-identity writables).
 
 #include <android/log.h>
+#if !defined(SWP_HOST_TESTS)
+#include <dlfcn.h>
+#endif
 #include <link.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -126,6 +129,39 @@ void SwpHooksTestSetBase(uintptr_t base) { g_sceneBase = base; }
 
 extern "C" bool SwpHooksArmed() { return g_state.load() == 1; }
 
+#if defined(SWP_HOST_TESTS)
+// Host tests drive a synthetic scene mapping; there is no dynamic linker, so the
+// residency and slot-owner probes degrade to the pre-existing patch path.
+bool IsOwnAddress(void*) { return false; }
+bool IsSceneAddress(void*) { return true; }
+#else
+// The loader dlcloses a layer with the XR instance that mounted it while its
+// wrapper stays in the scene GOT; keep this copy mapped so the next instance can
+// adopt it instead of capturing a dead pointer out of the slot.
+bool PinSelfResident() {
+    static void* const pin = []() -> void* {
+        Dl_info self{};
+        if (!dladdr(reinterpret_cast<void*>(&PinSelfResident), &self) || !self.dli_fname) {
+            return nullptr;
+        }
+        return dlopen(self.dli_fname, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+    }();
+    return pin != nullptr;
+}
+
+bool IsOwnAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, "libgxr_spacewarp.so");
+}
+
+bool IsSceneAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, kSceneSoname);
+}
+#endif  // SWP_HOST_TESTS
+
 extern "C" bool SwpHooksArm() {
     int current = g_state.load();
     if (current != 0) return current == 1;
@@ -133,6 +169,12 @@ extern "C" bool SwpHooksArm() {
     if (!g_busy.compare_exchange_strong(expected, true)) return false;
 
 #if !defined(SWP_HOST_TESTS)
+    if (!PinSelfResident()) {
+        LOG("cannot keep this layer resident; no interception (fail closed)");
+        g_state.store(2);
+        g_busy.store(false);
+        return false;
+    }
     g_sceneBase = 0;
     dl_iterate_phdr(PhdrCallback, nullptr);
     if (!g_sceneBase) {
@@ -177,6 +219,23 @@ extern "C" bool SwpHooksArm() {
     if (!original) {
         LOG("libvrlink_scene.so GOT slot for eglCreateImageKHR unresolved; "
             "no interception (fail closed)");
+        g_state.store(2);
+        g_busy.store(false);
+        return false;
+    }
+    if (IsOwnAddress(original)) {
+        // A self-pinned copy of this layer already intercepts the slot with a
+        // valid original; keep it instead of chaining through a wrapper that a
+        // later instance may unload.
+        g_state.store(1);
+        g_busy.store(false);
+        LOG("interception already resident (%s): eglCreateImageKHR GOT slot 0x%zx (adopted)",
+            chosen->build, chosen->slotEglCreateImageKHR);
+        return true;
+    }
+    if (!IsSceneAddress(original)) {
+        LOG("eglCreateImageKHR GOT slot holds a foreign pointer; no interception"
+            " (fail closed)");
         g_state.store(2);
         g_busy.store(false);
         return false;
