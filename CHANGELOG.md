@@ -1,3 +1,9 @@
+## [2.0.0-dev.8](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.7...v2.0.0-dev.8) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* enhance Android compilation and runtime behavior for GXR spacewarp layer ([09dc946](https://github.com/AngelDark92/xr-porting-hub/commit/09dc946ff41baaae7e0d76c8f02a48d1879cca16))
+
 ## [2.0.0-dev.7](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.6...v2.0.0-dev.7) (2026-10-21)
 
 ### ✨ New Features
