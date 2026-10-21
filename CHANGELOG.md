@@ -1,3 +1,9 @@
+## [2.0.0-dev.5](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-21)
+
+### ✨ New Features
+
+* retire half-rate synthesis mode and update related logic in VTS ([68048aa](https://github.com/AngelDark92/xr-porting-hub/commit/68048aa2d20107f95d7676b08db364d6f254708d))
+
 ## [2.0.0-dev.4](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-21)
 
 ### ✨ New Features
