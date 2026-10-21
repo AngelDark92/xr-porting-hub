@@ -555,8 +555,8 @@ static void Tick3(uint64_t predDispTime) {
 }
 
 static void ResetAll() {
-    g_checks = 0;
-    g_failures = 0;
+    // Counters accumulate across suites. Zeroing them here made the summary report
+    // only the last suite's checks and forced exit code 0 over earlier failures.
     g_logLines.clear();
     g_next = NextCalls{};
     g_est = EstimatorCalls{};
@@ -684,8 +684,10 @@ static void CheckArrivalLearning() {
     uint64_t epochs[8] = {0};
     uint64_t monos[8] = {0};
     const int historyCount = SwpEglArrivalHistory(epochs, monos, 8);
-    CHECK(historyCount == 8 && epochs[0] == epoch && monos[0] == 2500,
-          "arrival history: newest first");
+    // The duplicate above is not an arrival: it bumps neither the epoch nor the
+    // recorded timestamp, so the newest entry is still the 2000 ns one.
+    CHECK(historyCount == 8 && epochs[0] == epoch && monos[0] == 2000,
+          "arrival history: newest first (duplicates do not refresh the timestamp)");
     for (int i = 0; i < 65; i++) {
         SwpEglArrivalObserved(reinterpret_cast<void*>(static_cast<uintptr_t>(1000 + i)),
                               (void*)0xC0DE, (void*)0xD05, 3000 + static_cast<uint64_t>(i));
@@ -821,6 +823,10 @@ static void CheckStandDowns() {
     XrSessionCreateInfo info = GlesSessionInfo();
     XrSession session = nullptr;
     CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session)), "session create");
+    // The stand-down paths live on the enabled side of the gate; without a
+    // published carrier every tick would take the dormant fast path and these
+    // assertions would pass vacuously.
+    SwpVtsTestPublish(1);
     g_acquiredIndex = 1;
     DriveEnumerate();
     // Context mismatch: the arrival's context differs from the current -> stand down.
@@ -867,6 +873,7 @@ static void CheckStandDowns() {
     SwpEglTestSetNowNs(4000);
     SwpEglArrivalObserved((void*)40, (void*)0xC0DE, nullptr, 4100);
     g_acquiredIndex = 1;
+    DriveEnumerate();  // a new session enumerates its own swapchains (client behaviour)
     Tick(900000);
     CHECK(g_est.initCalled, "the next session re-reads the enable entry and runs");
 }
@@ -991,19 +998,27 @@ static void CheckBridgeGating() {
         GateTick();
     }
     CHECK(g_mockBridgeReads >= 2, "the flip landed via the cadence poll");
-    CHECK(g_est.initCalled,
-          "estimator bring-up ran in the allowed path right after the flip");
+    CHECK(!g_est.initCalled,
+          "the flip tick itself is still dormant (the fast path returned first)");
     CHECK(g_est.generateCalls == 0,
           "the pre-poll ticks were gated stock (no generation, no extrapolation)");
     CHECK(g_est.extrapolateCalls == 0,
           "fresh enablement never extrapolates from pre-enablement maps");
 
-    // A fresh real tick (new texture + fresh epoch) generates the maps...
+    // First slow-path tick after the flip: the estimator arms, but the frame
+    // history is cold (the dormant fast path recorded nothing), so this tick only
+    // records. That 1-tick warm-up is the designed cost of paying nothing while
+    // the carrier is off.
     g_acquiredIndex = 2;
     SwpEglArrivalObserved((void*)40, (void*)0xC0DE, nullptr, clock + 100);
     GateTick();
     CHECK(g_est.initCalled, "estimator init stays in the allowed path");
-    CHECK(g_est.generateCalls == 1, "the fresh real tick generated the maps");
+    CHECK(g_est.generateCalls == 0, "the cold-start tick only records history");
+    // The next real tick has a predecessor and generates the maps...
+    g_acquiredIndex = 1;
+    SwpEglArrivalObserved((void*)41, (void*)0xC0DE, nullptr, clock + 100);
+    GateTick();
+    CHECK(g_est.generateCalls == 1, "the second real tick generated the maps");
     // ...and the next missed tick extrapolates into the pending dst textures.
     g_acquiredIndex = 0;  // round-robin wrap: the missed tick's dst is texture 101
     GateTick();
@@ -1034,6 +1049,53 @@ static void CheckBridgeGating() {
               g_est.extrapolateCalls == extrapolateCallsBefore,
           "entry off + carrier on stays stock (the entry wins)");
     SwpSetEnabled(true);
+}
+
+// Dormant fast path (Wave A): with the host carrier off/unpublished the layer must
+// forward every tick with no state at all — no clock anchors, no tick
+// classification, no frame history, no estimator or GL work — while still running
+// the 60-endframe carrier cadence so a host publish is observed.
+static void CheckDormantFastPath() {
+    ResetAll();
+    CHECK(InstallNext(), "next chain installs (dormant fast path run)");
+    SwpVtsTestResetAll();
+    SwpVtsTestSetArmed(true);
+    SwpVtsTestSetRoot(reinterpret_cast<void*>(0x5A1E));
+    SwpVtsTestSetTable(&BridgeMock);
+    g_mockBridgePresent = false;  // the host never publishes: ASW off
+    g_mockBridgeValue = 0;
+
+    XrSessionCreateInfo info = GlesSessionInfo();
+    XrSession session = nullptr;
+    CHECK(XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session)),
+          "dormant session create forwards");
+    g_acquiredIndex = 1;
+    DriveEnumerate();
+    SwpEglArrivalObserved((void*)10, (void*)0xC0DE, nullptr, 100);
+
+    uint64_t clock = 1000;
+    uint64_t pred = 100000;
+    for (int i = 0; i < 600; i++) {
+        clock += 1000;
+        SwpEglTestSetNowNs(clock);
+        Tick(pred);
+        pred += 100000;
+    }
+    CHECK(g_next.endFrame == 600, "every dormant tick forwarded exactly once");
+    CHECK(g_next.lastLayerCount == 3 && g_next.lastLayersPtr != nullptr,
+          "the client layer list is forwarded untouched");
+    CHECK(!g_est.initCalled && g_est.generateCalls == 0 && g_est.extrapolateCalls == 0,
+          "600 dormant ticks reach neither the estimator nor GL");
+
+    auto it = g_sessions.find(kFakeSession);
+    CHECK(it != g_sessions.end(), "the dormant session still has its state");
+    if (it != g_sessions.end()) {
+        CHECK(it->second.slots[0].history.empty() && it->second.slots[1].history.empty(),
+              "dormant ticks record no frame history");
+        CHECK(!it->second.haveTickEpoch && it->second.pairCount == 0,
+              "no tick classification and no clock anchors while dormant");
+    }
+    CHECK(g_mockBridgeReads == 10, "the carrier cadence still ran once per 60 ticks");
 }
 
 static void CheckSessionTeardown() {
@@ -1074,6 +1136,7 @@ int main() {
     CheckDispatchFlow();
     CheckThreeProjectionLayout();
     CheckBridgeGating();
+    CheckDormantFastPath();
     CheckStandDowns();
     CheckSessionTeardown();
     std::printf("gxr-spacewarp dispatch host tests: %d checks, %d failures\n", g_checks,

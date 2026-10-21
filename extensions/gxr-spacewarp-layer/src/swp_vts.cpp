@@ -232,7 +232,11 @@ std::atomic<bool> g_notPresentLogged{false};
 std::atomic<bool> g_notCapturedLogged{false};
 std::atomic<bool> g_notArmedLogged{false};
 
-uint64_t g_endframeCounter = 0;  // poll cadence (serialized by the dispatch's EndFrame)
+std::atomic<uint64_t> g_endframeCounter{0};  // poll cadence (fast path: unlocked)
+// Bumped whenever the published carrier value changes (including to "not
+// present"). The dispatch compares it per session to detect a re-enable that
+// the 1 -> 0 -> 1 value alone cannot express (lastMode would read identical).
+std::atomic<uint64_t> g_carrierGeneration{0};
 BGetRemoteValueFn g_bGetRemoteValue = nullptr;
 CaptureParseFn g_originalParsePeer = nullptr;
 CaptureRxUnreliableFn g_originalRxUnreliable = nullptr;
@@ -340,6 +344,7 @@ void PollCarrierLogged() {
         }
         g_carrierValue.store(0);
         g_carrier.store(kCarrierUnknown);
+        ++g_carrierGeneration;
         return;
     }
     // The carrier read (per-base returned-value policy, both shapes share the
@@ -360,6 +365,7 @@ void PollCarrierLogged() {
     if (!present) {
         g_carrierValue.store(0);
         g_carrier.store(kCarrierUnpublished);
+        ++g_carrierGeneration;
         if (!g_notPresentLogged.exchange(true)) {
             LOG("carrier value not present (id 0x%x never published this session);"
                 " spacewarp stays disabled", kCarrierId);
@@ -371,6 +377,7 @@ void PollCarrierLogged() {
     const int next = value != 0 ? kCarrierOn : kCarrierOff;
     const int previous = g_carrier.exchange(next);
     if (previous != next || previousValue != value) {
+        ++g_carrierGeneration;
         LOG("bridge carrier 0x%x = %u (%s)", kCarrierId, value,
             value == kCarrierModeHalfRate ? "spacewarp half rate"
                 : value == kCarrierModeLateFrames ? "spacewarp late frames only"
@@ -399,6 +406,7 @@ void SwpVtsResetSession() {
     g_notArmedLogged.store(false);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
+    ++g_carrierGeneration;
     g_endframeCounter = 0;
 }
 
@@ -407,14 +415,19 @@ void SwpVtsSessionEnded() {
     g_svlRoot.store(0);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
+    ++g_carrierGeneration;
     g_endframeCounter = 0;
 }
 
-// Endframe cadence + the one cheap gate read (called inside the dispatch's
-// xrEndFrame critical section; the counter is serialized there).
+// Endframe cadence + the one cheap gate read (called from the dispatch's
+// xrEndFrame: on the dormant fast path WITHOUT the dispatch lock, so the counter
+// is atomic and the poll itself takes only the VTS-internal mutex).
 void SwpVtsNoteEndFrame() {
-    if (++g_endframeCounter < kReadCadenceEndframes) return;
-    g_endframeCounter = 0;
+    // Modulo, not reset: the dormant fast path calls this without the dispatch
+    // lock, so two sessions can increment concurrently and a read-modify-write
+    // reset would drop the cadence. Each thread owns a unique count value.
+    const uint64_t tick = g_endframeCounter.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (tick % kReadCadenceEndframes != 0) return;
     PollCarrierLogged();
 }
 
@@ -424,6 +437,10 @@ bool SwpVtsSynthesisAllowed() { return g_carrier.load() == kCarrierOn; }
 // The published mode (0 off / 1 late frames only / 2 half rate). The dispatch
 // reads it once per endframe, beside the gate.
 uint32_t SwpVtsMode() { return g_carrierValue.load(); }
+
+// Monotonic counter of carrier changes; the dispatch compares it per session so
+// a 1 -> 0 -> 1 cycle clears the state collected before the dormant gap.
+uint64_t SwpVtsGeneration() { return g_carrierGeneration.load(std::memory_order_relaxed); }
 
 // Arm once the scene lib is loaded (retried from XR calls like the egl hook).
 // Independent of SwpHooksArm: a capture failure never disturbs arrival learning
@@ -535,6 +552,7 @@ void SwpVtsTestPublish(uint32_t value) {
     if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;
     g_carrierValue.store(value);
     g_carrier.store(value != 0 ? kCarrierOn : kCarrierOff);
+    ++g_carrierGeneration;
 }
 void SwpVtsTestResetAll() {
     g_state.store(kVtsStatePending);

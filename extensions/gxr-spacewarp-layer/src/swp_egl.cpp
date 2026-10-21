@@ -62,9 +62,10 @@ std::recursive_mutex g_mutex;
 using EglCreateImageKHRFn = void* (*)(void*, void*, unsigned, void*, const int*);
 EglCreateImageKHRFn g_original = nullptr;
 
-#ifdef _WIN32
-// Host tests control the clock (deterministic arrival + anchor conversions);
-// the Windows path exists only under the host-test build, never on device.
+#ifdef SWP_HOST_TESTS
+// Host/device test clock (deterministic arrival + anchor conversions). Gated on
+// the test build, not on Windows: the suite also builds and runs as an arm64
+// binary on the headset, where clock_gettime would defeat the fixed vectors.
 uint64_t g_testNowNs = 0;
 #endif
 
@@ -80,8 +81,8 @@ std::deque<uint64_t> g_historyMono;
 std::set<uintptr_t> g_imageSeen;       // distinct handles observed (pool-anomaly guard)
 
 uint64_t NowNs() {
-#ifdef _WIN32
-    return g_testNowNs;  // host tests control the clock (never on device)
+#ifdef SWP_HOST_TESTS
+    return g_testNowNs;  // test builds control the clock (never a production build)
 #else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -178,10 +179,10 @@ void* SwpWrapEglCreateImageKHR(void* dpy, void* ctx, unsigned target, void* buff
 
 }  // extern "C"
 
-#ifdef _WIN32
-// Host-test clock control (never compiled on device; hidden visibility keeps it
-// out of any export table regardless). The reset below is benign on any build
-// (it only clears counters) but is still only reachable from inside the .so.
+#ifdef SWP_HOST_TESTS
+// Test clock control (test builds only; hidden visibility keeps it out of any
+// export table regardless). The reset below is benign on any build (it only
+// clears counters) but is still only reachable from inside the binary.
 extern "C" uint64_t SwpEglTestSetNowNs(uint64_t nowNs) {
     const uint64_t previous = g_testNowNs;
     g_testNowNs = nowNs;

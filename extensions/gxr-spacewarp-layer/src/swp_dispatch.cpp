@@ -136,6 +136,8 @@ void SwpVtsNoteEndFrame();
 bool SwpVtsSynthesisAllowed();
 // Published carrier value (0 off / 1 late frames only / 2 half rate).
 uint32_t SwpVtsMode();
+// Monotonic carrier-change counter (per-session stale-state detection).
+uint64_t SwpVtsGeneration();
 bool SwpVtsArm();
 }  // extern "C"
 
@@ -193,6 +195,7 @@ struct DispatchState {
     bool haveLocate = false;
     int consecutiveMissed = 0;
     int standDownTicks = 0;       // rate-limited logging: one line per 30
+    bool arrivalUnavailableLogged = false;  // one-shot: no arrival source this session
     uint32_t inputW = 0, inputH = 0;
     uint32_t mvW = 0, mvH = 0;
     uint32_t mvTexL = 0, mvTexR = 0;
@@ -217,6 +220,9 @@ struct DispatchState {
     GLuint copyReadFbo = 0, copyDrawFbo = 0;
     // Last carrier mode seen, so a 1 <-> 2 flip also drops stale maps.
     uint32_t lastMode = 0;
+    // Carrier generation at the last synthesis tick: a 1 -> 0 -> 1 cycle leaves
+    // lastMode identical, so the generation is what marks the dormant gap.
+    uint64_t modeGeneration = 0;
     // mono<->XrTime anchor ring (index 0 = newest, increasing index = older):
     // arrivals convert within the pair window that contains them; entries older
     // than every window stand down (never guessed).
@@ -879,9 +885,14 @@ XrResult SwpDispatchLocateViews(XrSession session, const XrViewLocateInfo* viewL
                                       XR_VIEW_STATE_ORIENTATION_VALID_BIT)) == 0) {
         return result;
     }
+    // The pose only feeds synthesis: with the carrier off (or a session the
+    // session-init decision already rejected) forward and stop — no lock, no
+    // matrix math. The pose for the first synthesis tick is captured on that
+    // tick's own LocateViews, which runs after the carrier has flipped.
+    if (SwpVtsMode() == 0) return result;
     std::lock_guard<std::recursive_mutex> lock(g_mutex);
     DispatchState* state = StateForLocked(session);
-    if (!state) return result;
+    if (!state || !state->enabledForSession) return result;
     for (int eye = 0; eye < 2; eye++) {
         const XrView& view = views[eye];
         const float pos[3] = {view.pose.position.x, view.pose.position.y, view.pose.position.z};
@@ -901,10 +912,25 @@ XrResult SwpDispatchLocateViews(XrSession session, const XrViewLocateInfo* viewL
 
 XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndInfo) {
     SwpDispatchTryArm();
+    // Dormant fast path: with the host carrier off (or never published) the layer
+    // owns nothing but the carrier cadence — one lock-free mode load, one counter
+    // tick, then the client's own endframe call. No clock read, no lock, no
+    // session lookup, no tick classification, no history. Everything synthesis
+    // needs is rebuilt after the mode flips, and the flip itself clears the state
+    // that went stale while dormant (see the transition block below).
+    if (SwpVtsMode() == 0) {
+        SwpVtsNoteEndFrame();
+        return g_nextEndFrame(session, frameEndInfo);
+    }
     std::lock_guard<std::recursive_mutex> lock(g_mutex);
 
     DispatchState* state = StateForLocked(session);
     if (!state || !state->enabledForSession) return g_nextEndFrame(session, frameEndInfo);
+
+    // The carrier cadence must run before every other early return below: a
+    // session whose arrival learning is unavailable still has to observe the
+    // host toggle (otherwise it can never leave the dormant state).
+    SwpVtsNoteEndFrame();
 
     // Clock anchor pair for arrival<->XrTime conversion: this tick's compositor
     // deadline (XrFrameEndInfo.displayTime) paired with the monotonic now.
@@ -924,17 +950,21 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     const bool learningDisabled = SwpEglLearningDisabled();
 
     if (!haveArrival || learningDisabled) {
-        RateLimitedLog(*state, learningDisabled ? "arrival learning disabled"
-                                                : "arrival snapshot unavailable");
+        // This session has no arrival source, so it can never classify a tick.
+        // Say it once and pass stock for the session's life instead of writing a
+        // line every 30 ticks (the previous behaviour, which the dormant fast
+        // path no longer masks).
+        if (!state->arrivalUnavailableLogged) {
+            state->arrivalUnavailableLogged = true;
+            LOG("%s; spacewarp stays stock for this session",
+                learningDisabled ? "arrival learning disabled" : "arrival snapshot unavailable");
+        }
         return g_nextEndFrame(session, frameEndInfo);
     }
 
     const TickKind kind = SwpClassifyTick(epochNow, state->tickEpoch, state->haveTickEpoch, false);
     state->tickEpoch = epochNow;
     state->haveTickEpoch = true;
-    // The bridge cadence must keep running even on a tick whose projection
-    // layout cannot be resolved; the gate decision is read below.
-    SwpVtsNoteEndFrame();
 
     // -----------------------------------------------------------------------
     // Projection slots. The client submits one projection per video component;
@@ -1043,33 +1073,30 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     }
 
     // -----------------------------------------------------------------------
-    // Bridge gate: ALL synthesis runs only while the carrier reads enabled;
-    // otherwise the tick is plain stock passthrough (observers keep learning).
+    // Bridge gate: synthesis runs only while the carrier reads enabled. Dormant
+    // ticks never reach this point (the fast path above returned already), so
+    // what follows is the enable transition and the synthesis path itself.
     // -----------------------------------------------------------------------
+    // Dormant ticks never reach here (the fast path above returns first), so this
+    // is the enable transition: the first tick after the carrier reads nonzero, or
+    // a 1 <-> 2 mode flip. Everything collected while dormant is stale by
+    // definition — the clock anchors stopped advancing and the frame history
+    // predates the gap — so drop it and restart from the next real tick.
     const uint32_t mode = SwpVtsMode();
-    const bool synthesisAllowed = mode != 0;
-    if (synthesisAllowed && (!state->synthesisWasAllowed || mode != state->lastMode)) {
-        // Fresh enablement (session start, bridge flip or mode flip): stale maps
-        // must never warp old content, and the cadence restarts on a real tick.
+    if (mode == 0) return g_nextEndFrame(session, frameEndInfo);  // raced with a flip off
+    const uint64_t generation = SwpVtsGeneration();
+    if (!state->synthesisWasAllowed || generation != state->modeGeneration ||
+        mode != state->lastMode) {
         state->mvValid = false;
         state->consecutiveMissed = 0;
         state->havePresented = false;
         state->lastPresentedWasReal = false;
+        state->pairCount = 0;  // pre-gap anchors would map fresh arrivals wrong
+        for (int s = 0; s < kMaxSlots; s++) state->slots[s].history.clear();
     }
-    state->synthesisWasAllowed = synthesisAllowed;
+    state->synthesisWasAllowed = true;
     state->lastMode = mode;
-    if (!synthesisAllowed) {
-        if (kind == TickKind::Real) {
-            for (int s = 0; s < slotCount; s++) {
-                RecordSlotTickLocked(*state, state->slots[s], state->slots[s].texL,
-                                     state->slots[s].texR, epochNow, predDispTime);
-            }
-            state->consecutiveMissed = 0;
-            state->havePresented = true;
-            state->lastPresentedWasReal = true;
-        }
-        return g_nextEndFrame(session, frameEndInfo);
-    }
+    state->modeGeneration = generation;
 
     // CRITICAL: draw only with the client's current EGL context, and only when it
     // matches the context the frame assets were created with.
@@ -1079,6 +1106,13 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
         return g_nextEndFrame(session, frameEndInfo);
     }
     if (!state->creationCtx) state->creationCtx = arrivalCtx;
+    // The pose is captured only while the carrier is on (LocateViews fast path).
+    // A tick that reaches synthesis without one must pass stock: warping with the
+    // zero matrix would silently draw garbage into the projection image.
+    if (!state->haveLocate) {
+        RateLimitedLog(*state, "no locate pose for this tick; passing stock");
+        return g_nextEndFrame(session, frameEndInfo);
+    }
 #ifdef SWP_HAVE_ESTIMATOR
     SwpBindIdentityContext(reinterpret_cast<void*>(currentCtx));
 #endif
