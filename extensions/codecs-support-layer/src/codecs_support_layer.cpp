@@ -9,8 +9,12 @@
 //   2. Finds libvrlink_scene.so via dl_iterate_phdr (from XR dispatch and
 //      from the layer constructor) and verifies its identity against pinned
 //      per-base SHA-256 code anchors — fail closed, never patch a stranger.
-//   3. Patches the scene library's PLT GOT slots for the 15 imported
-//      libmediandk functions (BIND_NOW + full RELRO, so mprotect first).
+//   3. Pins itself resident, then patches the scene library's PLT GOT slots
+//      for the 15 imported libmediandk functions (BIND_NOW + full RELRO, so
+//      mprotect first). Originals are dlsym handles from the real libmediandk
+//      module, never the slots being patched: the OpenXR loader dlcloses this
+//      layer when an XR instance is destroyed, so on a reload those slots hold
+//      wrappers of a copy that is no longer mapped.
 //   4. While armed, records the MediaFormat recipe the client builds for the
 //      decoder and captures the input buffer handed out by getInputBuffer.
 //   5. On the first compressed access unit: sniff it. HEVC / unknown keeps
@@ -23,6 +27,7 @@
 // Build: see Build-Native.ps1. Nothing here runs unless the layer is loaded.
 
 #include <android/log.h>
+#include <dlfcn.h>
 #include <link.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -57,9 +62,10 @@ using gxr::PatchAv1SeqHeaders;
 using gxr::Sniffed;
 
 constexpr const char* kLayerName = "XR_APILAYER_local_GalaxyXR_codecs_support";
-constexpr const char* kBuild = "codecs-support-v6-20261014";
+constexpr const char* kBuild = "codecs-support-v7-20261021";
 constexpr const char* kDisableEnv = "GXR_DISABLE_CODECS_SUPPORT";
 constexpr const char* kSceneSoname = "libvrlink_scene.so";
+constexpr const char* kMediaNdkSoname = "libmediandk.so";
 constexpr size_t kMaxSniffedAu = 4u << 20;
 
 // ---------------------------------------------------------------------------
@@ -94,7 +100,7 @@ const GotProfile kProfile5002363 = {
      0x22f720, 0x22f728, 0x22f740, 0x22f748, 0x22f750, 0x22f7a0, 0x22f7b0, 0x22f7b8},
 };
 
-// Originals: resolved libmediandk entry points read out of the scene GOT.
+// Originals: resolved libmediandk entry points (dlsym, never the scene GOT).
 using FnCreateDecoder = void* (*)(const char*);
 using FnFormatNew = void* (*)();
 using FnSetString = int32_t (*)(void*, const char*, const char*);
@@ -339,6 +345,11 @@ void* WrapCreateDecoder(const char* mime) {
     std::lock_guard<std::recursive_mutex> lock(g_mutex);
     void* handle = o_createDecoder(mime);
     if (handle) {
+        // Nothing armed means no session decoder is live, so this is the first
+        // decoder of a new session and leftovers of the previous one are stale.
+        // A decoder created while one is armed (auxiliary/extra) keeps them:
+        // clearing a retired->live mapping there would double-delete.
+        const bool freshSession = !g_armed;
         g_armed = true;
         g_sniffDone = false;
         g_pendingCodec = handle;
@@ -347,6 +358,16 @@ void* WrapCreateDecoder(const char* mime) {
         g_capturedFormat = nullptr;
         g_recipe.clear();
         g_inputPtrs.clear();
+        if (freshSession) {
+            g_handleMap.clear();
+            g_av1GeoDone = false;
+            g_av1FrameW = 0;
+            g_av1FrameH = 0;
+            g_av1Seq = gxr::Av1SeqInfo{};
+            g_savedWindow = nullptr;
+            g_savedCrypto = nullptr;
+            g_savedFlags = 0;
+        }
     }
     return handle;
 }
@@ -506,6 +527,96 @@ void* WrapperForSlot(size_t ix) {
     }
 }
 
+// The layer is unloaded together with the XR instance that mounted it while
+// the scene GOT keeps pointing at its wrappers, so pin this copy's code for
+// the life of the process before installing anything.
+bool PinSelfResident() {
+    static void* const pin = []() -> void* {
+        Dl_info self{};
+        if (!dladdr(reinterpret_cast<void*>(&PinSelfResident), &self) || !self.dli_fname) {
+            return nullptr;
+        }
+        return dlopen(self.dli_fname, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+    }();
+    return pin != nullptr;
+}
+
+bool IsMediaNdkAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, kMediaNdkSoname);
+}
+
+bool IsOwnAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, "libgxr_codecs_support.so");
+}
+
+// One row per slot: the table cannot drift out of order the way a bare
+// string array could, and a missing/duplicate row is caught at runtime.
+struct MediaSymbol {
+    SlotIx slot;
+    const char* name;
+};
+
+bool ResolveOriginals(void* orig[kSlotCount]) {
+    static const MediaSymbol kSymbols[kSlotCount] = {
+        {SlotCreateDecoder, "AMediaCodec_createDecoderByType"},
+        {SlotFormatNew, "AMediaFormat_new"},
+        {SlotSetString, "AMediaFormat_setString"},
+        {SlotSetInt32, "AMediaFormat_setInt32"},
+        {SlotConfigure, "AMediaCodec_configure"},
+        {SlotStart, "AMediaCodec_start"},
+        {SlotFormatDelete, "AMediaFormat_delete"},
+        {SlotDequeueOutput, "AMediaCodec_dequeueOutputBuffer"},
+        {SlotReleaseOutput, "AMediaCodec_releaseOutputBuffer"},
+        {SlotDequeueInput, "AMediaCodec_dequeueInputBuffer"},
+        {SlotGetInput, "AMediaCodec_getInputBuffer"},
+        {SlotQueueInput, "AMediaCodec_queueInputBuffer"},
+        {SlotFlush, "AMediaCodec_flush"},
+        {SlotStop, "AMediaCodec_stop"},
+        {SlotDelete, "AMediaCodec_delete"},
+    };
+    static_assert(sizeof(kSymbols) / sizeof(kSymbols[0]) == kSlotCount,
+                  "every slot needs exactly one libmediandk symbol");
+    for (size_t i = 0; i < kSlotCount; i++) orig[i] = nullptr;
+    void* media = dlopen(kMediaNdkSoname, RTLD_NOW | RTLD_LOCAL);
+    if (!media) return false;
+    for (const MediaSymbol& symbol : kSymbols) {
+        void* entry = dlsym(media, symbol.name);
+        if (!IsMediaNdkAddress(entry)) {
+            LOG("libmediandk.%s unavailable; failing closed", symbol.name);
+            return false;
+        }
+        orig[symbol.slot] = entry;
+    }
+    for (size_t i = 0; i < kSlotCount; i++) {
+        if (!orig[i]) return false;  // duplicate row left a slot unset
+    }
+    return true;
+}
+
+// True when every slot already points at a wrapper of one resident copy of this
+// library. That copy is self-pinned, so its wrappers stay mapped and valid: the
+// newest instance must not reinstall and split the per-copy state between two
+// generations. Mixed generations (partially patched GOT) are reinstalled.
+bool AdoptResidentGeneration(const GotProfile* profile) {
+    uintptr_t generation = 0;
+    for (size_t i = 0; i < kSlotCount; i++) {
+        void* value = *reinterpret_cast<void**>(g_sceneBase + profile->slots[i]);
+        Dl_info info{};
+        if (!value || !dladdr(value, &info) || !info.dli_fname ||
+            !std::strstr(info.dli_fname, "libgxr_codecs_support.so")) {
+            return false;
+        }
+        const uintptr_t slotGeneration = reinterpret_cast<uintptr_t>(info.dli_fbase);
+        if (i == 0) generation = slotGeneration;
+        else if (slotGeneration != generation) return false;
+    }
+    return true;
+}
+
 void TryPatch() {
     if (g_patchState.load() != 0) return;
     if (std::getenv(kDisableEnv)) {
@@ -515,6 +626,12 @@ void TryPatch() {
     }
     bool expected = false;
     if (!g_patchBusy.compare_exchange_strong(expected, true)) return;
+    if (!PinSelfResident()) {
+        LOG("cannot keep this layer resident; no interception");
+        g_patchState.store(2);
+        g_patchBusy.store(false);
+        return;
+    }
     g_sceneFound = false;
     g_sceneBase = 0;
     dl_iterate_phdr(PhdrCallback, nullptr);
@@ -542,10 +659,22 @@ void TryPatch() {
         g_patchBusy.store(false);
         return;
     }
+    if (AdoptResidentGeneration(profile)) {
+        LOG("resident generation already intercepts %s; this instance stays inert",
+            profile->build);
+        g_patchState.store(2);
+        g_patchBusy.store(false);
+        return;
+    }
+    // Resolve the real entry points. Reading them back out of the scene GOT
+    // would hand back this library's own wrappers after the loader unloaded
+    // that copy, and every intercepted call would branch into freed memory.
     void* orig[kSlotCount];
-    for (size_t i = 0; i < kSlotCount; i++) {
-        void** slot = reinterpret_cast<void**>(g_sceneBase + profile->slots[i]);
-        orig[i] = *slot;
+    if (!ResolveOriginals(orig)) {
+        LOG("libmediandk entry points unavailable; no interception (fail closed)");
+        g_patchState.store(2);
+        g_patchBusy.store(false);
+        return;
     }
     o_createDecoder = reinterpret_cast<FnCreateDecoder>(orig[SlotCreateDecoder]);
     o_formatNew = reinterpret_cast<FnFormatNew>(orig[SlotFormatNew]);
@@ -580,17 +709,30 @@ void TryPatch() {
         return;
     }
     size_t installed = 0;
+    size_t reloaded = 0;
+    size_t foreign = 0;
     for (size_t i = 0; i < kSlotCount; i++) {
         void** slot = reinterpret_cast<void**>(g_sceneBase + profile->slots[i]);
         void* target = WrapperForSlot(i);
         if (!target) continue;
+        // A slot that no longer holds the real import belongs either to a dead
+        // copy of this library (dladdr cannot see it: it is unmapped) or to
+        // another patcher. Both are replaced; the newest wrapper calls
+        // libmediandk directly, so no wrapper chain can grow.
+        if (*slot != orig[i]) {
+            if (IsOwnAddress(*slot)) reloaded++;
+            else foreign++;
+        }
         *slot = target;
         installed++;
     }
-    mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart, PROT_READ);
+    if (mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart, PROT_READ) != 0) {
+        LOG("mprotect(RO) restore failed on the scene GOT; pages stay writable");
+    }
     g_patchState.store(1);
     g_patchBusy.store(false);
-    LOG("interception installed on %s (%zu slots) build=%s", profile->build, installed, kBuild);
+    LOG("interception installed on %s (%zu slots, %zu reloaded, %zu foreign) build=%s",
+        profile->build, installed, reloaded, foreign, kBuild);
 }
 
 // ---------------------------------------------------------------------------
@@ -661,7 +803,8 @@ XrResult XRAPI_PTR LayerCreateInstance(const XrInstanceCreateInfo* info,
 
 __attribute__((constructor)) void OnLoad() {
     LOG("library loaded build=%s", kBuild);
-    TryPatch();
+    // Patching waits for xrCreateInstance: pinning this library with dlopen on
+    // its own constructor path would re-enter the linker for the same soinfo.
 }
 
 }  // namespace

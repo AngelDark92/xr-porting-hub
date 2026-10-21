@@ -621,9 +621,10 @@ Exact 2.0.23/5002363 only; headset validation pending. See the [diagnostic recor
 - Pairs with the GalaxyXR driver Stream codec setting (`nvencCodec`: 1 = H.264, 2 = AV1)
 - The layer identity-checks the scene library against pinned per-base code anchors and fails closed on unknown layouts; other patches' scene edits are tolerated while the pinned decoder-import regions stay byte-identical
 - Headset validation pending on 2.0.23/5002363; its existing native layout guards are unchanged
-- Live-verified on 2.0.20/5001712 (AV1 v6 alignment 2026-10-14, H.264 stage-4 decode 2026-10-15); requires a SteamVR restart and a stream reconnect
+- v6 live-verified on 2.0.20/5001712 (AV1 alignment 2026-10-14, H.264 stage-4 decode 2026-10-15); requires a SteamVR restart and a stream reconnect
+- v7 (2026-10-21) keeps the helper resident and resolves its originals from `libmediandk`; v6 crashed with SIGSEGV on every stream entry after the first because the reloaded layer inherited dead wrapper pointers. v7 live validation pending
 - Removing this patch: repatch from the original APK and set the driver Stream codec back to HEVC first — an unpatched client cannot decode an H.264/AV1 stream (driver uninstall needs no ordering: its setting is removed with the driver)
-- Records: [AV1 v6 TD-OBU fix](diagnostics/steamlink-streaming/2026-10-14-codecs-support-v6-td-obu-fix.md), [H.264 stage-4 verification](diagnostics/steamlink-streaming/2026-10-15-h264-stage4-verification.md)
+- Records: [AV1 v6 TD-OBU fix](diagnostics/steamlink-streaming/2026-10-14-codecs-support-v6-td-obu-fix.md), [H.264 stage-4 verification](diagnostics/steamlink-streaming/2026-10-15-h264-stage4-verification.md), [v7 layer-reload crash](diagnostics/steamlink-streaming/2026-10-21-codecs-support-v7-layer-reload-crash.md)
 
 ---
 
