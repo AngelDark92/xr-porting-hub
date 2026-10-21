@@ -61,6 +61,10 @@ extern "C" int __android_log_print(int, const char*, const char* format, ...) {
 
 // --- GLES3 stub bodies (record calls) ---
 static GLuint g_nextTextureId = 500;
+// Deleted-name ledger: the stubs otherwise discard deletes, which would let a
+// "zeroed the id without deleting the name" regression pass silently.
+static std::vector<GLuint> g_deletedTextures;
+static std::vector<GLuint> g_deletedFbos;
 extern "C" GLuint glCreateShader(GLenum) { return ++g_nextTextureId; }
 extern "C" void glShaderSource(GLuint, GLsizei, const GLchar* const*, const GLint*) {}
 extern "C" void glCompileShader(GLuint) {}
@@ -85,14 +89,18 @@ extern "C" GLenum glGetError() { return GL_NO_ERROR; }
 extern "C" void glGenFramebuffers(GLsizei n, GLuint* framebuffers) {
     for (GLsizei i = 0; i < n; i++) framebuffers[i] = ++g_nextTextureId;
 }
-extern "C" void glDeleteFramebuffers(GLsizei, const GLuint*) {}
+extern "C" void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
+    for (GLsizei i = 0; i < n; i++) g_deletedFbos.push_back(framebuffers[i]);
+}
 extern "C" void glBindFramebuffer(GLenum, GLuint) {}
 extern "C" void glFramebufferTexture2D(GLenum, GLenum, GLenum, GLuint, GLint) {}
 extern "C" GLenum glCheckFramebufferStatus(GLenum) { return GL_FRAMEBUFFER_COMPLETE; }
 extern "C" void glGenTextures(GLsizei n, GLuint* textures) {
     for (GLsizei i = 0; i < n; i++) textures[i] = ++g_nextTextureId;  // 501, 502 ...
 }
-extern "C" void glDeleteTextures(GLsizei, const GLuint*) {}
+extern "C" void glDeleteTextures(GLsizei n, const GLuint* textures) {
+    for (GLsizei i = 0; i < n; i++) g_deletedTextures.push_back(textures[i]);
+}
 extern "C" void glBindTexture(GLenum target, GLuint texture) {
     (void)target;
     (void)texture;
@@ -136,6 +144,7 @@ struct EstimatorCalls {
     bool initResult = true;
     bool generateResult = true;
     bool extrapolateResult = true;
+    int destroyCalls = 0;
 } g_est;
 uint32_t g_estStatus = 0;
 
@@ -145,7 +154,7 @@ bool SwpInit(const SwpInitInfo*) {
     g_estStatus = 1u;  // init ok
     return g_est.initResult;
 }
-void SwpDestroy() { g_estStatus = 0; }
+void SwpDestroy() { g_est.destroyCalls++; g_estStatus = 0; }
 bool SwpGenerateVectorsStereo(uint32_t prevTexL, uint32_t currTexL, uint32_t prevTexR,
                               uint32_t currTexR, const float*, const float*, const float*,
                               const float*, uint32_t mvTexL, uint32_t mvTexR) {
@@ -562,6 +571,16 @@ static void ResetAll() {
     g_est = EstimatorCalls{};
     g_estStatus = 0;
     g_nextTextureId = 500;
+    // Sessions, ownership counters and the reclaim queue are process-wide; leaving
+    // them set would strand an owner increment per suite and mask the dormant gate.
+    g_sessions.clear();
+    g_synthOwners.store(0);
+    g_deferred = DeferredReclaim{};
+    g_deferredPending.store(false);
+    g_leakedTextures.store(0);
+    g_leakedFbos.store(0);
+    g_deletedTextures.clear();
+    g_deletedFbos.clear();
     g_acquiredIndex = 0;
     g_fakePredDispTime = 0;
     g_glTableCalls = 0;
@@ -1127,6 +1146,165 @@ static void CheckSessionTeardown() {
           "session handle may be reused after teardown");
 }
 
+// ---------------------------------------------------------------------------
+// B1 suites: enabled-only ownership and context-safe release. "Settled Off"
+// means the layer owns no GL name at all, not that it merely stopped using one.
+// ---------------------------------------------------------------------------
+
+// Drive one session until ASW owns its enabled-only set (mv pair, staging quad and
+// the copy FBOs). Returns the session state, or null when setup failed.
+static int CountId(const std::vector<GLuint>& ids, GLuint id) {
+    int n = 0;
+    for (GLuint value : ids) {
+        if (value == id) ++n;
+    }
+    return n;
+}
+
+static DispatchState* OwnSessionResources() {
+    ResetAll();
+    if (!InstallNext()) return nullptr;
+    XrSessionCreateInfo info = GlesSessionInfo();
+    XrSession session = nullptr;
+    if (!XR_SUCCEEDED(SwpDispatchCreateSession((XrInstance)0x1, &info, &session))) return nullptr;
+    SwpVtsTestPublish(1);  // a new session restarts the carrier cache: republish
+    g_acquiredIndex = 1;
+    DriveEnumerate();
+    SwpEglArrivalObserved((void*)10, (void*)0xC0DE, nullptr, 1100);
+    SwpEglTestSetNowNs(1000);
+    Tick(100000);
+    SwpEglArrivalObserved((void*)11, (void*)0xC0DE, nullptr, 2100);
+    SwpEglTestSetNowNs(2000);
+    g_acquiredIndex = 2;
+    Tick(200000);
+    g_acquiredIndex = 0;  // round-robin wrap: the missed tick synthesizes into 101
+    SwpEglTestSetNowNs(3000);
+    Tick(300000);
+    auto it = g_sessions.find(kFakeSession);
+    return it == g_sessions.end() ? nullptr : &it->second;
+}
+
+static void CheckOffReleasesOwnedResources() {
+    DispatchState* state = OwnSessionResources();
+    CHECK(state != nullptr, "off-release session owns state");
+    if (!state) return;
+    const uint32_t ownedBefore = state->liveTextures;
+    CHECK(ownedBefore >= 6, "the enabled state owns the mv pair plus the staging quad");
+    CHECK(g_est.initCalled && g_est.extrapolateCalls > 0, "synthesis ran while enabled");
+    const int destroysBefore = g_est.destroyCalls;
+    // Capture every owned name before the flip: the release must delete these ids,
+    // not merely zero the fields that point at them.
+    std::vector<GLuint> expectedTextures;
+    for (GLuint id : {state->mvTexL, state->mvTexR}) {
+        if (id) expectedTextures.push_back(id);
+    }
+    for (int s = 0; s < kMaxSlots; s++) {
+        for (int e = 0; e < 2; e++) {
+            if (state->staging[s][e]) expectedTextures.push_back(state->staging[s][e]);
+        }
+    }
+    std::vector<GLuint> expectedFbos;
+    if (state->copyReadFbo) expectedFbos.push_back(state->copyReadFbo);
+    if (state->copyDrawFbo) expectedFbos.push_back(state->copyDrawFbo);
+    CHECK(g_synthOwners.load() == 1, "the enabled session is the only ASW owner");
+
+    SwpVtsTestPublish(0);  // the host turns the carrier off
+    SwpEglTestSetNowNs(4000);
+    Tick(400000);
+
+    CHECK(state->liveTextures == 0, "settled Off owns zero textures");
+    CHECK(state->liveFbos == 0, "settled Off owns zero framebuffers");
+    CHECK(state->mvTexL == 0 && state->mvTexR == 0, "the mv pair is deleted, not merely zeroed");
+    CHECK(!state->staging[0][0] && !state->staging[1][1], "the staging quad is released");
+    CHECK(!state->estimatorInited, "the estimator is torn down on Off");
+    CHECK(g_est.destroyCalls > destroysBefore, "SwpDestroy ran while its own context was current");
+    CHECK(!state->ownsCounted, "the session is no longer in the ASW-owner set");
+    CHECK(g_synthOwners.load() == 0, "the owner count returns to zero on Off");
+    for (GLuint id : expectedTextures) {
+        CHECK(CountId(g_deletedTextures, id) == 1, "every owned texture is deleted exactly once");
+    }
+    for (GLuint id : expectedFbos) {
+        CHECK(CountId(g_deletedFbos, id) == 1, "every owned framebuffer is deleted exactly once");
+    }
+    CHECK(g_leakedTextures.load() == 0 && g_leakedFbos.load() == 0,
+          "the Off path leaks nothing");
+
+    SwpEglTestSetNowNs(5000);
+    Tick(500000);
+    CHECK(state->liveTextures == 0 && state->liveFbos == 0, "settled Off stays empty");
+}
+
+static void CheckResizeRetiresOldSet() {
+    DispatchState* state = OwnSessionResources();
+    CHECK(state != nullptr, "resize session owns state");
+    if (!state) return;
+    const uint32_t owned = state->liveTextures;
+    CHECK(owned >= 6, "resize baseline owns the full set");
+    const uint32_t mvBefore = state->mvTexL;
+    for (int i = 0; i < 5; i++) {
+        state->inputW = 1;  // force the extent-change branch on the next tick
+        SwpEglTestSetNowNs(6000 + static_cast<uint64_t>(i) * 1000);
+        Tick(600000 + static_cast<uint64_t>(i) * 100000);
+        CHECK(state->liveTextures <= owned, "a layout change never accumulates owned textures");
+        CHECK(state->liveFbos == 0, "copy FBOs are released with the rest of the set");
+    }
+    CHECK(state->mvTexL != 0 && state->mvTexL != mvBefore, "the new extent owns a new mv pair");
+}
+
+static void CheckDestroyDefersWithoutContext() {
+    DispatchState* state = OwnSessionResources();
+    CHECK(state != nullptr, "destroy-defer session owns state");
+    if (!state) return;
+    CHECK(state->liveTextures >= 6, "destroy-defer baseline owns the full set");
+    const int destroysBefore = g_est.destroyCalls;
+    void* ownerCtx = g_currentCtx;
+    g_currentCtx = reinterpret_cast<void*>(0xBAD0);  // a foreign context is current
+
+    CHECK(XR_SUCCEEDED(SwpDispatchDestroySession(kFakeSession)),
+          "destroy forwards with a foreign context");
+    CHECK(g_deferredPending.load(), "owned names are queued instead of dropped");
+    CHECK(g_deferred.textureCount >= 6, "the queued set covers the mv pair and staging quad");
+    CHECK(g_est.destroyCalls == destroysBefore, "the estimator is not torn down from a foreign context");
+    std::vector<GLuint> queued;
+    for (uint32_t i = 0; i < g_deferred.textureCount; i++) queued.push_back(g_deferred.textures[i]);
+    const uint32_t queuedFbos = g_deferred.fboCount;
+
+    g_currentCtx = ownerCtx;
+    Tick(900000);  // any later frame on the creating context drains the queue
+    CHECK(!g_deferredPending.load(), "queued names are reclaimed on their creating context");
+    for (GLuint id : queued) {
+        CHECK(CountId(g_deletedTextures, id) == 1, "each queued texture is deleted exactly once");
+    }
+    CHECK(g_deletedFbos.size() >= queuedFbos, "queued framebuffers are deleted too");
+    CHECK(g_synthOwners.load() == 0, "the torn-down session left no owner behind");
+}
+
+static void CheckHundredOffCycles() {
+    DispatchState* state = OwnSessionResources();
+    CHECK(state != nullptr, "cycle session owns state");
+    if (!state) return;
+    for (int i = 0; i < 100; i++) {
+        SwpVtsTestPublish(0);
+        SwpEglTestSetNowNs(10000 + static_cast<uint64_t>(i) * 2000);
+        Tick(1000000 + static_cast<uint64_t>(i) * 200000);
+        CHECK(state->liveTextures == 0 && state->liveFbos == 0, "each Off cycle ends empty");
+        CHECK(g_synthOwners.load() == 0, "each Off cycle leaves no owner");
+        SwpVtsTestPublish(1);
+        SwpEglTestSetNowNs(11000 + static_cast<uint64_t>(i) * 2000);
+        // One stable arrival identity: the arrival pool disables learning for the
+        // session if new image handles keep appearing, which would stop allocation
+        // for reasons unrelated to this suite.
+        SwpEglArrivalObserved((void*)10, (void*)0xC0DE, nullptr,
+                              11500 + static_cast<uint64_t>(i) * 2000);
+        Tick(1100000 + static_cast<uint64_t>(i) * 200000);
+        CHECK(state->liveTextures == 2 && state->liveFbos == 0,
+              "each On cycle re-admits exactly the mv pair before history returns");
+        CHECK(g_synthOwners.load() == 1, "each On cycle registers exactly one owner");
+    }
+    CHECK(state->ownsCounted == (state->liveTextures + state->liveFbos > 0),
+          "the owner flag tracks the live set exactly");
+}
+
 int main() {
     CheckPoseMatrix();
     CheckScaleFactor();
@@ -1139,6 +1317,10 @@ int main() {
     CheckDormantFastPath();
     CheckStandDowns();
     CheckSessionTeardown();
+    CheckOffReleasesOwnedResources();
+    CheckResizeRetiresOldSet();
+    CheckDestroyDefersWithoutContext();
+    CheckHundredOffCycles();
     std::printf("gxr-spacewarp dispatch host tests: %d checks, %d failures\n", g_checks,
                 g_failures);
     return g_failures == 0 ? 0 : 1;
