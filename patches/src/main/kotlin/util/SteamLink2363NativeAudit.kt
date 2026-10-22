@@ -3,7 +3,6 @@ package util
 import app.morphe.patcher.patch.PatchException
 import app.template.patches.steamlink.androidxr.*
 import app.template.patches.steamlink.binary.*
-import app.template.patches.steamlink.identity.patchHmdModelIdentity
 import java.io.File
 import java.security.MessageDigest
 
@@ -101,13 +100,8 @@ object SteamLink2363NativeAudit {
         }
         println("PASS 5002363 combined native patches: 24 execution orders and reapplications agree")
 
-        val hmd = File(base, "assets/config/hmd_config.json").readText()
-        for (profile in listOf("samsung-galaxy-xr", "meta-quest-pro", "pico-4-pro", "stock-no-change")) {
-            val output = patchHmdModelIdentity(hmd, profile, exactProductLookup = true)
-            check(patchHmdModelIdentity(output, profile, exactProductLookup = true) == output)
-        }
         check(library.readBytes().sha256() == stock.sha256())
-        println("PASS 5002363 identity profiles: real config/idempotence; source hash unchanged")
+        println("PASS 5002363 native scene source hash unchanged")
     }
 
     private fun ByteArray.word(offset: Int): Int = (0..3).fold(0) { value, i -> value or ((this[offset + i].toInt() and 255) shl (8 * i)) }

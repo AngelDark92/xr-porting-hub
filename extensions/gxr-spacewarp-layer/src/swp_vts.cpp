@@ -70,6 +70,9 @@
 // atomic svlRoot pointer; arm() latches atomically.
 
 #include <android/log.h>
+#if !defined(SWP_HOST_TESTS)
+#include <dlfcn.h>
+#endif
 #include <link.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -186,9 +189,64 @@ const VtsProfile kVtsProfile5001712 = {
     0xa08,     // SVLRoot + 0xa08 (census: 22 real call sites, one immediate)
 };
 
-// Order of tries (brief 13): 5002363 first (the existing base), 5001712 second.
-const VtsProfile* const kVtsProfiles[] = {&kVtsProfile5002363, &kVtsProfile5001712};
-constexpr size_t kVtsProfileCount = 2;
+const VtsProfile kVtsProfile5001812 = {
+    "2.0.20/5001812",
+    0xfd1c0,
+    "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed",
+    "GetRemoteValue",
+    0x16a2bc,
+    "4fdbb103a30949c7be8526de890a84e2662fec7e8df7181773c2b80d9a83bbd0",
+    ReadReturn::kCopiedByteCount,
+    0x164c28,
+    "cb57aa43cab2f8047490fe0d0ae37fad53273c40e54e0a0a3aed0f8940355150",
+    0x21b1d8,  // RUNTIME vaddr (GOT)
+    0x164ae0,
+    "13eef8450164c26f9723dd6758c81b45ac1b5337081a3844fe41072b83473e1d",
+    0x21b120,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+const VtsProfile kVtsProfile5001968 = {
+    "2.0.21/5001968",
+    0xf9168,
+    "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b",
+    "GetRemoteValue",
+    0x16cf2c,
+    "b157c632a93c4c2279dec464b20639e3c6070f37db8133aaec7f0cdd4d3ef017",
+    ReadReturn::kCopiedByteCount,
+    0x161054,
+    "5705f972f2144137b959083a093436baf0ac5c0e5ff0698571929bdbc6b42264",
+    0x2212f0,  // RUNTIME vaddr (GOT)
+    0x160ef4,
+    "c1ab7b447687818e7739859c31cab3d19af9b4fdaff38d74861d0975438f0a4d",
+    0x221238,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+const VtsProfile kVtsProfile5002244 = {
+    "2.0.22/5002244",
+    0xfa4a8,
+    "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643",
+    "GetRemoteValue",
+    0x17156c,
+    "ee6610ff9427945df893d8ae6bf04e7eb98c3087f8d1b0345afdcbec5f893f26",
+    ReadReturn::kCopiedByteCount,
+    0x164020,
+    "957662bc91a65ecce072b3bf6de7e53085e297ce4d658ff2d19d8326efd7ef71",
+    0x225868,  // RUNTIME vaddr (GOT)
+    0x163ec0,
+    "3702fae746c1a8d0b70613c4c7b35a2cd7ebddd44aad8f4a74a2b188c6934e84",
+    0x2257d0,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+// Order of tries: the two originally verified bases first, then the restored
+// legacy bases.
+const VtsProfile* const kVtsProfiles[] = {
+    &kVtsProfile5002363, &kVtsProfile5001712, &kVtsProfile5001812,
+    &kVtsProfile5001968, &kVtsProfile5002244,
+};
+constexpr size_t kVtsProfileCount = 5;
 
 // bool (*)(VTS* obj, unsigned id, void* out, unsigned size) — the shared
 // AArch64 argument shape of the re-derived read APIs (this, id, out, size).
@@ -226,13 +284,22 @@ std::atomic<uintptr_t> g_svlRoot{0};
 std::atomic<int> g_carrier{kCarrierUnknown};
 // Last published 4-byte carrier value (0 / 1 / 2); the mode source of truth.
 std::atomic<uint32_t> g_carrierValue{0};
+// 2026-10-21 (owner directive): half rate is retired on both sides. The host no
+// longer publishes carrier 2, and a 2 from an older host runs as late-frames-only
+// here, so the mode cannot be entered by a stale driver. The half-rate synthesis
+// code stays compiled; flip this flag (and the host's kHalfRateRetired) to revive.
+std::atomic<bool> g_halfRateRetired{true};
 
 // Per-session one-line log flags (reset by SwpVtsResetSession).
 std::atomic<bool> g_notPresentLogged{false};
 std::atomic<bool> g_notCapturedLogged{false};
 std::atomic<bool> g_notArmedLogged{false};
 
-uint64_t g_endframeCounter = 0;  // poll cadence (serialized by the dispatch's EndFrame)
+std::atomic<uint64_t> g_endframeCounter{0};  // poll cadence (fast path: unlocked)
+// Bumped whenever the published carrier value changes (including to "not
+// present"). The dispatch compares it per session to detect a re-enable that
+// the 1 -> 0 -> 1 value alone cannot express (lastMode would read identical).
+std::atomic<uint64_t> g_carrierGeneration{0};
 BGetRemoteValueFn g_bGetRemoteValue = nullptr;
 CaptureParseFn g_originalParsePeer = nullptr;
 CaptureRxUnreliableFn g_originalRxUnreliable = nullptr;
@@ -296,14 +363,61 @@ bool AnchorMatches(uintptr_t offset, const char* expectedSha, const char* label)
 // mprotect the page RW, write the wrapper, restore PROT_READ. Returns false on
 // any failure (fail closed; the slot stays untouched when the original is
 // unresolved).
-bool PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* label,
-                      void** outOriginal) {
-    void* original = *reinterpret_cast<void**>(g_sceneBase + slotRuntimeVaddr);
-    if (!original) {
+#if defined(SWP_HOST_TESTS)
+// Host tests drive a synthetic scene mapping; there is no dynamic linker, so the
+// residency and slot-owner probes degrade to the pre-existing patch path.
+bool IsOwnAddress(void*) { return false; }
+bool IsSceneAddress(void*) { return true; }
+#else
+// A layer copy is dlclosed together with the XR instance that mounted it while
+// its wrappers stay in the scene GOT. Keep this copy mapped so a later instance
+// can adopt it instead of capturing a dead pointer out of the slot.
+bool PinSelfResident() {
+    static void* const pin = []() -> void* {
+        Dl_info self{};
+        if (!dladdr(reinterpret_cast<void*>(&PinSelfResident), &self) || !self.dli_fname) {
+            return nullptr;
+        }
+        return dlopen(self.dli_fname, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
+    }();
+    return pin != nullptr;
+}
+
+bool IsOwnAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, "libgxr_spacewarp.so");
+}
+
+bool IsSceneAddress(void* address) {
+    Dl_info info{};
+    return address && dladdr(address, &info) && info.dli_fname &&
+           std::strstr(info.dli_fname, kSceneSoname);
+}
+#endif  // SWP_HOST_TESTS
+
+enum class SlotPatch { Patched, Adopted, Failed };
+
+SlotPatch PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* label,
+                           void** outOriginal) {
+    void* current = *reinterpret_cast<void**>(g_sceneBase + slotRuntimeVaddr);
+    if (!current) {
         LOG("GOT slot for %s unresolved; capture not installed (fail closed)", label);
-        return false;
+        return SlotPatch::Failed;
     }
-    *outOriginal = original;
+    if (IsOwnAddress(current)) {
+        // A self-pinned copy of this layer already intercepts this slot and its
+        // captured originals are valid. Taking the slot again would record our own
+        // wrapper as the "original" and chain into a copy a later instance unmaps.
+        *outOriginal = nullptr;
+        return SlotPatch::Adopted;
+    }
+    if (!IsSceneAddress(current)) {
+        LOG("GOT slot for %s holds a foreign pointer; capture not installed (fail closed)",
+            label);
+        return SlotPatch::Failed;
+    }
+    *outOriginal = current;
     const long pageSize = sysconf(_SC_PAGESIZE);
     const uintptr_t slotAddr = g_sceneBase + slotRuntimeVaddr;
     const uintptr_t mapStart = slotAddr & ~static_cast<uintptr_t>(pageSize - 1);
@@ -312,11 +426,11 @@ bool PatchCaptureSlot(uintptr_t slotRuntimeVaddr, void* wrapper, const char* lab
     if (mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart,
                  PROT_READ | PROT_WRITE) != 0) {
         LOG("mprotect(RW) failed for %s; capture not installed (fail closed)", label);
-        return false;
+        return SlotPatch::Failed;
     }
     *reinterpret_cast<void**>(slotAddr) = wrapper;
     mprotect(reinterpret_cast<void*>(mapStart), mapEnd - mapStart, PROT_READ);
-    return true;
+    return SlotPatch::Patched;
 }
 
 // The carrier read (per-cadence). Tri-state caching per the brief: unknown
@@ -340,6 +454,7 @@ void PollCarrierLogged() {
         }
         g_carrierValue.store(0);
         g_carrier.store(kCarrierUnknown);
+        ++g_carrierGeneration;
         return;
     }
     // The carrier read (per-base returned-value policy, both shapes share the
@@ -360,6 +475,7 @@ void PollCarrierLogged() {
     if (!present) {
         g_carrierValue.store(0);
         g_carrier.store(kCarrierUnpublished);
+        ++g_carrierGeneration;
         if (!g_notPresentLogged.exchange(true)) {
             LOG("carrier value not present (id 0x%x never published this session);"
                 " spacewarp stays disabled", kCarrierId);
@@ -367,10 +483,14 @@ void PollCarrierLogged() {
         return;
     }
     if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;  // undefined mode reads as late-frames
+    if (value == kCarrierModeHalfRate && g_halfRateRetired.load(std::memory_order_relaxed)) {
+        value = kCarrierModeLateFrames;  // retired: a stale host's half rate applies as late frames
+    }
     const uint32_t previousValue = g_carrierValue.exchange(value);
     const int next = value != 0 ? kCarrierOn : kCarrierOff;
     const int previous = g_carrier.exchange(next);
     if (previous != next || previousValue != value) {
+        ++g_carrierGeneration;
         LOG("bridge carrier 0x%x = %u (%s)", kCarrierId, value,
             value == kCarrierModeHalfRate ? "spacewarp half rate"
                 : value == kCarrierModeLateFrames ? "spacewarp late frames only"
@@ -399,6 +519,7 @@ void SwpVtsResetSession() {
     g_notArmedLogged.store(false);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
+    ++g_carrierGeneration;
     g_endframeCounter = 0;
 }
 
@@ -407,14 +528,19 @@ void SwpVtsSessionEnded() {
     g_svlRoot.store(0);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
+    ++g_carrierGeneration;
     g_endframeCounter = 0;
 }
 
-// Endframe cadence + the one cheap gate read (called inside the dispatch's
-// xrEndFrame critical section; the counter is serialized there).
+// Endframe cadence + the one cheap gate read (called from the dispatch's
+// xrEndFrame: on the dormant fast path WITHOUT the dispatch lock, so the counter
+// is atomic and the poll itself takes only the VTS-internal mutex).
 void SwpVtsNoteEndFrame() {
-    if (++g_endframeCounter < kReadCadenceEndframes) return;
-    g_endframeCounter = 0;
+    // Modulo, not reset: the dormant fast path calls this without the dispatch
+    // lock, so two sessions can increment concurrently and a read-modify-write
+    // reset would drop the cadence. Each thread owns a unique count value.
+    const uint64_t tick = g_endframeCounter.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (tick % kReadCadenceEndframes != 0) return;
     PollCarrierLogged();
 }
 
@@ -424,6 +550,10 @@ bool SwpVtsSynthesisAllowed() { return g_carrier.load() == kCarrierOn; }
 // The published mode (0 off / 1 late frames only / 2 half rate). The dispatch
 // reads it once per endframe, beside the gate.
 uint32_t SwpVtsMode() { return g_carrierValue.load(); }
+
+// Monotonic counter of carrier changes; the dispatch compares it per session so
+// a 1 -> 0 -> 1 cycle clears the state collected before the dormant gap.
+uint64_t SwpVtsGeneration() { return g_carrierGeneration.load(std::memory_order_relaxed); }
 
 // Arm once the scene lib is loaded (retried from XR calls like the egl hook).
 // Independent of SwpHooksArm: a capture failure never disturbs arrival learning
@@ -437,8 +567,15 @@ bool SwpVtsArm() {
     // Log context (host tests arm without a real scene lib: report the original
     // 5002363 profile there; the shipped path re-selects below).
     const VtsProfile* profile = &kVtsProfile5002363;
+    bool adopted = false;  // set when a pinned copy of this layer already owns the slots
 
 #if !defined(SWP_HOST_TESTS)
+    if (!PinSelfResident()) {
+        LOG("cannot keep this layer resident; VTS capture not installed (fail closed)");
+        g_state.store(kVtsStateFailed);
+        g_busy.store(false);
+        return false;
+    }
     g_sceneBase = 0;
     dl_iterate_phdr(PhdrCallback, nullptr);
     if (!g_sceneBase) {
@@ -474,31 +611,36 @@ bool SwpVtsArm() {
     // armed state unusable either way).
     g_vtsEmbedOffset = profile->vtsEmbedOffset;
     g_readReturn = profile->readReturn;
-    if (!PatchCaptureSlot(profile->captureParsePeerSlot,
-                          reinterpret_cast<void*>(&SwpWrapVtsParsePeerValueSettings),
-                          "ParsePeerValueSettings",
-                          reinterpret_cast<void**>(&g_originalParsePeer))) {
+    const SlotPatch peerPatch =
+        PatchCaptureSlot(profile->captureParsePeerSlot,
+                         reinterpret_cast<void*>(&SwpWrapVtsParsePeerValueSettings),
+                         "ParsePeerValueSettings",
+                         reinterpret_cast<void**>(&g_originalParsePeer));
+    if (peerPatch == SlotPatch::Failed) {
         g_state.store(kVtsStateFailed);
         g_busy.store(false);
         return false;
     }
-    if (!PatchCaptureSlot(profile->captureRxUnreliableSlot,
-                          reinterpret_cast<void*>(&SwpWrapVtsRxUnreliableStream),
-                          "RXUnreliableStream",
-                          reinterpret_cast<void**>(&g_originalRxUnreliable))) {
+    const SlotPatch rxPatch =
+        PatchCaptureSlot(profile->captureRxUnreliableSlot,
+                         reinterpret_cast<void*>(&SwpWrapVtsRxUnreliableStream),
+                         "RXUnreliableStream",
+                         reinterpret_cast<void**>(&g_originalRxUnreliable));
+    if (rxPatch == SlotPatch::Failed) {
         g_state.store(kVtsStateFailed);
         g_busy.store(false);
         return false;
     }
+    adopted = peerPatch == SlotPatch::Adopted || rxPatch == SlotPatch::Adopted;
     g_bGetRemoteValue = reinterpret_cast<BGetRemoteValueFn>(g_sceneBase + profile->readVa);
 #endif
 
     g_state.store(kVtsStateArmed);
     g_busy.store(false);
-    LOG("bridge armed on %s: carrier 0x%x direct-read via %s (runtime vaddr"
+    LOG("bridge armed on %s (%s): carrier 0x%x direct-read via %s (runtime vaddr"
         " 0x%zx); synthesis stays disabled until the host publishes the carrier",
-        profile->build, kCarrierId, profile->readApiName,
-        static_cast<size_t>(profile->readVa));
+        profile->build, adopted ? "resident generation adopted" : "capture installed",
+        kCarrierId, profile->readApiName, static_cast<size_t>(profile->readVa));
     return true;
 }
 
@@ -533,14 +675,22 @@ void SwpVtsTestSetRoot(void* root) { SwpVtsRootObserved(root); }
 // model "the host published the carrier before the session ticks").
 void SwpVtsTestPublish(uint32_t value) {
     if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;
+    if (value == kCarrierModeHalfRate && g_halfRateRetired.load(std::memory_order_relaxed)) {
+        value = kCarrierModeLateFrames;  // mirror the production retirement mapping
+    }
     g_carrierValue.store(value);
     g_carrier.store(value != 0 ? kCarrierOn : kCarrierOff);
+    ++g_carrierGeneration;
 }
+void SwpVtsTestSetHalfRateRetired(bool retired) { g_halfRateRetired.store(retired); }
 void SwpVtsTestResetAll() {
     g_state.store(kVtsStatePending);
     g_svlRoot.store(0);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
+    // Production default: half rate retired. A suite that flips it must not leak
+    // the flip into the next suite.
+    g_halfRateRetired.store(true);
     g_notPresentLogged.store(false);
     g_notCapturedLogged.store(false);
     g_notArmedLogged.store(false);

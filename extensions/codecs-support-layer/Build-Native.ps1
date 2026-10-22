@@ -12,7 +12,7 @@ $csLibrary = Join-Path $OutputDirectory 'libgxr_codecs_support.so'
 & (Join-Path $csBin 'aarch64-linux-android29-clang++.cmd') -std=c++17 -O2 -fPIC -shared -fvisibility=hidden -static-libstdc++ -Wall -Wextra -Werror -Wno-missing-field-initializers `
     -DXR_USE_PLATFORM_ANDROID "-I$OpenXrDirectory/include" `
     (Join-Path $PSScriptRoot 'src/codecs_support_layer.cpp') -o $csLibrary `
-    '-Wl,-soname,libgxr_codecs_support.so' '-Wl,-z,max-page-size=16384' '-Wl,--exclude-libs,ALL' -llog
+    '-Wl,-soname,libgxr_codecs_support.so' '-Wl,-z,max-page-size=16384' '-Wl,--exclude-libs,ALL' -llog -ldl
 if ($LASTEXITCODE -ne 0) { throw 'Codecs support Android compilation failed' }
 & (Join-Path $csBin 'llvm-strip.exe') --strip-unneeded $csLibrary
 if ($LASTEXITCODE -ne 0) { throw 'Codecs support strip failed' }

@@ -37,7 +37,7 @@ constexpr double DEFAULT_ANGULAR_PITCH_DEG = -42.25;
 // controller HAL pose layer, which reports the same frames), so there it is rotated into the base
 // space. Written by the Morphe patch per Steam Link base, located by the 16-byte magic. Version 1:
 //   +16 version          uint32
-//   +20 angularWorld     uint32  0 = local to the pose (VRLink 2.0.23), 1 = base space (2.0.20 - 2.0.22)
+//   +20 angularWorld     uint32  0 = local to the pose (VRLink 2.0.23), 1 = base space (2.0.20)
 struct ConfigBlob {
     char magic[16];
     std::uint32_t version;

@@ -143,7 +143,7 @@ class AndroidSurfaceTriggerResourceTest {
         )
         assertEquals(
             ANDROID_SURFACE_TRIGGER_LIBRARY,
-            androidSurfaceTriggerResourceLibraryForBuild("2.0.22", "5002244"),
+            androidSurfaceTriggerResourceLibraryForBuild("2.0.20", "5002363"),
         )
         assertEquals(
             ANDROID_SURFACE_TRIGGER_LIBRARY,

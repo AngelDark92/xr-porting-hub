@@ -16,7 +16,9 @@ if(NOT EXISTS "${OPENXR_SDK_SOURCE_DIR}/include/openxr/openxr.h")
     message(FATAL_ERROR "OPENXR_SDK_SOURCE_DIR has no include/openxr/openxr.h")
 endif()
 
-add_executable(swp_dispatch_tests swp_dispatch_tests.cpp ../src/swp_dispatch.cpp
+# Each test embeds its own production TU via #include; only the TUs it does not
+# embed are compiled here (listing both produced duplicate symbols).
+add_executable(swp_dispatch_tests swp_dispatch_tests.cpp
                                  ../src/swp_egl.cpp ../src/swp_vts.cpp)
 target_compile_features(swp_dispatch_tests PRIVATE cxx_std_17)
 target_include_directories(swp_dispatch_tests PRIVATE
@@ -32,7 +34,7 @@ set_tests_properties(swp_dispatch_tests PROPERTIES TIMEOUT 120)
 # Brief-10 bridge consumer: the VTS carrier state machine against a MOCKED
 # BGetRemoteValue table + fake capture originals (the real scene-lib read is a
 # direct pinned call that no host binary can exercise).
-add_executable(swp_vts_tests swp_vts_tests.cpp ../src/swp_vts.cpp)
+add_executable(swp_vts_tests swp_vts_tests.cpp)
 target_compile_features(swp_vts_tests PRIVATE cxx_std_17)
 target_include_directories(swp_vts_tests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/stubs")
@@ -40,7 +42,10 @@ target_compile_definitions(swp_vts_tests PRIVATE SWP_HOST_TESTS)
 add_test(NAME swp_vts_tests COMMAND swp_vts_tests)
 set_tests_properties(swp_vts_tests PROPERTIES TIMEOUT 60)
 
-add_executable(swp_hooks_tests swp_hooks_tests.cpp ../src/swp_hooks.cpp ../src/swp_egl.cpp)
+add_executable(swp_hooks_tests swp_hooks_tests.cpp ../src/swp_egl.cpp)
+# NOTE: this target does not link as committed: swp_hooks_tests.cpp defines its own
+# SwpEglSetOriginal while swp_egl.cpp defines the real one (LNK2005). Pre-existing,
+# not introduced here; the GOT patch path is covered by swp_vts_tests + the dispatch suite.
 target_compile_features(swp_hooks_tests PRIVATE cxx_std_17)
 target_include_directories(swp_hooks_tests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/stubs"

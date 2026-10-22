@@ -51,13 +51,16 @@ brief (08-ESTIMATOR-B1a); the two are joined by the shared interface contract in
   arrivals converted into XrTime through the `xrBeginFrame` monotonic/paired-anchor
   ring), clamped to `[0.05, 3.0]`, and at most **2 consecutive** extrapolated ticks
   before the layer passes stock again.
-- **Synthesis modes (2026-10-20, owner directive).** The carrier value is the mode:
-  `0` off, `1` late frames only (the original behavior), `2` half rate. In half-rate
-  mode every second presented tick is synthesized from the previously presented frame
-  instead of showing the fresh decode, so real frames update at half the display rate;
-  the client still decodes every frame. Any other value reads as late-frames-only and
-  never rewrites the host's saved setting. A mode flip mid-session behaves like a fresh
-  enablement: stale maps are dropped and the next real tick regenerates them.
+- **Synthesis modes.** The carrier value is the mode: `0` off, `1` late frames only
+  (the original behavior), `2` half rate. **Half rate is retired since 2026-10-21:**
+  the host no longer publishes `2`, and this layer maps a `2` from an older host to
+  late frames while `g_halfRateRetired` is true, so a stale driver cannot enter the
+  mode. Any value above `2` also reads as late-frames-only, and nothing rewrites the
+  host's saved setting. In half-rate mode (un-retired) every second presented tick is
+  synthesized from the previously presented frame instead of showing the fresh
+  decode, so real frames update at half the display rate; the client still decodes
+  every frame. A mode flip mid-session behaves like a fresh enablement: stale maps are
+  dropped and the next real tick regenerates them.
 - Any failure stands down **this tick only** (contract status 16), logged **once per 30
   occurrences**; the already-rendered client content still reaches the compositor, so
   the worst case equals stock. Estimator-init failure stands the session down
@@ -117,8 +120,18 @@ boolean that receipt 06 ranked first and the owner pinned:
   payload = disabled with one line per session.
 - **The layer NEVER auto-enables on stock sessions**: with no VrlinkTap on the
   host (or no session flowing), the gate stays off and the layer remains the
-  pure-passthrough observer set (arrival learning + tick classification +
-  real-tick history keep running so a later enablement starts from fresh data).
+  pure-passthrough observer set. Arrival learning keeps running (the egl GOT
+  wrapper and its bounded 8-entry ring), so a later publish starts from fresh
+  arrival data; nothing else is collected.
+- **Dormant fast path (2026-10-21).** While the carrier reads 0/unpublished,
+  `xrEndFrame` is one lock-free mode load, one cadence increment and the client's
+  own call — no clock read, no session lookup, no tick classification, no frame
+  history, no GL/EGL, no pose math (`xrLocateViews` returns before its lock).
+  The first tick after a publish is therefore a cold-start tick (estimator init +
+  one history record) and synthesis begins on the tick after: one display frame
+  of warm-up, ~11 ms at 90 Hz. A 1 -> 0 -> 1 carrier cycle is detected by a
+  carrier *generation* counter (the value alone would read identical) and clears
+  the history and clock anchors collected before the gap.
 - A mid-session carrier flip takes effect live within the cadence; entering the
   enabled state discards pre-enablement motion maps (fresh real-tick generation
   required before any extrapolation — stale content is never warped).
@@ -197,6 +210,12 @@ anchors do NOT share bytes across the bases); no match = fail closed. Derive wit
   mechanism (unknown layout / mprotect failure / unresolved slot never write).
 - The shipped `.so` staging + sha pin in `GxrSpacewarpLayerPatch.kt` is the owner
   build flow (payload tests self-activate once the pin stops being the placeholder).
+- The same suite also builds as an arm64 executable for an on-device run:
+  `aarch64-linux-android29-clang++ -std=c++17 -DSWP_HOST_TESTS -I tests/stubs
+  tests/swp_dispatch_tests.cpp src/swp_egl.cpp src/swp_vts.cpp -o
+  swp_dispatch_tests_arm64`, then `adb push` + run from `/data/local/tmp`. The
+  deterministic test clock is guarded by `SWP_HOST_TESTS` (not by `_WIN32`), so
+  the vectors hold on any host or device. Production builds never define it.
 
 ## Known gaps (recorded, not hidden)
 

@@ -6,6 +6,7 @@ import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.Constants.isNativeXrSteamLinkBuild
+import app.template.patches.shared.buildLabel
 
 // QSVLClientAudioNdk::Init(bool, int), immediately before
 // AAudioStreamBuilder_setInputPreset(builder, preset):
@@ -86,9 +87,8 @@ internal fun patchNativeMicrophonePreset(
 @Suppress("unused")
 val microphoneInputPresetPatch = rawResourcePatch(
     name = "Microphone input preset",
-    description = "Switches the microphone's capture mode; Voice Recognition tested clearest and " +
-        "loudest on Galaxy XR. Builds: 2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, " +
-        "2.0.22/5002244, 2.0.23/5002363.",
+    description = "Switches microphone capture mode; Voice Recognition tested best. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK),
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)

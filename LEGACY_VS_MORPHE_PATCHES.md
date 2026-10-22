@@ -11,14 +11,14 @@ native permission names; Force HMD initialization gates; Force lobby permission-
 stream XR gates; GXR face bridge; Galaxy XR high-resolution 3-projection fix; Microphone input
 preset; OLED color calibration; Unrestricted battery usage; Visual Delay Fix; XR Core Runtime;
 XR Device Config Baseline; XR Input Routing Config; XR Launcher Bootstrap (Home Space); XR
-Manifest Capability Pack; and Device identity with the Meta Quest Pro spoof (`Oculus Quest Pro`
-model).
+Manifest Capability Pack; and Device identity with the Galaxy XR identity (`xrvst2ue` model).
 
-Leave HMD identity on **Recommended**, or explicitly choose **Meta Quest Pro**. Recommended
-resolves to the Quest spoof for the exact legacy targets 2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, and 2.0.22/5002244. The config baseline runs before Device identity; the legacy Quest payload changes
-only the 3 HMD model values while preserving SamsungVST tracking and Galaxy XR controller/eye
-routing. Saved explicit Samsung, Stock, or PICO profiles remain respected rather than silently
-overridden.
+**Device identity** has no selector: every legacy base reports the Galaxy XR identity with model
+`xrvst2ue`, the headset's `Build.PRODUCT`, while preserving SamsungVST tracking and Galaxy XR
+controller/eye routing. `xrvst2ue` is also the `vrlink_<model>` section name the PC-side VRLink
+driver reads, so the patched legacy build routes its render/stream/10-bit settings exactly like an
+unpatched 2.0.23 build. The config baseline no longer writes `hmd_config.json`; Device identity is
+its only writer.
 
 The exact 2.0.22/5002322 bundle selects only face bridge, high-resolution fix, microphone
 `voice-recognition`, OLED `final-balanced` with recommended `srgb8-highp`, battery usage, and Visual Delay
@@ -207,7 +207,7 @@ Line-ending and final-newline differences account for several different hashes.
 Common device configuration includes:
 
 - Samsung tracking/manufacturer identity.
-- `Oculus Quest Pro` model compatibility identity.
+- `xrvst2ue` model identity (the `vrlink_<model>` settings section the PC driver reads).
 - `XR_EXT_eye_gaze_interaction` request.
 - Oculus Touch interaction profile remapped to Galaxy XR controller identities.
 - Galaxy XR controller pose offsets.
@@ -416,7 +416,7 @@ These edits force execution through paths that stock code conditionally skips. T
 
 The exact high-level field represented by each register cannot be proven from stripped local-variable information alone. Implement these as separate toggles initially and verify with logcat/OpenXR traces rather than combining all six into one opaque patch.
 
-### Recommended native patch implementation
+### Recommended native patch implementation (historical design note for the retired 5002244 base)
 
 Create a guarded `rawResourcePatch` for the 5002244 layout:
 

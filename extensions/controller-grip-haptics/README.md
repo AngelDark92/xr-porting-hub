@@ -147,7 +147,7 @@ picks 3 below 0.15, 2 below 0.65 and 1 above. Those cut points are not measured.
 
 ## Bases
 
-The legacy bases (5001712, 5001812, 5001968, 5002244) call the same two OpenXR functions
+The legacy base (5001712) calls the same two OpenXR functions
 with the same `/user/hand/left|right` subaction paths, but the patch was run on a headset
 only with 5002363.
 

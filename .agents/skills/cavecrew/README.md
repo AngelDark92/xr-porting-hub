@@ -69,8 +69,8 @@ Overrides patch only the `model:` line in the installed agent's frontmatter; the
 ## See also
 
 - [`SKILL.md`](./SKILL.md) — full decision matrix and output contracts
-- [`agents/cavecrew-investigator.md`](../../../.github/agents/cavecrew-investigator.md)
-- [`agents/cavecrew-builder.md`](../../../.github/agents/cavecrew-builder.md)
-- [`agents/cavecrew-reviewer.md`](../../../.github/agents/cavecrew-reviewer.md)
+- [`agents/cavecrew-investigator.md`](../../../.opencode/agents/cavecrew-investigator.md)
+- [`agents/cavecrew-builder.md`](../../../.opencode/agents/cavecrew-builder.md)
+- [`agents/cavecrew-reviewer.md`](../../../.opencode/agents/cavecrew-reviewer.md)
 - [`references/hermes-roles.md`](references/hermes-roles.md) — Hermes role contracts for `delegate_task`
 - [Caveman README](../../README.md) — repo overview

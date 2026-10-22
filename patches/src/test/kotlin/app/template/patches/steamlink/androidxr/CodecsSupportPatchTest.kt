@@ -27,11 +27,20 @@ class CodecsSupportPatchTest {
                 target.versionCodes.orEmpty().values.map { target.version to it }
             }
         }.toSet()
-        assertEquals(setOf("2.0.20" to 5001712, "2.0.23" to 5002363), targets)
-        assertTrue(isCodecsSupportSteamLinkBuild("2.0.20", "5001712"))
-        assertTrue(isCodecsSupportSteamLinkBuild("2.0.23", "5002363"))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
-            "2.0.23" to "5002322").forEach { (version, code) ->
+        assertEquals(
+            setOf(
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
+            ),
+            targets,
+        )
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244", "2.0.23" to "5002363",
+        ).forEach { (version, code) -> assertTrue(isCodecsSupportSteamLinkBuild(version, code)) }
+        listOf("2.0.20" to "5002363", "2.0.23" to "5002322",
+            "2.0.23" to "5002296", "2.0.23" to "5002313",
+            "2.0.23" to "5002318", "2.0.23" to "5002364").forEach { (version, code) ->
             assertFalse(isCodecsSupportSteamLinkBuild(version, code))
         }
     }
@@ -39,7 +48,7 @@ class CodecsSupportPatchTest {
     @Test
     fun `excluded exact pairs return unchanged before file or payload access`() = withTemporaryRoot { root ->
         val missing = File(root, "must-stay-absent")
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.20" to "5001713")
+        listOf("2.0.20" to "5001713")
             .forEach { (version, code) ->
                 assertFalse(installCodecsSupportResources(missing, version, code,
                     byteArrayOf(1), byteArrayOf(2)))
@@ -49,7 +58,10 @@ class CodecsSupportPatchTest {
 
     @Test
     fun `actual decoded renderers accept pinned regions and reject altered contracts`() {
-        listOf("2.0.20" to "5001712", "2.0.23" to "5002363").forEach { (version, code) ->
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244", "2.0.23" to "5002363",
+        ).forEach { (version, code) ->
             val original = originalScene(version, code)
             validateCodecsSupportScene(original, version, code)
             assertFailsWith<PatchException> {
@@ -220,6 +232,9 @@ class CodecsSupportPatchTest {
 
     private fun pinnedOffsets(version: String, code: String): List<Int> = when ("$version/$code") {
         "2.0.20/5001712" -> listOf(0xfd304, 0xfdca8, 0xfd2f8)
+        "2.0.20/5001812" -> listOf(0xfd1c0, 0xfdb64, 0xfd1b4)
+        "2.0.21/5001968" -> listOf(0xf9168, 0xf9b0c, 0xf915c)
+        "2.0.22/5002244" -> listOf(0xfa4a8, 0xfae4c, 0xfa49c)
         else -> listOf(0xfd6fc, 0xfe0a0, 0xfd6f0)
     }
 

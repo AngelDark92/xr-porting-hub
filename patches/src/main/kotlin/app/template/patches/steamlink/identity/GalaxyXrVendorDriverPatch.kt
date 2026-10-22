@@ -5,6 +5,7 @@ import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 
 /**
  * Identity for the resource-only SteamVR driver `galaxyxr` (Galaxy XR VRLink Setup on the PC).
@@ -229,18 +230,16 @@ internal fun patchControllerConfigForVendorDriver(
 @Suppress("unused")
 val galaxyXrVendorDriverPatch = rawResourcePatch(
     name = "Galaxy XR SteamVR driver (galaxyxr)",
-    description = "Sets Galaxy XR headset and controller names in SteamVR, replacing the Meta Quest Pro spoof. " +
-        "Builds: 5001712 to 5002363. Needs: Galaxy XR VRLink Setup on the PC, or controllers show no model." +
-        " Details: https://github.com/4uva4ek/steamlink-patches.",
+    description = "Sets Galaxy XR names in SteamVR; needs the PC-side Galaxy XR VRLink Setup. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK),
     default = false,
 ) {
     category(PatchCategories.APP_AND_DEVICE_IDENTITY)
     compatibleWith(*COMPATIBILITIES_STEAM_LINK.toTypedArray())
-    // Runs after both Device identity variants so their Quest Pro payload (legacy bundles) or
-    // Galaxy upserts (native builds) are already in place and get rewritten to the galaxyxr
-    // identity. Their execute bodies are build-aware, so running both on any base is a no-op
-    // beyond the identity they would write anyway.
-    dependsOn(deviceIdentityPatch, deviceIdentityNativeXrPatch)
+    // Runs after the legacy Device identity payload so its Galaxy entries are rewritten to the
+    // galaxyxr vendor paths. The identity body is exact-pair guarded and stays a no-op on the
+    // native build, where Valve's own identity remains authoritative.
+    dependsOn(deviceIdentityPatch)
 
     val offsetPositionCm by stringOption(
         key = "offsetPositionCm",

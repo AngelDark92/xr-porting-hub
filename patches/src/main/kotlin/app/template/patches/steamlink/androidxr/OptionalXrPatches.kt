@@ -9,6 +9,7 @@ import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_HIGH_RESOLUTION
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_BEFORE_LATEST
 import app.template.patches.shared.Constants.isHighResolutionSteamLinkBuild
+import app.template.patches.shared.buildLabel
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
@@ -36,7 +37,8 @@ private val unrestrictedBatteryManifestPatch = resourcePatch {
 @Suppress("unused")
 val unrestrictedBatteryUsagePatch = bytecodePatch(
     name = "Unrestricted battery usage",
-    description = "Opens Android's Battery usage page at startup so Unrestricted can be selected for XR streaming.",
+    description = "Opens Android's Battery usage page at startup so XR streaming can run unrestricted. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK),
     default = true,
 ) {
     category(PatchCategories.STARTUP_AND_PERMISSIONS)
@@ -73,7 +75,8 @@ private val appearOnTopManifestPatch = resourcePatch {
 @Suppress("unused")
 val appearOnTopPatch = bytecodePatch(
     name = "Appear on top (legacy)",
-    description = "Legacy overlay fallback for older builds: lets Steam Link draw its panel over other screens.",
+    description = "Lets Steam Link draw its panel over other screens (legacy fallback). " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_BEFORE_LATEST),
     default = false,
 ) {
     category(PatchCategories.STARTUP_AND_PERMISSIONS)
@@ -308,8 +311,8 @@ private val androidSurfaceTriggerResourcesPatch = androidSurfaceTriggerResources
 @Suppress("unused")
 val xrGalaxyXrHighResolutionPatch = resourcePatch(
     name = "Galaxy XR high-resolution 3-projection fix",
-    description = "Permission-free high-resolution fix: adds a small Android-surface trigger and leaves the renderer's own " +
-        "formats, including future RGB10_A2, untouched. No image copy. Builds: 5001712, 5001812, 5001968, 5002244, 5002363.",
+    description = "Permission-free high-resolution fix that leaves renderer formats, including future RGB10_A2, untouched. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_HIGH_RESOLUTION),
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

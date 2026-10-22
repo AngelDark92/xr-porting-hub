@@ -1,6 +1,8 @@
 package app.template.patches.steamlink.binary
 
 import app.morphe.patcher.patch.PatchException
+import org.junit.Assume.assumeTrue
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -12,10 +14,10 @@ class VisualDelayPatchTest {
     fun `native layouts patch all guarded sites and are idempotent`() {
         nativeLayouts.forEach { layout ->
             val stock = syntheticElf(layout)
-            val patched = patchVisualDelay(stock, 60)
+            val patched = patchVisualDelay(stock, 60, layout.versionName, layout.versionCode.toString())
 
             assertFalse(stock.contentEquals(patched), layout.versionCode.toString())
-            assertContentEquals(patched, patchVisualDelay(patched, 60), layout.versionCode.toString())
+            assertContentEquals(patched, patchVisualDelay(patched, 60, layout.versionName, layout.versionCode.toString()), layout.versionCode.toString())
             assertContentEquals(
                 stock.copyOfRange(stock.size - 32, stock.size),
                 patched.copyOfRange(patched.size - 32, patched.size),
@@ -49,7 +51,7 @@ class VisualDelayPatchTest {
             val snapshot = changed.copyOf()
 
             assertFailsWith<PatchException>(layout.versionCode.toString()) {
-                patchVisualDelay(changed, 60)
+                patchVisualDelay(changed, 60, layout.versionName, layout.versionCode.toString())
             }
             assertContentEquals(snapshot, changed, layout.versionCode.toString())
         }
@@ -64,7 +66,9 @@ class VisualDelayPatchTest {
     @Test
     fun `5002363 requires exact metadata and rejects unexpected size`() {
         val stock = syntheticElf(layout5002363)
-        assertContentEquals(stock, patchVisualDelay(stock, 60))
+        val patched = patchVisualDelay(stock, 60, layout5002363.versionName, layout5002363.versionCode.toString())
+        assertFalse(stock.contentEquals(patched))
+        assertContentEquals(patched, patchVisualDelay(patched, 60, layout5002363.versionName, layout5002363.versionCode.toString()))
         assertContentEquals(stock, patchVisualDelay(stock, 60, "2.0.22", "5002363"))
         assertContentEquals(stock, patchVisualDelay(stock, 60, "2.0.23", "5002322"))
         assertFailsWith<PatchException> {
@@ -240,9 +244,30 @@ class VisualDelayPatchTest {
         (readU32LE(offset).toLong() and 0xFFFFFFFFL) or
             ((readU32LE(offset + 4).toLong() and 0xFFFFFFFFL) shl 32)
 
+    @Test
+    fun `real decoded renderers patch and reapply on every restored base`() {
+        val bases = listOf(
+            Triple("2.0.20", "5001712", 2_221_072),
+            Triple("2.0.20", "5001812", 2_220_872),
+            Triple("2.0.21", "5001968", 2_234_048),
+            Triple("2.0.22", "5002244", 2_251_920),
+            Triple("2.0.23", "5002363", 2_292_008),
+        )
+        bases.forEach { (version, code, size) ->
+            val file = File("android-steamlinkvr-release-base-$version-$code/lib/arm64-v8a/libvrlink_scene.so")
+            assumeTrue("BLOCKED: decoded $version/$code scene is absent", file.isFile)
+            val stock = file.readBytes()
+            assertEquals(size, stock.size, "$version/$code")
+            val patched = patchVisualDelay(stock, 60, version, code)
+            assertFalse(stock.contentEquals(patched), "$version/$code")
+            assertContentEquals(patched, patchVisualDelay(patched, 60, version, code), "$version/$code")
+        }
+    }
+
     private companion object {
         data class TestLayout(
             val versionCode: Int,
+            val versionName: String,
             val fileSize: Int,
             val hookOffset: Int,
             val velocityStores: List<Triple<Int, Int, Boolean>>,
@@ -250,7 +275,7 @@ class VisualDelayPatchTest {
         )
 
         val layout5002363 = TestLayout(
-            5002363, 2_292_008, 0x101f1c,
+            5002363, "2.0.23", 2_292_008, 0x101f1c,
             listOf(
                 Triple(0x102190, 28, false), Triple(0x102194, 32, false),
                 Triple(0x102198, 36, false), Triple(0x1021a4, 40, false),
@@ -260,7 +285,7 @@ class VisualDelayPatchTest {
 
         val nativeLayouts = listOf(
             TestLayout(
-                5001712,
+                5001712, "2.0.20",
                 2_221_072,
                 0x1014E8,
                 listOf(

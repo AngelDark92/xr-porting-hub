@@ -79,7 +79,7 @@ class ControllerGripHapticsPatchTest {
     }
 
     @Test
-    fun `patch is opt-in and covers the legacy and native bases`() {
+    fun `patch is opt-in and covers both bases`() {
         assertFalse(controllerGripHapticsPatch.default)
         assertEquals("Controller grip haptics through Shizuku", controllerGripHapticsPatch.name)
 
@@ -90,12 +90,13 @@ class ControllerGripHapticsPatchTest {
             compatibilities.flatMap { it.targets }.flatMap { it.versionCodes!!.values }.toSet(),
         )
 
-        listOf("2.0.20" to "5001712", "2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
-            "2.0.23" to "5002363")
-            .forEach { (version, versionCode) ->
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244", "2.0.23" to "5002363",
+        ).forEach { (version, versionCode) ->
                 assertTrue(isControllerGripHapticsBuild(version, versionCode), "$version/$versionCode")
             }
-        listOf("2.0.23" to "5002364", "2.0.19" to "5001712", "2.0.24" to "5002363")
+        listOf("2.0.23" to "5002364", "2.0.19" to "5001712", "2.0.20" to "5002363")
             .forEach { (version, versionCode) ->
                 assertFalse(isControllerGripHapticsBuild(version, versionCode), "$version/$versionCode")
             }

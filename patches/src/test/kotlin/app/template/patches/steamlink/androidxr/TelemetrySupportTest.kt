@@ -13,7 +13,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TelemetryPatchTest {
-    private val pairs = listOf("2.0.20" to "5001712", "2.0.23" to "5002363")
+    private val pairs = listOf(
+        "2.0.20" to "5001712",
+        "2.0.20" to "5001812",
+        "2.0.21" to "5001968",
+        "2.0.22" to "5002244",
+        "2.0.23" to "5002363",
+    )
 
     @Test fun `merged Codecs Support exposes telemetry off by default without dependencies`() {
         val patches = listOf(xrCodecsSupportPatch)
@@ -34,9 +40,9 @@ class TelemetryPatchTest {
     @Test fun `unknown pairs and other apps return before file or payload access`() = withTemporaryRoot { root ->
         val absent = File(root, "must-stay-absent")
         val invalidPayload = mapOf("unknown" to byteArrayOf(1))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
-            "2.0.20" to "5001713", "2.0.20" to "5001968", "2.0.22" to "5002322",
-            "2.0.23" to "5002364", "2.0.24" to "5002363").forEach { (version, code) ->
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712",
+            "2.0.20" to "5001813", "2.0.20" to "5002364", "2.0.22" to "5002322",
+            "2.0.21" to "5001969", "2.0.24" to "5002363").forEach { (version, code) ->
             assertTrue(prepareTelemetryResources(absent, version, code, payloads = invalidPayload,
                 profileBytes = byteArrayOf(1)).isEmpty())
             assertFalse(installTelemetryResources(absent, version, code, payloads = invalidPayload,

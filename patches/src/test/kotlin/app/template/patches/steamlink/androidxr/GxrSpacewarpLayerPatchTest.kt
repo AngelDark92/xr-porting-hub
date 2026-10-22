@@ -19,6 +19,9 @@ class GxrSpacewarpLayerPatchTest {
     // base-agnostic; the gate evidence pairs and scene windows are per base.
     private val supportedBases = listOf(
         Pair("2.0.20", "5001712"),
+        Pair("2.0.20", "5001812"),
+        Pair("2.0.21", "5001968"),
+        Pair("2.0.22", "5002244"),
         Pair("2.0.23", "5002363"),
     )
 
@@ -29,29 +32,27 @@ class GxrSpacewarpLayerPatchTest {
         assertTrue(gxrSpacewarpLayerPatch.compatibility.orEmpty()
             .all { it.name == EXPERIMENTAL_COMPATIBILITY_NAME })
         val nativeTargets = gxrSpacewarpLayerPatch.compatibility.orEmpty().flatMap { it.targets }
-        assertEquals(setOf("2.0.20", "2.0.23"), nativeTargets.map { it.version }.toSet())
-        assertEquals(setOf(5001712, 5002363),
+        assertEquals(setOf("2.0.20", "2.0.21", "2.0.22", "2.0.23"), nativeTargets.map { it.version }.toSet())
+        assertEquals(setOf(5001712, 5001812, 5001968, 5002244, 5002363),
             nativeTargets.flatMap { it.versionCodes.orEmpty().values }.toSet())
-        // Both supported pairs are positive now; the other known Steam Link
-        // pairs stay excluded (brief 13's negative list, restructured for
-        // 5001712 becoming positive).
-        assertTrue(isGxrSpacewarpSteamLinkBuild("2.0.20", "5001712"))
-        assertTrue(isGxrSpacewarpSteamLinkBuild("2.0.23", "5002363"))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968",
-            "2.0.22" to "5002244", "2.0.23" to "5002322").forEach { (version, code) ->
+        supportedBases.forEach { (version, code) ->
+            assertTrue(isGxrSpacewarpSteamLinkBuild(version, code), "$version/$code")
+        }
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712",
+            "2.0.23" to "5002322", "2.0.20" to "5001740").forEach { (version, code) ->
             assertFalse(isGxrSpacewarpSteamLinkBuild(version, code))
         }
         // Repo voice: the description states the fail-safe stand-down and the
         // experimental status; assert with contains-checks (credits may appended).
         val description = gxrSpacewarpLayerPatch.description.orEmpty()
-        assertTrue("2.0.23/5002363" in description, "description names the exact base")
-        assertTrue("2.0.20/5001712" in description, "description names the second base")
+        assertTrue("5002363" in description, "description names the native base")
+        assertTrue("5001712" in description, "description names the legacy base")
         assertTrue("stand" in description, "description states the stand-down discipline")
     }
     @Test
     fun `excluded exact pairs return unchanged before file or payload access`() = withTemporaryRoot { root ->
         val missing = File(root, "must-stay-absent")
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712",
             "2.0.23" to "5002322")
             .forEach { (version, code) ->
                 assertFalse(
@@ -293,6 +294,9 @@ class GxrSpacewarpLayerPatchTest {
     // The layer's per-base eglCreateImageKHR slot pins (swp_hooks profiles).
     private val perBaseSlotPins = mapOf(
         "5001712" to 0x21bb88,
+        "5001812" to 0x21bab8,
+        "5001968" to 0x221bc8,
+        "5002244" to 0x226150,
         "5002363" to 0x22fcc8,
     )
 
@@ -317,10 +321,16 @@ class GxrSpacewarpLayerPatchTest {
     // per versionCode: (versionName, decoded tree directory)
     private val baseTrees = mapOf(
         "5001712" to "android-steamlinkvr-release-base-2.0.20-5001712",
+        "5001812" to "android-steamlinkvr-release-base-2.0.20-5001812",
+        "5001968" to "android-steamlinkvr-release-base-2.0.21-5001968",
+        "5002244" to "android-steamlinkvr-release-base-2.0.22-5002244",
         "5002363" to "android-steamlinkvr-release-base-2.0.23-5002363",
     )
     private val baseVersionNames = mapOf(
         "5001712" to "2.0.20",
+        "5001812" to "2.0.20",
+        "5001968" to "2.0.21",
+        "5002244" to "2.0.22",
         "5002363" to "2.0.23",
     )
 

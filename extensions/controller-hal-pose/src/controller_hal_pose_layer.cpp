@@ -96,7 +96,7 @@ constexpr double DEFAULT_LEAD_MS = 30.0;
 // Written by the Morphe patch, located by the 16-byte magic. Version 1:
 //   +16 version          uint32
 //   +20 angularWorld     uint32  0 = angular velocity local to the grip pose (VRLink 2.0.23),
-//                                1 = in the base space (VRLink 2.0.20 - 2.0.22)
+//                                1 = in the base space (VRLink 2.0.20)
 struct ConfigBlob {
     char magic[16];
     uint32_t version;

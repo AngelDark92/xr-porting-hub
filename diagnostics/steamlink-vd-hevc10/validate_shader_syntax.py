@@ -16,7 +16,7 @@ output = root / '../builds/steamlink-patches/build/vd-sdr-glsl-check'
 output.mkdir(parents=True, exist_ok=True)
 compiler = root / '../builds/steamlink-patches/build/tooling/bin/glslang.exe'
 report = {'boundary': __doc__.strip(), 'cases': []}
-bases = [('2.0.20', '5001712'), ('2.0.22', '5002244'), ('2.0.23', '5002363')]
+bases = [('2.0.20', '5001712'), ('2.0.23', '5002363')]
 
 for version, code in bases:
     binary = (root / f'decoded-apk-android-steamlinkvr-release-base-{version}-{code}' /

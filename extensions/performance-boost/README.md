@@ -3,8 +3,8 @@
 Morphe option: **OpenXR CPU and GPU BOOST**, default off,
 category App & device identity. The standalone MPP contains only this option.
 
-Exact repository-supported targets: 2.0.20/5001712, 2.0.20/5001812,
-2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, original package
+Exact repository-supported targets: 2.0.20/5001712 and
+2.0.23/5002363, original package
 `com.valvesoftware.steamlinkvr`, ARM64 loader required. Unknown versions are
 unchanged even if forced. This is not a claim about every historical/future
 Steam Link build or renamed package.
@@ -50,10 +50,9 @@ continuation, repeated begin, multiple instances and destruction cleanup. PASS
 with MSVC; optional CMake `GXR_BOOST_TESTS=ON` enables CTest on a host build.
 
 Morphe Desktop 1.18.1 successfully loads the MPP and applies it to retained actual
-2.0.20/5001712, 2.0.20/5001812 and 2.0.23/5002363 APKs. Reapplication checked on
+2.0.20/5001712 and 2.0.23/5002363 APKs. Reapplication checked on
 5001712. Existing entries are byte-preserved. Loader discovery strings verified.
-The other two exact bases retain compatibility metadata but were unavailable for
-fresh APK validation in this run. On Galaxy XR, the running Steam Link process logged extension enabled and both CPU/GPU requests returning XR_SUCCESS after create and begin. No clocks/FPS measurement performed.
+On Galaxy XR, the running Steam Link process logged extension enabled and both CPU/GPU requests returning XR_SUCCESS after create and begin. No clocks/FPS measurement performed.
 
 All production Kotlin sources compile with the local compiler fallback and
 catalogs were regenerated with the canonical generator. Gradle is BLOCKED before

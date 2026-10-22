@@ -18,7 +18,7 @@
 namespace {
 constexpr const char* kName = "XR_APILAYER_local_GalaxyXR_foveal_canvas";
 constexpr int kWidth = 5000, kHeight = 6000;
-constexpr const char* kBuild = "foveal-canvas-5001812-v1-20261001";
+constexpr const char* kBuild = "foveal-canvas-multibase-v2-20261021";
 #define LOG(...) __android_log_print(ANDROID_LOG_INFO, "GXRFovealCanvas", __VA_ARGS__)
 struct Dispatch {
     PFN_xrGetInstanceProcAddr get{};
@@ -75,7 +75,7 @@ bool samePose(const XrPosef& a, const XrPosef& b) {
 }
 gxr_canvas::Fov fov(const XrFovf& f) { return {f.angleLeft, f.angleRight, f.angleDown, f.angleUp}; }
 bool knownLayerChain(const void* next) {
-    // Exact 5001812 attaches FB composition-layer settings to both projections.
+    // Exact Steam Link layers attach FB composition-layer settings to both projections.
     // Preserve those pointers/settings verbatim. Unknown image-dependent layer
     // extensions are not inferred to remain valid after image/FOV replacement.
     const auto* item = reinterpret_cast<const XrBaseInStructure*>(next);

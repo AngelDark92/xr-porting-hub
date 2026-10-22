@@ -7,6 +7,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_LEGACY
+import app.template.patches.shared.buildLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21c
 import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31c
@@ -121,7 +122,8 @@ private val changePackageNameBytecodePatch = bytecodePatch {
 @Suppress("unused")
 val changePackageNamePatch = resourcePatch(
     name = "Change package name",
-    description = "Renames the app so the patched Steam Link can install next to the original. Builds: 5001712 to 5002244.",
+    description = "Renames the app so it can install next to the original. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_LEGACY),
     default = false,
 ) {
     category(PatchCategories.APP_AND_DEVICE_IDENTITY)

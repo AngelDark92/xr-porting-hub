@@ -24,7 +24,7 @@ class ControllerPoseTimePatchTest {
 
         assertContentEquals(byteArrayOf(0x7f, 0x45, 0x4c, 0x46), library.copyOfRange(0, 4))
         // extensions/controller-pose-time-layer, NDK 28.2.13676358, arm64-v8a, Release.
-        assertEquals("54e1375ccb9e58c37cc19aac221e4cf7af3b330deb238674a581c66dbee3c975", sha256(library))
+        assertEquals("72417eca039bfce67da5f7019252ecc3b76dc16f7970400ae614617b5b9129ae", sha256(library))
         val text = String(library, Charsets.ISO_8859_1)
         assertTrue("xrNegotiateLoaderApiLayerInterface" in text)
         assertTrue("/system/lib64/libopenxr_android.so" in text)
@@ -84,7 +84,10 @@ class ControllerPoseTimePatchTest {
         val compatibilities = controllerPoseTimePatch.compatibility.orEmpty()
         assertTrue(compatibilities.isNotEmpty() && compatibilities.all { it.name == EXPERIMENTAL_COMPATIBILITY_NAME })
         assertEquals(
-            setOf("2.0.20" to 5001712, "2.0.23" to 5002363),
+            setOf(
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
+            ),
             compatibilities.flatMap { it.targets }.map { it.version to it.versionCodes!!.values.toSet().single() }.toSet(),
         )
         val option = controllerPoseTimePatch.options["compensationMs"]
@@ -95,8 +98,11 @@ class ControllerPoseTimePatchTest {
         assertTrue("28.82 ms" in controllerPoseTimePatch.description.orEmpty())
 
         assertNotNull(controllerPoseTimeScene("2.0.20", "5001712"))
+        assertNotNull(controllerPoseTimeScene("2.0.20", "5001812"))
+        assertNotNull(controllerPoseTimeScene("2.0.21", "5001968"))
+        assertNotNull(controllerPoseTimeScene("2.0.22", "5002244"))
         assertNotNull(controllerPoseTimeScene("2.0.23", "5002363"))
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244", "2.0.23" to "5002364")
+        listOf("2.0.20" to "5002363", "2.0.23" to "5001712", "2.0.23" to "5002364")
             .forEach { (version, code) -> assertNull(controllerPoseTimeScene(version, code), "$version/$code") }
     }
 

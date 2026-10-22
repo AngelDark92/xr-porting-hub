@@ -136,6 +136,8 @@ void SwpVtsNoteEndFrame();
 bool SwpVtsSynthesisAllowed();
 // Published carrier value (0 off / 1 late frames only / 2 half rate).
 uint32_t SwpVtsMode();
+// Monotonic carrier-change counter (per-session stale-state detection).
+uint64_t SwpVtsGeneration();
 bool SwpVtsArm();
 }  // extern "C"
 
@@ -193,6 +195,7 @@ struct DispatchState {
     bool haveLocate = false;
     int consecutiveMissed = 0;
     int standDownTicks = 0;       // rate-limited logging: one line per 30
+    bool arrivalUnavailableLogged = false;  // one-shot: no arrival source this session
     uint32_t inputW = 0, inputH = 0;
     uint32_t mvW = 0, mvH = 0;
     uint32_t mvTexL = 0, mvTexR = 0;
@@ -215,8 +218,18 @@ struct DispatchState {
     int stageW = 0, stageH = 0;
     GLint stageFormat = 0;   // internal format of the destination swapchain
     GLuint copyReadFbo = 0, copyDrawFbo = 0;
+    // B1 (enabled-only ownership): every GL name this file creates is counted per
+    // session, so the settled-Off state is a measured zero rather than a claim.
+    // Estimator-owned names (programs plus its own textures/FBO) are torn down by
+    // SwpDestroy and are not counted here.
+    uint32_t liveTextures = 0;
+    uint32_t liveFbos = 0;
+    bool ownsCounted = false;       // this session is present in g_synthOwners
     // Last carrier mode seen, so a 1 <-> 2 flip also drops stale maps.
     uint32_t lastMode = 0;
+    // Carrier generation at the last synthesis tick: a 1 -> 0 -> 1 cycle leaves
+    // lastMode identical, so the generation is what marks the dormant gap.
+    uint64_t modeGeneration = 0;
     // mono<->XrTime anchor ring (index 0 = newest, increasing index = older):
     // arrivals convert within the pair window that contains them; entries older
     // than every window stand down (never guessed).
@@ -497,17 +510,238 @@ bool EnsureEstimatorReadyLocked(DispatchState& state) {
     return true;
 }
 
+// --- B1: enabled-only ownership and context-safe release ---------------------
+//
+// Everything this file allocates (mv pair, staging quad, copy FBOs) is owned by
+// the session that created it and by the EGL context current at that moment.
+// Deletion is only valid while that same context is current, so a release that
+// cannot run is deferred into a bounded pending set and drained from a later
+// frame callback with the matching context - never silently dropped, and never
+// issued against an unrelated current context.
+
+std::atomic<uint32_t> g_synthOwners{0};  // sessions holding live ASW-owned GL names
+std::atomic<bool> g_deferredPending{false};
+std::atomic<uint32_t> g_leakedTextures{0};  // reported, unreclaimable (no matching context)
+std::atomic<uint32_t> g_leakedFbos{0};
+
+struct DeferredReclaim {
+    void* ctx = nullptr;
+    GLuint textures[24] = {};
+    GLuint fbos[8] = {};
+    uint32_t textureCount = 0;
+    uint32_t fboCount = 0;
+};
+DeferredReclaim g_deferred;
+
+bool ContextIsOwner(const DispatchState& state, void* ctx) {
+    return ctx && ctx != EGL_NO_CONTEXT && state.creationCtx && ctx == state.creationCtx;
+}
+
+void NoteOwnedLocked(DispatchState& state, uint32_t textures, uint32_t fbos) {
+    if (!state.ownsCounted) {
+        state.ownsCounted = true;
+        g_synthOwners.fetch_add(1, std::memory_order_relaxed);
+    }
+    state.liveTextures += textures;
+    state.liveFbos += fbos;
+}
+
+void NoteReleasedLocked(DispatchState& state, uint32_t textures, uint32_t fbos) {
+    state.liveTextures = textures > state.liveTextures ? 0u : state.liveTextures - textures;
+    state.liveFbos = fbos > state.liveFbos ? 0u : state.liveFbos - fbos;
+    if (state.liveTextures == 0 && state.liveFbos == 0 && state.ownsCounted) {
+        state.ownsCounted = false;
+        g_synthOwners.fetch_sub(1, std::memory_order_relaxed);
+    }
+}
+
+// Move a session's still-live names into the bounded pending set. Used when a
+// session ends while its context is not current: the names cannot be deleted from
+// here, and discarding them would leak. Returns false when the queue cannot take
+// them, so the caller can report the leak instead of stranding the owner counter.
+bool DeferReclaimLocked(DispatchState& state) {
+    if (state.liveTextures == 0 && state.liveFbos == 0) return true;
+    if (!state.creationCtx) {
+        LOG("cannot defer reclaim: no creating context was recorded (%u textures, %u framebuffers)",
+            state.liveTextures, state.liveFbos);
+        return false;
+    }
+    if (g_deferred.ctx && g_deferred.ctx != state.creationCtx) {
+        LOG("deferred reclaim holds another context; %u textures, %u framebuffers cannot be queued",
+            state.liveTextures, state.liveFbos);
+        return false;
+    }
+    g_deferred.ctx = state.creationCtx;
+    uint32_t tex = 0, fbo = 0;
+    auto queueTexture = [&](GLuint& id) {
+        if (!id || g_deferred.textureCount >= 24) return;
+        g_deferred.textures[g_deferred.textureCount++] = id;
+        id = 0;
+        ++tex;
+    };
+    auto queueFbo = [&](GLuint& id) {
+        if (!id || g_deferred.fboCount >= 8) return;
+        g_deferred.fbos[g_deferred.fboCount++] = id;
+        id = 0;
+        ++fbo;
+    };
+    queueTexture(state.mvTexL);
+    queueTexture(state.mvTexR);
+    for (int s = 0; s < kMaxSlots; s++) {
+        for (int e = 0; e < 2; e++) queueTexture(state.staging[s][e]);
+    }
+    queueFbo(state.copyReadFbo);
+    queueFbo(state.copyDrawFbo);
+    state.stageW = state.stageH = 0;
+    state.stageFormat = 0;
+    state.mvAllocTried = false;
+    state.mvValid = false;
+    NoteReleasedLocked(state, tex, fbo);
+    g_deferredPending.store(true, std::memory_order_relaxed);
+    LOG("queued %u textures, %u framebuffers for reclaim on their creating context", tex, fbo);
+    return true;
+}
+
+// SwpDestroy tears down the process-wide estimator singleton that every session
+// shares. Clearing only the calling session's flag would leave another session
+// believing its estimator survived (EnsureEstimatorReadyLocked returns early on the
+// stale flag, and every later estimator call fails the entry gate), so clear all.
+void DestroyEstimatorForAllSessionsLocked() {
+    bool anyInited = false;
+    for (auto& entry : g_sessions) {
+        if (entry.second.estimatorInited) {
+            entry.second.estimatorInited = false;
+            anyInited = true;
+        }
+    }
+    if (anyInited) SwpDestroy();
+}
+
+void DrainDeferredLocked(void* ctx) {
+    if (!g_deferredPending.load(std::memory_order_relaxed)) return;
+    if (!ctx || ctx != g_deferred.ctx) return;
+    uint32_t tex = 0, fbo = 0;
+    for (uint32_t i = 0; i < g_deferred.textureCount; i++) {
+        if (g_deferred.textures[i]) {
+            glDeleteTextures(1, &g_deferred.textures[i]);
+            ++tex;
+        }
+    }
+    for (uint32_t i = 0; i < g_deferred.fboCount; i++) {
+        if (g_deferred.fbos[i]) {
+            glDeleteFramebuffers(1, &g_deferred.fbos[i]);
+            ++fbo;
+        }
+    }
+    g_deferred = DeferredReclaim{};
+    g_deferredPending.store(false, std::memory_order_relaxed);
+    LOG("reclaimed %u deferred textures, %u framebuffers", tex, fbo);
+}
+
+// Delete every ASW-owned GL name for one session. Returns false when names are
+// still held because their creating context is not current (the caller retries on
+// a later tick); returns true when the session owns nothing afterwards.
+bool ReleaseSynthResourcesLocked(DispatchState& state, void* ctx) {
+    if (state.liveTextures == 0 && state.liveFbos == 0) return true;
+    if (!ContextIsOwner(state, ctx)) {
+        return false;
+    }
+    uint32_t tex = 0, fbo = 0;
+    if (state.mvTexL) {
+        glDeleteTextures(1, &state.mvTexL);
+        state.mvTexL = 0;
+        ++tex;
+    }
+    if (state.mvTexR) {
+        glDeleteTextures(1, &state.mvTexR);
+        state.mvTexR = 0;
+        ++tex;
+    }
+    for (int s = 0; s < kMaxSlots; s++) {
+        for (int e = 0; e < 2; e++) {
+            if (state.staging[s][e]) {
+                glDeleteTextures(1, &state.staging[s][e]);
+                state.staging[s][e] = 0;
+                ++tex;
+            }
+        }
+    }
+    if (state.copyReadFbo) {
+        glDeleteFramebuffers(1, &state.copyReadFbo);
+        state.copyReadFbo = 0;
+        ++fbo;
+    }
+    if (state.copyDrawFbo) {
+        glDeleteFramebuffers(1, &state.copyDrawFbo);
+        state.copyDrawFbo = 0;
+        ++fbo;
+    }
+    state.stageW = state.stageH = 0;
+    state.stageFormat = 0;
+    state.mvAllocTried = false;
+    state.mvValid = false;
+    NoteReleasedLocked(state, tex, fbo);
+    LOG("spacewarp resources released: %u textures, %u framebuffers (live %u/%u)", tex, fbo,
+        state.liveTextures, state.liveFbos);
+    return true;
+}
+
+// Lazily create the two copy FBOs, counted like every other owned name.
+void EnsureCopyFbosLocked(DispatchState& state) {
+    void* ctx = eglGetCurrentContext();
+    if (!ctx || ctx == EGL_NO_CONTEXT) return;
+    if (state.creationCtx && state.creationCtx != ctx) return;  // names live elsewhere
+    if (!state.creationCtx) state.creationCtx = ctx;
+    if (!state.copyReadFbo) {
+        glGenFramebuffers(1, &state.copyReadFbo);
+        if (state.copyReadFbo) NoteOwnedLocked(state, 0, 1);
+    }
+    if (!state.copyDrawFbo) {
+        glGenFramebuffers(1, &state.copyDrawFbo);
+        if (state.copyDrawFbo) NoteOwnedLocked(state, 0, 1);
+    }
+}
+
+// Release the enabled-only set for a session that was disabled mid-session (for
+// example an unsupported viewCount): without this the early return in EndFrame
+// would retain the whole set until xrDestroySession while the carrier is still on.
+void ReleaseDisabledSessionLocked(DispatchState& state) {
+    void* ctx = eglGetCurrentContext();
+    if (!ReleaseSynthResourcesLocked(state, ctx)) {
+        RateLimitedLog(state, "disabled session: owned GL names await their creating context");
+    }
+    if (state.estimatorInited && ContextIsOwner(state, ctx)) DestroyEstimatorForAllSessionsLocked();
+}
+
 // Allocate the MV-map textures in the client's CURRENT context (RGBA16F per the
 // contract's mv map format; immutable storage via TexStorage2D for the FBO path).
 // Never creates or binds a context; fails (-> tick stand-down) without one.
 bool AllocateMvTextures(DispatchState& state) {
-    if (state.mvAllocTried) return state.mvTexL != 0 && state.mvTexR != 0;
+    if (state.mvTexL && state.mvTexR) return true;
+    if (state.mvAllocTried) return false;
     state.mvAllocTried = true;
-    if (eglGetCurrentContext() == EGL_NO_CONTEXT) return false;
+    void* ctx = eglGetCurrentContext();
+    if (!ctx || ctx == EGL_NO_CONTEXT) return false;
+    // The creating context is immutable: names created here belong to it, and a
+    // different current context means this session is looking at a dead namespace.
+    if (state.creationCtx && state.creationCtx != ctx) return false;
+    if (!state.creationCtx) state.creationCtx = ctx;
     if (state.mvW == 0 || state.mvH == 0) return false;
     glGenTextures(1, &state.mvTexL);
     glGenTextures(1, &state.mvTexR);
-    if (!state.mvTexL || !state.mvTexR) return false;
+    if (!state.mvTexL || !state.mvTexR) {
+        // A half-generated pair used to leave one name owned while mvAllocTried
+        // stayed set, so it was never retried and never freed.
+        if (state.mvTexL) {
+            glDeleteTextures(1, &state.mvTexL);
+            state.mvTexL = 0;
+        }
+        if (state.mvTexR) {
+            glDeleteTextures(1, &state.mvTexR);
+            state.mvTexR = 0;
+        }
+        return false;
+    }
     for (uint32_t tex : {state.mvTexL, state.mvTexR}) {
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -517,6 +751,7 @@ bool AllocateMvTextures(DispatchState& state) {
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, state.mvW, state.mvH);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
+    NoteOwnedLocked(state, 2, 0);
     LOG("mv textures allocated %ux%u RGBA16F (ids %u/%u)", state.mvW, state.mvH, state.mvTexL,
         state.mvTexR);
     return true;
@@ -597,35 +832,64 @@ bool EnsureStagingLocked(DispatchState& state, int w, int h, GLint format) {
         state.staging[0][0] && state.staging[1][1]) {
         return true;
     }
+    void* ctx = eglGetCurrentContext();
+    if (!ctx || ctx == EGL_NO_CONTEXT) return false;
+    if (state.creationCtx && state.creationCtx != ctx) return false;  // names live elsewhere
+    if (!state.creationCtx) state.creationCtx = ctx;  // owner = allocation site
     GLint prevActive = GL_TEXTURE0;
     GLint prevBinding = 0;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &prevActive);
     glActiveTexture(GL_TEXTURE0);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevBinding);
+    uint32_t deleted = 0;
     for (int s = 0; s < kMaxSlots; s++) {
         for (int e = 0; e < 2; e++) {
             if (state.staging[s][e]) {
                 glDeleteTextures(1, &state.staging[s][e]);
                 state.staging[s][e] = 0;
+                ++deleted;
             }
         }
     }
-    for (int s = 0; s < kMaxSlots; s++) {
+    NoteReleasedLocked(state, deleted, 0);
+    const int wanted = kMaxSlots * 2;
+    int created = 0;
+    bool failed = false;
+    for (int s = 0; s < kMaxSlots && !failed; s++) {
         for (int e = 0; e < 2; e++) {
             glGenTextures(1, &state.staging[s][e]);
-            if (!state.staging[s][e]) return false;
+            if (!state.staging[s][e]) {
+                failed = true;
+                break;
+            }
             glBindTexture(GL_TEXTURE_2D, state.staging[s][e]);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexStorage2D(GL_TEXTURE_2D, 1, static_cast<GLenum>(format), w, h);
+            ++created;
         }
     }
-    const bool ok = glGetError() == GL_NO_ERROR;
+    const bool ok = !failed && created == wanted && glGetError() == GL_NO_ERROR;
     glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(prevBinding));
     glActiveTexture(static_cast<GLenum>(prevActive));
-    if (!ok) return false;
+    if (!ok) {
+        // Roll back this call's partial set: a failed realloc must not leave an
+        // uncounted half-quad behind while the caller falls back to stock.
+        for (int s = 0; s < kMaxSlots; s++) {
+            for (int e = 0; e < 2; e++) {
+                if (state.staging[s][e]) {
+                    glDeleteTextures(1, &state.staging[s][e]);
+                    state.staging[s][e] = 0;
+                }
+            }
+        }
+        state.stageW = state.stageH = 0;
+        state.stageFormat = 0;
+        return false;
+    }
+    NoteOwnedLocked(state, static_cast<uint32_t>(created), 0);
     state.stageW = w;
     state.stageH = h;
     state.stageFormat = format;
@@ -639,8 +903,7 @@ bool EnsureStagingLocked(DispatchState& state, int w, int h, GLint format) {
 // attachment cannot leave a half-committed composite.
 bool ValidateCopyPair(uint32_t src, uint32_t dst, DispatchState& state) {
     if (!src || !dst) return false;
-    if (!state.copyReadFbo) glGenFramebuffers(1, &state.copyReadFbo);
-    if (!state.copyDrawFbo) glGenFramebuffers(1, &state.copyDrawFbo);
+    EnsureCopyFbosLocked(state);
     if (!state.copyReadFbo || !state.copyDrawFbo) return false;
     GLint prevRead = 0, prevDraw = 0;
     glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prevRead);
@@ -660,8 +923,7 @@ bool ValidateCopyPair(uint32_t src, uint32_t dst, DispatchState& state) {
 // disabled for the copy and restored; the caller's read/draw bindings survive.
 bool CopyStagingToSwapchain(uint32_t src, uint32_t dst, int w, int h, DispatchState& state) {
     if (!src || !dst) return false;
-    if (!state.copyReadFbo) glGenFramebuffers(1, &state.copyReadFbo);
-    if (!state.copyDrawFbo) glGenFramebuffers(1, &state.copyDrawFbo);
+    EnsureCopyFbosLocked(state);
     if (!state.copyReadFbo || !state.copyDrawFbo) return false;
     GLint prevRead = 0, prevDraw = 0;
     const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
@@ -823,36 +1085,37 @@ XrResult SwpDispatchDestroySession(XrSession session) {
     // This session's SVLRoot must never be read again (it may be destroyed with
     // the session; the next live session re-captures its own root).
     SwpVtsSessionEnded();
-    // MV textures live in the client's context: delete only while that exact context
-    // is still current, else leave the two small RGBA16F textures (a few KB once per
-    // session; destroying GL names without their context is invalid GL usage).
-    if (state.creationCtx && eglGetCurrentContext() == state.creationCtx) {
-        if (state.mvTexL && state.mvTexR) {
-            glDeleteTextures(1, &state.mvTexL);
-            glDeleteTextures(1, &state.mvTexR);
-        }
-        // Owned staging + copy FBOs belong to this context; without this the
-        // full-resolution pair leaks on every reconnect.
-        for (int s = 0; s < kMaxSlots; s++) {
-            for (int e = 0; e < 2; e++) {
-                if (state.staging[s][e]) {
-                    glDeleteTextures(1, &state.staging[s][e]);
-                    state.staging[s][e] = 0;
-                }
-            }
-        }
-        if (state.copyReadFbo) {
-            glDeleteFramebuffers(1, &state.copyReadFbo);
-            state.copyReadFbo = 0;
-        }
-        if (state.copyDrawFbo) {
-            glDeleteFramebuffers(1, &state.copyDrawFbo);
-            state.copyDrawFbo = 0;
+    // MV textures, the staging quad and the copy FBOs live in the client's
+    // context. Delete them only while that exact context is current; otherwise
+    // queue the names for reclaim on a later tick with the matching context. The
+    // previous code either skipped them silently or zeroed ids without deleting.
+    void* ctx = eglGetCurrentContext();
+    if (!ReleaseSynthResourcesLocked(state, ctx)) {
+        const uint32_t stillTextures = state.liveTextures;
+        const uint32_t stillFbos = state.liveFbos;
+        if (DeferReclaimLocked(state)) {
+            LOG("session destroy: %u textures, %u framebuffers queued (context not current)",
+                stillTextures, stillFbos);
+        } else {
+            // Neither deletable now nor queueable: count a reported leak and drop the
+            // ownership record with the session, so the dormant gate cannot stay
+            // pinned by a counter nothing can clear.
+            g_leakedTextures.fetch_add(stillTextures, std::memory_order_relaxed);
+            g_leakedFbos.fetch_add(stillFbos, std::memory_order_relaxed);
+            NoteReleasedLocked(state, state.liveTextures, state.liveFbos);
+            LOG("session destroy: %u textures, %u framebuffers LEAKED (no creating context); "
+                "total leaked %u/%u",
+                stillTextures, stillFbos, g_leakedTextures.load(), g_leakedFbos.load());
         }
     }
     if (state.estimatorInited) {
-        SwpDestroy();
-        state.estimatorInited = false;
+        if (ContextIsOwner(state, ctx)) {
+            DestroyEstimatorForAllSessionsLocked();
+        } else {
+            // The estimator singleton cannot delete names from a foreign context;
+            // the next SwpInit (which starts with SwpDestroy) completes it.
+            LOG("session destroy: estimator teardown deferred (its context is not current)");
+        }
     }
     g_sessions.erase(it);
     return result;
@@ -879,9 +1142,14 @@ XrResult SwpDispatchLocateViews(XrSession session, const XrViewLocateInfo* viewL
                                       XR_VIEW_STATE_ORIENTATION_VALID_BIT)) == 0) {
         return result;
     }
+    // The pose only feeds synthesis: with the carrier off (or a session the
+    // session-init decision already rejected) forward and stop — no lock, no
+    // matrix math. The pose for the first synthesis tick is captured on that
+    // tick's own LocateViews, which runs after the carrier has flipped.
+    if (SwpVtsMode() == 0) return result;
     std::lock_guard<std::recursive_mutex> lock(g_mutex);
     DispatchState* state = StateForLocked(session);
-    if (!state) return result;
+    if (!state || !state->enabledForSession) return result;
     for (int eye = 0; eye < 2; eye++) {
         const XrView& view = views[eye];
         const float pos[3] = {view.pose.position.x, view.pose.position.y, view.pose.position.z};
@@ -901,10 +1169,54 @@ XrResult SwpDispatchLocateViews(XrSession session, const XrViewLocateInfo* viewL
 
 XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndInfo) {
     SwpDispatchTryArm();
+    // Dormant fast path: with the host carrier off (or never published) the layer
+    // owns nothing but the carrier cadence — one lock-free mode load, one counter
+    // tick, then the client's own endframe call. No clock read, no lock, no
+    // session lookup, no tick classification, no history. Everything synthesis
+    // needs is rebuilt after the mode flips, and the flip itself clears the state
+    // that went stale while dormant (see the transition block below).
+    if (SwpVtsMode() == 0) {
+        // Settled-Off release (B1). The gate is one relaxed load, so a dormant
+        // tick in a run that never enabled ASW still performs no lock and no GL:
+        // the release path is entered only while some session still owns names.
+        if (g_synthOwners.load(std::memory_order_relaxed) != 0 ||
+            g_deferredPending.load(std::memory_order_relaxed)) {
+            std::lock_guard<std::recursive_mutex> offLock(g_mutex);
+            void* offCtx = eglGetCurrentContext();
+            DrainDeferredLocked(offCtx);
+            auto offIt = g_sessions.find(session);
+            if (offIt != g_sessions.end()) {
+                DispatchState& offState = offIt->second;
+                if (!ReleaseSynthResourcesLocked(offState, offCtx)) {
+                    RateLimitedLog(offState, "ASW off: owned GL names await their creating context");
+                }
+                if (ContextIsOwner(offState, offCtx)) {
+                    DestroyEstimatorForAllSessionsLocked();
+                } else if (offState.estimatorInited) {
+                    RateLimitedLog(offState, "ASW off: estimator teardown awaits its context");
+                }
+            }
+        }
+        SwpVtsNoteEndFrame();
+        return g_nextEndFrame(session, frameEndInfo);
+    }
     std::lock_guard<std::recursive_mutex> lock(g_mutex);
+    if (g_deferredPending.load(std::memory_order_relaxed)) DrainDeferredLocked(eglGetCurrentContext());
 
     DispatchState* state = StateForLocked(session);
-    if (!state || !state->enabledForSession) return g_nextEndFrame(session, frameEndInfo);
+    if (!state || !state->enabledForSession) {
+        // A session disabled mid-session (unsupported composition, failed enable)
+        // must not keep its enabled-only set alive just because the carrier is on.
+        if (state && (state->liveTextures || state->liveFbos || state->estimatorInited)) {
+            ReleaseDisabledSessionLocked(*state);
+        }
+        return g_nextEndFrame(session, frameEndInfo);
+    }
+
+    // The carrier cadence must run before every other early return below: a
+    // session whose arrival learning is unavailable still has to observe the
+    // host toggle (otherwise it can never leave the dormant state).
+    SwpVtsNoteEndFrame();
 
     // Clock anchor pair for arrival<->XrTime conversion: this tick's compositor
     // deadline (XrFrameEndInfo.displayTime) paired with the monotonic now.
@@ -924,17 +1236,21 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     const bool learningDisabled = SwpEglLearningDisabled();
 
     if (!haveArrival || learningDisabled) {
-        RateLimitedLog(*state, learningDisabled ? "arrival learning disabled"
-                                                : "arrival snapshot unavailable");
+        // This session has no arrival source, so it can never classify a tick.
+        // Say it once and pass stock for the session's life instead of writing a
+        // line every 30 ticks (the previous behaviour, which the dormant fast
+        // path no longer masks).
+        if (!state->arrivalUnavailableLogged) {
+            state->arrivalUnavailableLogged = true;
+            LOG("%s; spacewarp stays stock for this session",
+                learningDisabled ? "arrival learning disabled" : "arrival snapshot unavailable");
+        }
         return g_nextEndFrame(session, frameEndInfo);
     }
 
     const TickKind kind = SwpClassifyTick(epochNow, state->tickEpoch, state->haveTickEpoch, false);
     state->tickEpoch = epochNow;
     state->haveTickEpoch = true;
-    // The bridge cadence must keep running even on a tick whose projection
-    // layout cannot be resolved; the gate decision is read below.
-    SwpVtsNoteEndFrame();
 
     // -----------------------------------------------------------------------
     // Projection slots. The client submits one projection per video component;
@@ -997,16 +1313,26 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     const int32_t refH = projs[firstSlot]->views[0].subImage.imageRect.extent.height;
     if (!state->inputW || !state->inputH || state->inputW != static_cast<uint32_t>(refW) ||
         state->inputH != static_cast<uint32_t>(refH)) {
+        // Retire the old owned set BEFORE the new extent is armed. The previous
+        // code zeroed the mv ids without deleting them, so every mid-session size
+        // change leaked two textures; staging and the copy FBOs were rebuilt
+        // underneath the stale ones.
+        void* resizeCtx = eglGetCurrentContext();
+        if (!ReleaseSynthResourcesLocked(*state, resizeCtx)) {
+            RateLimitedLog(*state, "extent change needs the creating EGL context; holding stock");
+            return g_nextEndFrame(session, frameEndInfo);
+        }
+        if (state->estimatorInited) {
+            if (!ContextIsOwner(*state, resizeCtx)) {
+                RateLimitedLog(*state, "extent change: estimator teardown awaits its context");
+                return g_nextEndFrame(session, frameEndInfo);
+            }
+            DestroyEstimatorForAllSessionsLocked();
+        }
         state->inputW = static_cast<uint32_t>(refW);
         state->inputH = static_cast<uint32_t>(refH);
-        if (state->estimatorInited) {
-            SwpDestroy();
-            state->estimatorInited = false;
-            state->mvValid = false;
-            state->mvAllocTried = false;
-            state->mvTexL = 0;
-            state->mvTexR = 0;
-        }
+        state->mvValid = false;
+        state->mvAllocTried = false;
         for (int s = 0; s < kMaxSlots; s++) state->slots[s].history.clear();
     }
     // One uv field serves every slot: their view geometry and extent are
@@ -1043,33 +1369,30 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
     }
 
     // -----------------------------------------------------------------------
-    // Bridge gate: ALL synthesis runs only while the carrier reads enabled;
-    // otherwise the tick is plain stock passthrough (observers keep learning).
+    // Bridge gate: synthesis runs only while the carrier reads enabled. Dormant
+    // ticks never reach this point (the fast path above returned already), so
+    // what follows is the enable transition and the synthesis path itself.
     // -----------------------------------------------------------------------
+    // Dormant ticks never reach here (the fast path above returns first), so this
+    // is the enable transition: the first tick after the carrier reads nonzero, or
+    // a 1 <-> 2 mode flip. Everything collected while dormant is stale by
+    // definition — the clock anchors stopped advancing and the frame history
+    // predates the gap — so drop it and restart from the next real tick.
     const uint32_t mode = SwpVtsMode();
-    const bool synthesisAllowed = mode != 0;
-    if (synthesisAllowed && (!state->synthesisWasAllowed || mode != state->lastMode)) {
-        // Fresh enablement (session start, bridge flip or mode flip): stale maps
-        // must never warp old content, and the cadence restarts on a real tick.
+    if (mode == 0) return g_nextEndFrame(session, frameEndInfo);  // raced with a flip off
+    const uint64_t generation = SwpVtsGeneration();
+    if (!state->synthesisWasAllowed || generation != state->modeGeneration ||
+        mode != state->lastMode) {
         state->mvValid = false;
         state->consecutiveMissed = 0;
         state->havePresented = false;
         state->lastPresentedWasReal = false;
+        state->pairCount = 0;  // pre-gap anchors would map fresh arrivals wrong
+        for (int s = 0; s < kMaxSlots; s++) state->slots[s].history.clear();
     }
-    state->synthesisWasAllowed = synthesisAllowed;
+    state->synthesisWasAllowed = true;
     state->lastMode = mode;
-    if (!synthesisAllowed) {
-        if (kind == TickKind::Real) {
-            for (int s = 0; s < slotCount; s++) {
-                RecordSlotTickLocked(*state, state->slots[s], state->slots[s].texL,
-                                     state->slots[s].texR, epochNow, predDispTime);
-            }
-            state->consecutiveMissed = 0;
-            state->havePresented = true;
-            state->lastPresentedWasReal = true;
-        }
-        return g_nextEndFrame(session, frameEndInfo);
-    }
+    state->modeGeneration = generation;
 
     // CRITICAL: draw only with the client's current EGL context, and only when it
     // matches the context the frame assets were created with.
@@ -1079,6 +1402,13 @@ XrResult SwpDispatchEndFrame(XrSession session, const XrFrameEndInfo* frameEndIn
         return g_nextEndFrame(session, frameEndInfo);
     }
     if (!state->creationCtx) state->creationCtx = arrivalCtx;
+    // The pose is captured only while the carrier is on (LocateViews fast path).
+    // A tick that reaches synthesis without one must pass stock: warping with the
+    // zero matrix would silently draw garbage into the projection image.
+    if (!state->haveLocate) {
+        RateLimitedLog(*state, "no locate pose for this tick; passing stock");
+        return g_nextEndFrame(session, frameEndInfo);
+    }
 #ifdef SWP_HAVE_ESTIMATOR
     SwpBindIdentityContext(reinterpret_cast<void*>(currentCtx));
 #endif

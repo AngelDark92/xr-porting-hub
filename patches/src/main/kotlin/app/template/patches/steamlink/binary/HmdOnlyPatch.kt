@@ -5,6 +5,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.intSliderOption
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.buildLabel
 import app.template.patches.steamlink.util.BinaryPatchHelper.vaddrToFileOffset
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -426,9 +427,8 @@ internal fun patchVisualDelay(
 @Suppress("unused")
 val hmdOnlyPatch = rawResourcePatch(
     name = "Visual Delay Fix",
-    description = "Re-times the headset's position report so head movement shows up sooner; " +
-        "controller movement is untouched. Builds: 2.0.20/5001712, 2.0.20/5001812, " +
-        "2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
+    description = "Makes head movement appear sooner without touching controller motion. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK),
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)

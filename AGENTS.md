@@ -33,6 +33,8 @@ AppTarget(
 - `versionCodes = null` means every build code for that version. Use it only when every such build is intentionally supported. Use an explicit experimental target for warning-only unknown-version work; exact compatibility does not weaken patch preconditions.
 - `Patch.default` is one global flag per patch object. Recommended defaults live on the individual patches: each recommended patch sets `default = true` and declares only the exact bases where it is recommended, so Morphe Manager auto-selects the recommended set per detected `versionName` and `versionCode` in both Simple and Expert mode. Prefer a single patch whose guarded body selects the per-build behavior; declare one patch object per exact-build scope with distinct names only when a single global `default` flag cannot honestly describe the scopes. Do not duplicate a shared patch name to express per-build defaults.
 - Morphe executes dependencies recursively without re-checking their compatibility. Every build-specific dependency or mutation body must independently return unchanged on excluded builds before reading or writing target files. An app-specific patch must also be inert on every other app's package.
+- Prefer one patch object per feature with a build-aware body and a per-build layout table. Do not create a second patch object for the same feature on another base. The only valid duplication is a separate object whose global `default` flag must differ (for example a recommended legacy patch and an optional native patch); name the reason in the source.
+- Every public patch description follows one short plain-words sentence plus `Builds: <exact codes>.` generated from the same compatibility list passed to `compatibleWith`, then `Needs:` only when a real requirement exists. The `assertPatchDescriptionContract` test helper enforces this mapping and the sentence length. When adding a base, update the registry, per-build tables, tests, catalogs and the generated build line together.
 
 ## App isolation
 
@@ -62,7 +64,7 @@ AppTarget(
 - Untracked decoded trees at the repository root (for example the Steam Link `decoded-apk-*` bases and the 4XVR `4xvr-orig/` and `4XVR-GalaxyXR/` trees) are local evidence only. New app tests must pass on a fresh checkout without them.
 - Byte-hashed text payloads must declare a deterministic checkout encoding/line ending in `.gitattributes` (for the foveal canvas manifest: UTF-8 with LF). Validate the actual resource bytes after checkout; do not change the expected hash to accept Windows CRLF conversion or weaken production validation.
 - Verify new fixture-dependent tests both with retained real inputs and from an isolated working directory without those inputs. Report executed and skipped counts separately; a skipped audit is not compatibility proof.
-- Follow `.agents/skills/morphe-patches/SKILL.md` for the fresh-checkout check. Cached local compilation does not establish that GitHub CI passed; confirm the workflow for the corrected commit before claiming CI success.
+- Follow `.opencode\skills\morphe-patches\SKILL.md` for the fresh-checkout check. Cached local compilation does not establish that GitHub CI passed; confirm the workflow for the corrected commit before claiming CI success.
 
 ## Build dependency and release gates
 
@@ -89,7 +91,7 @@ AppTarget(
   Update scripts, release asset consumers, and current reproduction commands together.
   This includes new experiments, temporary checkouts, diagnostic logs, compiler
   scratch and Zig/Python caches. Pass this requirement to every delegated agent;
-  build-related skills and agent presets must follow it. On the Hermes host, Cavecrew children are spawned via `delegate_task` with the role contracts from `.agents/skills/cavecrew/references/hermes-roles.md` pasted into each child's `context`; the main thread runs all checks and owns verification claims. On this workspace the
+  build-related skills and agent presets must follow it. On the Hermes host, Cavecrew children are spawned via `delegate_task` with the role contracts from `.agents/skills/cavecrew/references/hermes-roles.md` pasted into each child's `context`; the main thread runs all checks and owns verification claims. OpenCode uses `.opencode/skills/` and `.opencode/agents/`; Cursor uses `.cursor/rules/project.mdc`; Codex keeps `.codex/agents/*.toml` when present. On this workspace the
   absolute root is `D:/Angelo/Desktop/SteamLink-GalaxyXR-Windows-Toolkit-FULL/builds/steamlink-patches`.
   Invoke repository Python helpers with `python -B` or configure an external
   `sys.pycache_prefix`; do not leave `__pycache__` directories in source folders.

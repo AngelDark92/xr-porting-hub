@@ -229,7 +229,10 @@ class GalaxyXrVendorDriverPatchTest {
         assertTrue(deviceIdentityPatch in galaxyXrVendorDriverPatch.dependencies)
         val targets = galaxyXrVendorDriverPatch.compatibility.orEmpty().flatMap { it.targets }
         assertEquals(
-            setOf("2.0.20:5001712", "2.0.20:5001812", "2.0.21:5001968", "2.0.22:5002244", "2.0.23:5002363"),
+            setOf(
+                "2.0.20:5001712", "2.0.20:5001812", "2.0.21:5001968",
+                "2.0.22:5002244", "2.0.23:5002363",
+            ),
             targets.flatMap { t -> t.versionCodes!!.values.map { "${t.version}:$it" } }.toSet(),
         )
     }

@@ -1,3 +1,81 @@
+## [2.0.0-dev.11](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.10...v2.0.0-dev.11) (2026-10-22)
+
+### ✨ New Features
+
+* **steamlink:** make OpenXR BOOST experimental ([9b1d581](https://github.com/AngelDark92/xr-porting-hub/commit/9b1d581f0a934c3ad3314da9ecfc84b3f2a0f4b3))
+
+## [2.0.0-dev.10](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.9...v2.0.0-dev.10) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* Add cavecrew skill and morphe-patches skill documentation ([9784e94](https://github.com/AngelDark92/xr-porting-hub/commit/9784e9443a80e998f4b1ac932f00992936cf8d7a))
+
+## [2.0.0-dev.9](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.8...v2.0.0-dev.9) (2026-10-22)
+
+### ✨ New Features
+
+* **steamlink:** restore support for all five builds ([9a75e32](https://github.com/AngelDark92/xr-porting-hub/commit/9a75e32297b43c70907703a2c37c7ac0520ca07d))
+
+## [2.0.0-dev.8](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.7...v2.0.0-dev.8) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* enhance Android compilation and runtime behavior for GXR spacewarp layer ([09dc946](https://github.com/AngelDark92/xr-porting-hub/commit/09dc946ff41baaae7e0d76c8f02a48d1879cca16))
+
+## [2.0.0-dev.7](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.6...v2.0.0-dev.7) (2026-10-21)
+
+### ✨ New Features
+
+* update codecs support to version 8 with stability improvements and crash fixes ([c9e0efa](https://github.com/AngelDark92/xr-porting-hub/commit/c9e0efa88e7005d37665662bd1c770a09b01c22e))
+
+## [2.0.0-dev.6](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.5...v2.0.0-dev.6) (2026-10-21)
+
+### ✨ New Features
+
+* update codecs support to version 7 with enhanced stability and crash fixes ([ba5c178](https://github.com/AngelDark92/xr-porting-hub/commit/ba5c178ff463717208abc33bd1edea67841bb669))
+
+## [2.0.0-dev.5](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-21)
+
+### ✨ New Features
+
+* retire half-rate synthesis mode and update related logic in VTS ([68048aa](https://github.com/AngelDark92/xr-porting-hub/commit/68048aa2d20107f95d7676b08db364d6f254708d))
+
+## [2.0.0-dev.4](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-21)
+
+### ✨ New Features
+
+* implement context-safe resource management and ownership tracking for ASW sessions ([246b882](https://github.com/AngelDark92/xr-porting-hub/commit/246b882300f1250f0a439ee83d1eea0ee0e9ad8e))
+
+## [2.0.0-dev.3](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* edited Steam Link identity patches to unify model handling ([a5a9d8c](https://github.com/AngelDark92/xr-porting-hub/commit/a5a9d8cefc5d8935c9baa0a913750378e528e966))
+
+## [2.0.0-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.1...v2.0.0-dev.2) (2026-10-21)
+
+### ✨ New Features
+
+* **foveal:** support 2.0.20/5001712 and 2.0.23/5002363 ([d426ee2](https://github.com/AngelDark92/xr-porting-hub/commit/d426ee22c3ee192f98591900fcaa94e8d5ef1a32))
+
+## [2.0.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.33.0-dev.1...v2.0.0-dev.1) (2026-10-21)
+
+### ⚠ BREAKING CHANGES
+
+* Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 are
+no longer supported, and the patches "Full-FOV foveal canvas (experimental)" and
+"OpenXR CPU and GPU BOOST (2.0.21/2.0.22)" no longer exist.
+
+### ✨ New Features
+
+* retire Steam Link 5001812, 5001968 and 5002244 support ([6d19288](https://github.com/AngelDark92/xr-porting-hub/commit/6d19288bcc91a223ca6277c98f7428fbde19c528))
+
+## [1.33.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.1...v1.33.0-dev.1) (2026-10-21)
+
+### ✨ New Features
+
+* **spacewarp:** implement dormant fast path and carrier generation tracking ([68e9d1a](https://github.com/AngelDark92/xr-porting-hub/commit/68e9d1adbec53b98f218c354505b93cf27ddd8c3))
+
 ## [1.32.1](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.0...v1.32.1) (2026-10-20)
 
 ### 🐛 Bug Fixes

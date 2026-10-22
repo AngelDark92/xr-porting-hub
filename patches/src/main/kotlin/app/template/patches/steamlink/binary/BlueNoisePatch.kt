@@ -5,6 +5,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.booleanOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.buildLabel
 
 /** One selectable patch owning both blue-noise layers. The two former per-layer patches and
  * their declared-depth option merged: 8-bit and 10-bit input share the same final 8-bit sRGB
@@ -14,9 +15,8 @@ import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 @Suppress("unused")
 val blueNoisePatch = rawResourcePatch(
     name = "Blue-noise dithering",
-    description = "Adds fine grain that hides harsh color steps, with separate on/off choices " +
-        "for the center and the background. Builds: 2.0.20/5001712, 2.0.20/5001812, " +
-        "2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
+    description = "Adds fine grain that hides color steps; center and background can be toggled. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK),
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

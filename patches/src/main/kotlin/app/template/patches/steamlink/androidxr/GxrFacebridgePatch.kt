@@ -7,10 +7,11 @@ import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_FULL_FAC
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_MODERN_TONGUE_BRIDGE
 import app.template.patches.shared.Constants.isFullFacebridgeSteamLinkBuild
 import app.template.patches.shared.Constants.isModernTongueBridgeSteamLinkBuild
+import app.template.patches.shared.buildLabel
 import org.w3c.dom.Element
 import java.io.File
 
-// One patch covers all 5 bases; builds up to 5002318 get the face-tracking layer (face bridge
+// One patch covers both bases: 2.0.20/5001712 gets the face-tracking layer (face bridge
 // library + FACE_TRACKING permission) and 2.0.23/5002363 gets the tongue transport edit.
 private fun facebridgeResource(name: String): ByteArray =
     (object {}.javaClass.getResourceAsStream("/steamlink/androidxr/$name")
@@ -80,9 +81,9 @@ internal val gxrFaceTrackingManifestPatch = resourcePatch {
 @Suppress("unused")
 val gxrFacebridgePatch = rawResourcePatch(
     name = "GXR face and tongue bridge",
-    description = "Face and tongue feed for the VRCFT module: the face bridge " +
-        "on 5001712/5001812/5001968/5002244, tongue out/left/right/up/down slots on 2.0.23/5002363; " +
-        "Valve's own expressions and tongue-out keep working.",
+    description = "Installs the VRCFT face bridge on legacy builds; on 2.0.23/5002363 it only adds tongue transport. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_FULL_FACEBRIDGE + COMPATIBILITIES_STEAM_LINK_MODERN_TONGUE_BRIDGE) +
+        " Valve's own expressions and tongue-out keep working.",
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)

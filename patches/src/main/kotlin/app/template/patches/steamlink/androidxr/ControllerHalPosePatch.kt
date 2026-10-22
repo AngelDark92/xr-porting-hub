@@ -7,15 +7,16 @@ import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_LEGACY_E
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_NATIVE_XR_EXPERIMENTAL
 import app.template.patches.shared.Constants.isLegacyXrFoundationSteamLinkBuild
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 
 internal const val CONTROLLER_HAL_POSE_LIBRARY = "libgxr_controller_hal_pose.so"
 internal const val CONTROLLER_HAL_POSE_MANIFEST = "XR_APILAYER_local_GalaxyXR_controller_hal_pose.json"
 internal const val CONTROLLER_HAL_POSE_EXTENSION = "extensions/controller-hal-pose.mpe"
 
 // The layer wraps xrLocateSpace for VRLink's controller pose action, which every supported base
-// creates under the same name, so it is not tied to one native layout. One patch covers all 5
+// creates under the same name, so it is not tied to one native layout. One patch covers both
 // supported bases; the angular-velocity frame written into the bundled layer differs per build
-// (2.0.23: grip-pose frame; legacy bases: base-space frame).
+// (2.0.23: grip-pose frame; 2.0.20/5001712: base-space frame).
 internal fun isControllerHalPoseBuild(version: String, versionCode: String): Boolean =
     isShizukuBridgeBuild(version, versionCode)
 
@@ -34,12 +35,14 @@ private val controllerHalPoseExtensionPatch = bytecodePatch {
 }
 
 private const val CONTROLLER_HAL_POSE_DESCRIPTION =
-    "Reads controller poses straight from the headset's HAL, removing ~35 ms of lag and smoothing jitter. HAL access needs shell rights, so this needs Shizuku running with its permission granted to Steam Link; without it tracking stays stock."
+    "Reads controller poses from the headset HAL, removing about 35 ms of lag. This needs Shizuku; without it tracking stays stock."
 
 @Suppress("unused")
 val controllerHalPosePatch = rawResourcePatch(
     name = "Controller tracking from the controller HAL through Shizuku",
-    description = "$CONTROLLER_HAL_POSE_DESCRIPTION Builds: 2.0.23, angular velocity is reported local to the grip pose; 2.0.20 - 2.0.22, it is reported in the base space. " +
+    description = "$CONTROLLER_HAL_POSE_DESCRIPTION " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_NATIVE_XR_EXPERIMENTAL + COMPATIBILITIES_STEAM_LINK_LEGACY_EXPERIMENTAL) +
+        " Angular velocity is local to the grip pose on 2.0.23/5002363 and in the base space on older builds. " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = false,
 ) {

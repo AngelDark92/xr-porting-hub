@@ -7,6 +7,7 @@ import app.morphe.patcher.patch.floatSliderOption
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.stringOption
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.buildLabel
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -336,9 +337,8 @@ internal fun setProjectionSwapchainFormat(
 @Suppress("unused")
 val oledCalibrationPatch = rawResourcePatch(
     name = "OLED color calibration",
-    description = "Tunes the OLED headset's color with gamma and saturation presets, plus optional " +
-        "center-of-view tweaks; visible improvement needs headset verification. " +
-        "Builds: 5001712, 5001812, 5001968, 5002244, 5002363.",
+    description = "Tunes OLED color with gamma and saturation presets. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK) + " Headset verification pending.",
     default = true,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

@@ -202,7 +202,7 @@ tasks.named("sourcesJar") {
 tasks {
     register<JavaExec>("auditOledDecodedCompatibility") {
         group = "verification"
-        description = "Read-only OLED option audit across 5 exact bases (5001712, 5001812, 5001968, 5002244, 5002363); a missing decoded input reports BLOCKED"
+        description = "Read-only OLED option audit across the 2 exact supported bases (5001712, 5002363); a missing decoded input reports BLOCKED"
         dependsOn(classes)
         classpath = sourceSets["main"].runtimeClasspath
         mainClass.set("util.OledDecodedCompatibilityAudit")
@@ -211,7 +211,7 @@ tasks {
 
     register<JavaExec>("auditSdr10ShaderAssemble") {
         group = "verification"
-        description = "Assemble the complete opaque/masked video shaders (production common prefix + each base's actual native suffixes) for the 5 exact color-supported bases; a missing decoded input reports BLOCKED; writes .glsl files and a report to a fresh output directory"
+        description = "Assemble the complete opaque/masked video shaders (production common prefix + each base's actual native suffixes) for the 2 exact color-supported bases; a missing decoded input reports BLOCKED; writes .glsl files and a report to a fresh output directory"
         dependsOn(classes)
         classpath = sourceSets["main"].runtimeClasspath
         mainClass.set("util.Sdr10ShaderAssembleAudit")
@@ -222,7 +222,7 @@ tasks {
 
     register<JavaExec>("auditDecodedSteamLinkPatches") {
         group = "verification"
-        description = "Audit public 5001712/5001812/5001968/5002363 patches, high resolution and Visual Delay on 5 bases"
+        description = "Audit public 5001712/5002363 patches, high resolution and Visual Delay on 2 bases"
 
         dependsOn(classes)
         classpath = sourceSets["main"].runtimeClasspath
@@ -240,15 +240,6 @@ tasks {
         args(auditArgs)
     }
 
-    register<JavaExec>("auditSteamLinkLegacyNative") {
-        group = "verification"
-        description = "Exercise exact 5001812/5001968 native helpers, option transitions, guards and patch ordering on decoded bytes"
-        dependsOn(classes)
-        classpath = sourceSets["main"].runtimeClasspath
-        mainClass.set("util.LegacyAddedNativeAudit")
-        args(rootProject.projectDir.absolutePath)
-    }
-
     register<JavaExec>("auditSteamLink2363Native") {
         group = "verification"
         description = "Exercise exact 5002363 native helpers, option transitions and patch ordering on decoded bytes"
@@ -256,19 +247,6 @@ tasks {
         classpath = sourceSets["main"].runtimeClasspath
         mainClass.set("util.SteamLink2363NativeAudit")
         args(rootProject.projectDir.absolutePath)
-    }
-
-    register<JavaExec>("generateVideoOutputAb") {
-        group = "verification"
-        description = "Generate guarded srgb8-highp and rgb10-a2 decoded 5002244 A/B derivatives"
-
-        dependsOn(classes)
-        classpath = sourceSets["main"].runtimeClasspath
-        mainClass.set("util.VideoOutputAbGeneratorKt")
-        args(
-            project.layout.projectDirectory.dir("../decoded-apk-android-steamlinkvr-release-base-2.0.22-5002244").asFile.absolutePath,
-            rootProject.layout.buildDirectory.dir("video-output-ab-5002244").get().asFile.absolutePath,
-        )
     }
 
     register<JavaExec>("generatePatchesList") {

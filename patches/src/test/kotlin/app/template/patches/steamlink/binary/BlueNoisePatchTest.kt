@@ -21,8 +21,8 @@ class BlueNoisePatchTest {
         assertEquals(true, blueNoisePatch.options["fovea"].default)
         assertEquals(false, blueNoisePatch.options["background"].default)
         assertTrue("inputDepth" !in blueNoisePatch.options.keys)
-        assertEquals(setOf("2.0.20" to 5001712,
-                "2.0.20" to 5001812,
+        assertEquals(setOf(
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
                 "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363),
             blueNoisePatch.compatibility.orEmpty().flatMap { compatibility ->
                 assertEquals("Steam Link", compatibility.name)
@@ -57,11 +57,35 @@ class BlueNoisePatchTest {
     fun `blue noise does not infer neighboring layouts from the build number`() {
         val unrelated = byteArrayOf(1, 2, 3)
         for (mode in FoveaMode.entries) for ((version, code) in listOf(
-            "2.0.22" to "5002322", "2.0.22" to "5002363", "2.0.20" to "5001740",
+            "2.0.20" to "5002363", "2.0.23" to "5001712", "2.0.20" to "5001740",
         )) {
             val result = applyFovealBlueNoise(unrelated, version, code, mode)
             assertContentEquals(unrelated, result.scene)
             assertNull(result.helper)
+        }
+    }
+
+    @Test
+    fun `real decoded renderers accept both restored legacy layouts`() {
+        val bases = listOf(
+            Triple("2.0.20", "5001712", 2_221_072),
+            Triple("2.0.20", "5001812", 2_220_872),
+            Triple("2.0.21", "5001968", 2_234_048),
+            Triple("2.0.22", "5002244", 2_251_920),
+            Triple("2.0.23", "5002363", 2_292_008),
+        )
+        bases.forEach { (version, code, size) ->
+            val file = java.io.File("android-steamlinkvr-release-base-$version-$code/lib/arm64-v8a/libvrlink_scene.so")
+            org.junit.Assume.assumeTrue("BLOCKED: decoded $version/$code scene is absent", file.isFile)
+            val stock = file.readBytes()
+            assertEquals(size, stock.size, "$version/$code")
+            listOf(BlueNoiseLayer.FOVEA, BlueNoiseLayer.BACKGROUND).forEach { layer ->
+                val patched = applyBlueNoiseLayer(stock, version, code, FoveaMode.INPUT_10BIT, layer).scene
+                assertFalse(stock.contentEquals(patched), "$version/$code $layer")
+                assertContentEquals(patched,
+                    applyBlueNoiseLayer(patched, version, code, FoveaMode.INPUT_10BIT, layer).scene,
+                    "$version/$code $layer reapply")
+            }
         }
     }
 
@@ -118,7 +142,7 @@ class BlueNoisePatchTest {
         val foreign = byteArrayOf(4, 5, 6)
         for (layer in BlueNoiseLayer.entries) for (mode in FoveaMode.entries) {
             for ((version, code) in listOf(
-                "2.0.22" to "5002322", "2.0.22" to "5002363", "2.0.20" to "5001740",
+                "2.0.20" to "5002363", "2.0.23" to "5001712", "2.0.20" to "5001740",
             )) {
                 val result = applyBlueNoiseLayer(scene, version, code, mode, layer,
                     payload = foreign, existingHelper = foreign)

@@ -10,5 +10,5 @@ target_include_directories(gxr_codecs_support PRIVATE "${OPENXR_SDK_SOURCE_DIR}/
 target_compile_definitions(gxr_codecs_support PRIVATE XR_USE_PLATFORM_ANDROID)
 target_compile_options(gxr_codecs_support PRIVATE -O2 -Wall -Wextra -Werror -Wno-missing-field-initializers -ffunction-sections -fdata-sections)
 target_link_options(gxr_codecs_support PRIVATE -Wl,--gc-sections -Wl,-z,max-page-size=16384 -Wl,--exclude-libs,ALL)
-target_link_libraries(gxr_codecs_support PRIVATE log)
+target_link_libraries(gxr_codecs_support PRIVATE log dl)
 set_target_properties(gxr_codecs_support PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)

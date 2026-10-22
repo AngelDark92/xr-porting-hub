@@ -5,6 +5,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 
 internal const val CONTROLLER_GRIP_HAPTICS_LIBRARY = "libgxr_haptic_main.so"
 internal const val CONTROLLER_GRIP_HAPTICS_MANIFEST = "XR_APILAYER_local_GalaxyXR_haptic_main.json"
@@ -28,7 +29,9 @@ private val controllerGripHapticsExtensionPatch = bytecodePatch {
 @Suppress("unused")
 val controllerGripHapticsPatch = rawResourcePatch(
     name = "Controller grip haptics through Shizuku",
-    description = "Sends controller vibration to the grip motor instead of the trigger Galaxy XR uses by default. Builds: 5001712 to 5002363. Needs: Shizuku running with its permission granted to Steam Link; without it vibration stays stock. " +
+    description = "Sends controller vibration to the grip motor instead of the trigger. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL) +
+        " This needs Shizuku running with permission granted; without it vibration stays stock. " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = false,
 ) {

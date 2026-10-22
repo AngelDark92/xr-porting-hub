@@ -1,12 +1,10 @@
 package app.template.patches.steamlink.androidxr
 
 import app.morphe.patcher.patch.PatchException
-import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.rawResourcePatch
-import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5002363
-import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5001712
-import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
@@ -25,7 +23,7 @@ internal const val GXR_SPACEWARP_GATE0_5001712 = "gxr_spacewarp_gate0_5001712.js
 // The layer payload is base-agnostic (the .so's per-base profile table selects the
 // scene-lib pins at runtime); only the two gate evidence JSONs are per base.
 internal const val GXR_SPACEWARP_LIBRARY_SHA256 =
-    "867356426b648e91119661dc3c1b7be6aa4312a35315be11fac4f4130f64435e"
+    "a963930142c7c9dcbe536ad1b9862d5be803f39ea079e23829968d65d51ccd22"
 internal const val GXR_SPACEWARP_MANIFEST_SHA256 =
     "623f0f1b9c69d049cc9c3754d0481aa06b40529d322f3e233bafa12af840943b"
 internal const val GXR_SPACEWARP_GATE0_SHA256 =
@@ -39,9 +37,30 @@ internal const val GXR_SPACEWARP_VTS_GATE_5001712 = "gxr_spacewarp_vts_5001712.j
 internal const val GXR_SPACEWARP_VTS_GATE_5001712_SHA256 =
     "183d352208a04e23ed636e065c6154b37d7d21c131b19e58b7f43cd621bd1aa9"
 
+internal const val GXR_SPACEWARP_GATE0_5001812 = "gxr_spacewarp_gate0_5001812.json"
+internal const val GXR_SPACEWARP_GATE0_5001812_SHA256 =
+    "a8115345f5226dc554401baeac0bcf43060257375946a69c4634a23786bb50f9"
+internal const val GXR_SPACEWARP_VTS_GATE_5001812 = "gxr_spacewarp_vts_5001812.json"
+internal const val GXR_SPACEWARP_VTS_GATE_5001812_SHA256 =
+    "51433e629c6b90319340d456e448e6855645ccdd78568c2d48aec315b3d8c0f4"
+
+internal const val GXR_SPACEWARP_GATE0_5001968 = "gxr_spacewarp_gate0_5001968.json"
+internal const val GXR_SPACEWARP_GATE0_5001968_SHA256 =
+    "bc7ca8cb8e12a6d3f236751119eb6d29d519cfcfea4951dd765c8e92470cbc6f"
+internal const val GXR_SPACEWARP_VTS_GATE_5001968 = "gxr_spacewarp_vts_5001968.json"
+internal const val GXR_SPACEWARP_VTS_GATE_5001968_SHA256 =
+    "90cb3790b0f84d2f1a4e129aaf15c185ff809e3b1d1af4a91fd4f41305d7bba1"
+
+internal const val GXR_SPACEWARP_GATE0_5002244 = "gxr_spacewarp_gate0_5002244.json"
+internal const val GXR_SPACEWARP_GATE0_5002244_SHA256 =
+    "21399e266e7b6c38524a8f2830119d2e4eaaa0f2a9b4ddea401b736293252536"
+internal const val GXR_SPACEWARP_VTS_GATE_5002244 = "gxr_spacewarp_vts_5002244.json"
+internal const val GXR_SPACEWARP_VTS_GATE_5002244_SHA256 =
+    "5726b255880eb6c2e748839699d9fdeb1acc0c0e58ef355af1429c15077f90ff"
+
 internal fun isGxrSpacewarpSteamLinkBuild(versionName: String, versionCode: String): Boolean =
-    (versionName == "2.0.20" && versionCode == "5001712") ||
-        (versionName == "2.0.23" && versionCode == "5002363")
+    app.template.patches.shared.Constants.isLegacyXrFoundationSteamLinkBuild(versionName, versionCode) ||
+        app.template.patches.shared.Constants.isNativeXrSteamLinkBuild(versionName, versionCode)
 
 private fun spacewarpSha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
     .digest(bytes).joinToString("") { "%02x".format(it) }
@@ -66,6 +85,24 @@ internal val gxrSpacewarpScenePreconditions: Map<String, List<Triple<Int, Int, S
         Triple(0xfd6fc, 0x80, "f5c43c6aacb69e61c3f929f361612e1b91bb509803d2c14824b9601b3dd8c795"),
         Triple(0x10cd00, 0x80, "21cfe100a3a057dc633ab0b4934d1aedaa2809278b320a66e93c79e494aff7ca"),
         Triple(0x11b708, 0x80, "daa07b02967fd5682a9add717ceb396a95549c7ffbb7cc38f5a4e3de43ac66aa"),
+    ),
+    "2.0.20/5001812" to listOf(
+        Triple(0xfd1c0, 0x80, "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed"),
+        Triple(0xfb6b4, 0x80, "ec3b7533986ce9b132f6acd927dfc52384cbf793c2ad438b9749210a4437587d"),
+        Triple(0x1191d0, 0x80, "69be9e201e8ac70bd2da8d9b9c4c36c49332a3a33e826400471d4a5413c05e14"),
+        Triple(0x13ebe8, 0x80, "eb375ff16999c0e9c32a3e315f9f0b0a86b1de691f326f73eb25639b2c50deed"),
+    ),
+    "2.0.21/5001968" to listOf(
+        Triple(0xf9168, 0x80, "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b"),
+        Triple(0xf7610, 0x80, "787a4f75036a3e44b7b88ffe98230257490ff5e1114e3e25d05be1942b402438"),
+        Triple(0x1151a8, 0x80, "c5899078c748adb01aa2f06cbc252e5aa590d667b461fb4dc0134a82cb9d1a19"),
+        Triple(0x13abc0, 0x80, "6de6af6c30572cb7fdb84e52a2c06f1b44700ea05e8d72c3f6262d735f9e5dcc"),
+    ),
+    "2.0.22/5002244" to listOf(
+        Triple(0xfa4a8, 0x80, "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643"),
+        Triple(0xf8950, 0x80, "4f870b4aaa2d73996daf82cd6c4dda94de5d72bec80044ae77fdce92f89c12a3"),
+        Triple(0x116c10, 0x80, "20eb71d2be352aac82836578c95e68d03d38b024aa953db587e74f71999829bb"),
+        Triple(0x13e180, 0x80, "0a1f3be8b69d6e88d7aefc74b9bea6af81eb2b0ff3a28da29f8e44cab04f46c5"),
     ),
 )
 
@@ -108,6 +145,24 @@ internal val gxrSpacewarpGatePairs: Map<String, GxrSpacewarpGatePair> = mapOf(
         GXR_SPACEWARP_GATE0_SHA256,
         GXR_SPACEWARP_VTS_GATE,
         GXR_SPACEWARP_VTS_GATE_SHA256,
+    ),
+    "5001812" to GxrSpacewarpGatePair(
+        GXR_SPACEWARP_GATE0_5001812,
+        GXR_SPACEWARP_GATE0_5001812_SHA256,
+        GXR_SPACEWARP_VTS_GATE_5001812,
+        GXR_SPACEWARP_VTS_GATE_5001812_SHA256,
+    ),
+    "5001968" to GxrSpacewarpGatePair(
+        GXR_SPACEWARP_GATE0_5001968,
+        GXR_SPACEWARP_GATE0_5001968_SHA256,
+        GXR_SPACEWARP_VTS_GATE_5001968,
+        GXR_SPACEWARP_VTS_GATE_5001968_SHA256,
+    ),
+    "5002244" to GxrSpacewarpGatePair(
+        GXR_SPACEWARP_GATE0_5002244,
+        GXR_SPACEWARP_GATE0_5002244_SHA256,
+        GXR_SPACEWARP_VTS_GATE_5002244,
+        GXR_SPACEWARP_VTS_GATE_5002244_SHA256,
     ),
 )
 
@@ -233,28 +288,12 @@ internal fun installGxrSpacewarpResources(
 @Suppress("unused")
 val gxrSpacewarpLayerPatch = rawResourcePatch(
     name = "GXR spacewarp layer (experimental)",
-    description = "Makes up a frame from the two latest decoded video frames when the stream misses a " +
-        "display tick; any failure stands down to the stock renderer. Builds: 2.0.20/5001712, 2.0.23/5002363. " +
-        "Experimental: headset validation pending.",
+    description = "Synthesizes a frame when the stream misses a display tick; any failure stands down to stock. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL) + " Experimental; headset validation pending.",
     default = false,
 ) {
     category(PatchCategories.STREAMING_AND_NETWORK)
-    compatibleWith(
-        *COMPATIBILITIES_STEAM_LINK_5002363.map { exact ->
-            Compatibility(
-                name = EXPERIMENTAL_COMPATIBILITY_NAME,
-                packageName = requireNotNull(exact.packageName),
-                targets = exact.targets,
-            )
-        }.toTypedArray(),
-        *COMPATIBILITIES_STEAM_LINK_5001712.map { exact ->
-            Compatibility(
-                name = EXPERIMENTAL_COMPATIBILITY_NAME,
-                packageName = requireNotNull(exact.packageName),
-                targets = exact.targets,
-            )
-        }.toTypedArray(),
-    )
+    compatibleWith(*COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL.toTypedArray())
     execute {
         // Morphe executes dependencies recursively without rechecking compatibility.
         // Keep this build guard inside the mutation itself so an excluded APK stays untouched.

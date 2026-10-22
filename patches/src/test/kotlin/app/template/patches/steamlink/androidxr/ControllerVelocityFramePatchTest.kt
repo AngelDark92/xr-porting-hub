@@ -67,7 +67,7 @@ class ControllerVelocityFramePatchTest {
     }
 
     @Test
-    fun `patch is stable, on by default and one patch covers all 5 bases`() {
+    fun `patch is stable, on by default and one patch covers 2 bases`() {
         assertEquals("Controller velocity frame", controllerVelocityFramePatch.name)
 
         assertTrue(controllerVelocityFramePatch.default, controllerVelocityFramePatch.name)
@@ -77,8 +77,8 @@ class ControllerVelocityFramePatchTest {
         assertEquals(COMPATIBILITIES_STEAM_LINK, compatibilities, controllerVelocityFramePatch.name)
         assertEquals(
             setOf(
-                "2.0.23" to 5002363, "2.0.20" to 5001712, "2.0.20" to 5001812,
-                "2.0.21" to 5001968, "2.0.22" to 5002244,
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
             ),
             compatibilities.map { it.targets.single() }.map { it.version to it.versionCodes!!.values.toSet().single() }.toSet(),
             controllerVelocityFramePatch.name,
@@ -87,14 +87,16 @@ class ControllerVelocityFramePatchTest {
         assertTrue("in the base space" in controllerVelocityFramePatch.description.orEmpty())
         assertTrue("measured on 2.0.23/5002363" in controllerVelocityFramePatch.description.orEmpty())
 
-        listOf("2.0.20" to "5001712", "2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244")
-            .forEach { (version, versionCode) ->
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244",
+        ).forEach { (version, versionCode) ->
                 assertTrue(isControllerVelocityFrameLegacyBuild(version, versionCode), "$version/$versionCode")
                 assertFalse(isControllerVelocityFrameNativeBuild(version, versionCode), "$version/$versionCode")
             }
         assertTrue(isControllerVelocityFrameNativeBuild("2.0.23", "5002363"))
         assertFalse(isControllerVelocityFrameLegacyBuild("2.0.23", "5002363"))
-        listOf("2.0.22" to "5002363", "2.0.23" to "5002322", "2.0.23" to "5002364", "2.0.20" to "5002244")
+        listOf("2.0.20" to "5002363", "2.0.23" to "5002322", "2.0.23" to "5002364")
             .forEach { (version, versionCode) ->
                 assertFalse(isControllerVelocityFrameBuild(version, versionCode), "$version/$versionCode")
             }

@@ -1,12 +1,12 @@
 package app.template.patches.steamlink.androidxr
 
+import app.template.patches.shared.buildLabel
 import app.template.patches.shared.PatchCategories
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.booleanOption
-import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5001712
-import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5002363
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL
 import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
 import java.io.File
 import java.nio.file.Files
@@ -16,13 +16,13 @@ import java.security.MessageDigest
 internal const val CODECS_SUPPORT_LIBRARY = "libgxr_codecs_support.so"
 internal const val CODECS_SUPPORT_MANIFEST = "XR_APILAYER_local_GalaxyXR_codecs_support.json"
 internal const val CODECS_SUPPORT_LIBRARY_SHA256 =
-    "ac30d452d0ac86de5f97f66d8582f5343d2e53ed326a2039bf56b5dccfda3a08"
+    "cfcce064493f266f36318b59ae7ee3147fbd56cf882121c4373facca4c4a4de6"
 internal const val CODECS_SUPPORT_MANIFEST_SHA256 =
     "801f2a6cf8155486879339a7eb7b83b1554a537f517ba50b6406a5a98a96fec5"
 
 internal fun isCodecsSupportSteamLinkBuild(versionName: String, versionCode: String): Boolean =
-    (versionName == "2.0.20" && versionCode == "5001712") ||
-        (versionName == "2.0.23" && versionCode == "5002363")
+    app.template.patches.shared.Constants.isLegacyXrFoundationSteamLinkBuild(versionName, versionCode) ||
+        app.template.patches.shared.Constants.isNativeXrSteamLinkBuild(versionName, versionCode)
 
 private fun codecsSha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
     .digest(bytes).joinToString("") { "%02x".format(it) }
@@ -37,6 +37,21 @@ private val codecsSupportScenePreconditions: Map<String, List<Triple<Int, Int, S
         Triple(0xfd304, 0x80, "6e5dcb4f5094763e948388ca35c6132af242159fc3c22e812f0fe2f4ab4f2649"),
         Triple(0xfdca8, 0x80, "86ceb824e4a972fbac71d7cb6b88a99d5decde4b42fbd1b80cb5d84361a94b67"),
         Triple(0xfd2f8, 0x40, "25174852802b65e709401364232a3dd9490617cfe9983f8bfc948a27a90e11f4"),
+    ),
+    "2.0.20/5001812" to listOf(
+        Triple(0xfd1c0, 0x80, "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed"),
+        Triple(0xfdb64, 0x80, "2d79c63e6001f5b6fd708027a3241c7004612b55c5158ee773870825c3b875e1"),
+        Triple(0xfd1b4, 0x40, "8be10423034e42a7d6c398c853c0d91085420210c0178247dd3ab1960d1e51ee"),
+    ),
+    "2.0.21/5001968" to listOf(
+        Triple(0xf9168, 0x80, "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b"),
+        Triple(0xf9b0c, 0x80, "faeea4728e0047b25bae83bd24a14b51bd4972c21530180d73332c82b26e1db3"),
+        Triple(0xf915c, 0x40, "2f9ccf5df080c89ddee7bdc010c7eeda87f536fac5d164729acbdb82b8f74ad0"),
+    ),
+    "2.0.22/5002244" to listOf(
+        Triple(0xfa4a8, 0x80, "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643"),
+        Triple(0xfae4c, 0x80, "3342b1a89b49d2c038ec58e0f7f76e4871f73efcb7cb0cfbebd87212e1de7e2c"),
+        Triple(0xfa49c, 0x40, "d7c2ad75cd4e123d937828007c802055a17675cdc9445af8b90b9dc84c7258ac"),
     ),
     "2.0.23/5002363" to listOf(
         Triple(0xfd6fc, 0x80, "f5c43c6aacb69e61c3f929f361612e1b91bb509803d2c14824b9601b3dd8c795"),
@@ -199,18 +214,19 @@ internal fun installCodecsSupportResources(
 @Suppress("unused")
 val xrCodecsSupportPatch = rawResourcePatch(
     name = "Codecs Support",
-    description = "Lets the headset decode the H.264 or AV1 video the GalaxyXR driver's Stream codec setting picks; stock HEVC streams are untouched. " +
-        "Builds: 2.0.20/5001712, 2.0.23/5002363. Needs: the matching driver codec setting. Headset validation pending on 2.0.23/5002363.",
+    description = "Lets the headset decode H.264 or AV1 streams; HEVC is untouched. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL) +
+        " Needs: the matching driver codec setting.",
     default = true,
 ) {
     val enableTelemetry by booleanOption(
         key = "enableTelemetry",
         default = false,
         title = "Enable telemetry",
-        description = "Optional USB ADB decoder measurements and codec-byte capture for SteamVR Colour Lab. Off installs no telemetry components.",
+        description = "Optional decoder measurements and codec-byte capture for SteamVR Colour Lab. Off installs no telemetry components.",
     )
     category(PatchCategories.STREAMING_AND_NETWORK)
-    compatibleWith(*(COMPATIBILITIES_STEAM_LINK_5001712 + COMPATIBILITIES_STEAM_LINK_5002363).map { exact ->
+    compatibleWith(*(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL).map { exact ->
         Compatibility(
             name = EXPERIMENTAL_COMPATIBILITY_NAME,
             packageName = requireNotNull(exact.packageName),

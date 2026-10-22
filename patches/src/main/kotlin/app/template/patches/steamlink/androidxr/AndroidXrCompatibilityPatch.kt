@@ -1,6 +1,7 @@
 package app.template.patches.steamlink.androidxr
 
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EARLIER_STARTUP
 import app.template.patches.shared.Constants.isEarlierStartupSteamLinkBuild
@@ -111,7 +112,8 @@ private val androidXrLibPatch = resourcePatch {
 @Suppress("unused")
 val xrCoreRuntimePatch = bytecodePatch(
     name = "XR Core Runtime",
-    description = "Installs the bridge files the other XR patches need.",
+    description = "Installs the bridge files the other XR patches need. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_LEGACY),
     default = true,
 ) {
     category(PatchCategories.ADVANCED_XR_COMPATIBILITY)
@@ -122,7 +124,8 @@ val xrCoreRuntimePatch = bytecodePatch(
 @Suppress("unused")
 val xrDeviceConfigBaselinePatch = rawResourcePatch(
     name = "XR Device Config Baseline",
-    description = "Installs the default Galaxy XR headset and controller settings plus the dashboard files.",
+    description = "Installs the default Galaxy XR controller settings and dashboard files. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_LEGACY),
     default = true,
 ) {
     category(PatchCategories.ADVANCED_XR_COMPATIBILITY)
@@ -134,13 +137,6 @@ val xrDeviceConfigBaselinePatch = rawResourcePatch(
         // The legacy controller_config.json has neither, so replacing it disables native hands.
         if (isNativeXrSteamLinkBuild(packageMetadata.versionName, packageMetadata.versionCode)) return@execute
 
-        get("assets/config/hmd_config.json").writeBytes(
-            adaptLegacyHmdConfigForBuild(
-                loadResource("hmd_config.json"),
-                packageMetadata.versionName,
-                packageMetadata.versionCode,
-            ),
-        )
         get("assets/config/controller_config.json").writeBytes(loadResource("controller_config.json"))
         // assets/config/default_config.json — preflight.ignore_microphone_muted=false
         get("assets/config/default_config.json").writeBytes(loadResource("default_config.json"))
@@ -188,7 +184,8 @@ internal fun adaptLegacyHmdConfigForBuild(
 @Suppress("unused")
 val xrManifestCapabilityPackPatch = resourcePatch(
     name = "XR Manifest Capability Pack",
-    description = "Adds the Android XR/OpenXR permissions, features and app properties Steam Link needs.",
+    description = "Adds the Android XR permissions, features and app properties Steam Link needs. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_LEGACY),
     default = true,
 ) {
     category(PatchCategories.ADVANCED_XR_COMPATIBILITY)
@@ -494,7 +491,8 @@ internal val xrStartupSplashUiPatch = bytecodePatch {
 @Suppress("unused")
 val xrLauncherBootstrapPatch = resourcePatch(
     name = "Startup splash and XR launch mode (before 5002322)",
-    description = "Adds the Launching Steam Link splash and full-space VR start mode on older builds; requests no permissions (pick Startup permission requests for those).",
+    description = "Adds the launch splash and full-space VR start mode. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EARLIER_STARTUP),
     default = true,
 ) {
     category(PatchCategories.STARTUP_AND_PERMISSIONS)
@@ -656,7 +654,8 @@ val xrLauncherBootstrapPatch = resourcePatch(
 @Suppress("unused")
 val xrInputRoutingConfigPatch = rawResourcePatch(
     name = "XR Input Routing Config",
-    description = "Installs the settings file that routes pointer and button input to the launcher UI.",
+    description = "Routes pointer and button input to the launcher UI. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_LEGACY),
     default = true,
 ) {
     category(PatchCategories.TRACKING_AND_AUDIO)
@@ -695,7 +694,8 @@ internal val xrStartupPermissionDeclarationsPatch = resourcePatch {
 @Suppress("unused")
 val xrStartupPermissionsPatch = bytecodePatch(
     name = "Startup permission requests (before 5002322)",
-    description = "Requests hand, eye, face, microphone and Bluetooth permissions at startup on older builds; battery settings and the splash are separate patches.",
+    description = "Requests hand, eye, face, microphone and Bluetooth permissions at startup. " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EARLIER_STARTUP),
     default = true,
 ) {
     category(PatchCategories.STARTUP_AND_PERMISSIONS)

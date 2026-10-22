@@ -1,11 +1,11 @@
 # Cavecrew roles on the Hermes host
 
-Hermes auto-loads project `AGENTS.md` (git-root to cwd chain, per-file character cap) and does not read `.github/agents/` or Codex preset files. For delegation it uses the `delegate_task` tool, not named agent presets: the main thread owns all three Cavecrew roles and spawns children with the contracts below.
+Hermes auto-loads project `AGENTS.md` (git-root to cwd chain, per-file character cap) and does not read `.opencode/agents/`, `.codex/` presets or `.cursor/` rules. For delegation it uses the `delegate_task` tool, not named agent presets: the main thread owns all three Cavecrew roles and spawns children with the contracts below.
 
 Hermes child facts (observed, not preset inheritance):
 
 - Child gets isolated context, its own terminal session and the workspace's project context files; it knows nothing of the parent conversation. The role contract, the task, and every path must reach the child, but NOT verbatim inside `goal`/`context`: the contracts contain backticks, braces and angle brackets, which break the `delegate_task` JSON payload (parse failure). Write the contract + task to a scratch file (Hermes scratch dir works) and keep the dispatch text punctuation-safe: goal/context = "Read file C:/.../<task>.md FIRST with read_file. It contains your cavecrew role contract and your full task. Follow it exactly." Pair with `output_schema` so receipts come back structured.
-- Child inherits the parent model and tools. `delegate_task` has no per-child model pin, so the `model: haiku` frontmatter in `.github/agents/` does not exist on Hermes. Do not promise a cheap model.
+- Child inherits the parent model and tools. `delegate_task` has no per-child model pin, so no preset frontmatter can select a cheaper model. Do not promise a cheap model.
 - Child cannot ask questions (`clarify` unavailable). Ambiguous spec means the child must answer `ambiguous. ask: <one question>.`
 - Child summaries are self-reports. The parent re-verifies: re-read the cited lines, run the checks itself.
 - Batch independent lookups in one `delegate_task` call; concurrency is capped by `delegation.max_concurrent_children` in config, not by this skill.
