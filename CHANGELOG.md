@@ -1,3 +1,9 @@
+## [2.0.0-dev.10](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.9...v2.0.0-dev.10) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* Add cavecrew skill and morphe-patches skill documentation ([9784e94](https://github.com/AngelDark92/xr-porting-hub/commit/9784e9443a80e998f4b1ac932f00992936cf8d7a))
+
 ## [2.0.0-dev.9](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.8...v2.0.0-dev.9) (2026-10-22)
 
 ### ✨ New Features

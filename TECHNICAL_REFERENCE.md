@@ -62,7 +62,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v2.0.0-dev.9](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.0.0-dev.9)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
+> **[v2.0.0-dev.10](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.0.0-dev.10)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
