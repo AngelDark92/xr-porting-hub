@@ -16,6 +16,7 @@ class PermissionPromptPatchTest {
 
     private val legacyLayouts = listOf(
         Layout("2.0.20", "5001712", 2_221_072, 0x142c0c),
+        Layout("2.0.22", "5002244", 2_251_920, 0x1422c4),
     )
 
     private val original = byteArrayOf(

@@ -1,5 +1,6 @@
 package app.template.patches.fourxvr
 
+import app.template.patches.shared.assertPatchDescriptionContract
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -38,6 +39,28 @@ class FourXvrBundleTest {
             fourXvrRenderDispatchPayloadPatch,
             fourXvrSubtitleSuitePayloadPatch,
         ).forEach { payload -> assertTrue(payload.default, payload.name) }
+    }
+
+    @Test
+    fun `4XVR descriptions name exactly their compatible build`() {
+        listOf(
+            fourXvrLaunchCompatibilityPatch,
+            fourXvrLauncherIconPatch,
+            fourXvrControllerModelsPatch,
+            fourXvrRefreshProfilePatch,
+            fourXvrHdrPipelinePatch,
+            fourXvrAudioBridgePatch,
+            fourXvrRenderDispatchPatch,
+            fourXvrSubtitleSuitePatch,
+            fourXvrToastContinuityPatch,
+            fourXvrPlatformDecouplingPatch,
+            fourXvrPopupRefreshPatch,
+            fourXvrHdrPayloadPatch,
+            fourXvrAudioBridgePayloadPatch,
+            fourXvrRenderDispatchPayloadPatch,
+            fourXvrSubtitleSuitePayloadPatch,
+            fourXvrPremiumUnlockPatch,
+        ).forEach(::assertPatchDescriptionContract)
     }
 
     @Test

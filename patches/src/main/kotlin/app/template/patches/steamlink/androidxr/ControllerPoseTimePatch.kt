@@ -5,6 +5,7 @@ import app.morphe.patcher.patch.intSliderOption
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
@@ -40,6 +41,24 @@ internal val CONTROLLER_POSE_TIME_SCENES = listOf(
         state = PoseTimeRegion(0x1070cc, 0xa78, "eefcb6a7bffbb01e5372a3ac0bda144d567eb83a6dc1911d26f646d515e1bc8b"),
         send = PoseTimeRegion(0xf4e74, 0x514, "b6031c5147641142e80ad6de19af0431b8feaf6445ccb2494144ef7b980b0ce0"),
         clock = PoseTimeRegion(0x155bf4, 0x40, "34ab8d6b71aba044a599a172257035e13029ea10d9819d3907c215356e872c21"),
+    ),
+    PoseTimeScene(
+        "2.0.20", 5001812,
+        state = PoseTimeRegion(0x10722c, 0xa78, "aea72e1523efc481775fcb702a99fb67599cae5a7f22946d9186ff925b4256b7"),
+        send = PoseTimeRegion(0xf4d34, 0x514, "6c1fbe7ec1a4f2ff27a87a5f9cb0e8df5facb4553e8c37ecad07043c75297fb6"),
+        clock = PoseTimeRegion(0x155c38, 0x78, "f1b840b2be041e63aec5669bae395e823929e4d8c3d8f68b0046d0bb7deb98a3"),
+    ),
+    PoseTimeScene(
+        "2.0.21", 5001968,
+        state = PoseTimeRegion(0x10319c, 0xa78, "6d7292da1ff3d1fa9439c1a3a2ec63b56dd7c0ac9cb6c13833ebe26f32137163"),
+        send = PoseTimeRegion(0xf06cc, 0x534, "0758a927fb176829d637623beb6d36d67af3db3933f19065963f2a6bf1473f1a"),
+        clock = PoseTimeRegion(0x151d2c, 0x78, "6e94ab11f89a2401ac1acf405546c894d98ae5a46608798a7eae502b029dc3af"),
+    ),
+    PoseTimeScene(
+        "2.0.22", 5002244,
+        state = PoseTimeRegion(0x104800, 0xa78, "5c82f95c9d0f9c8069814d5ccba18e87d571b168bc0066d5ee10302e17e6632a"),
+        send = PoseTimeRegion(0xf1c64, 0x534, "027cf28b63162b26b2a9ccc1882a9f2b0b078f3a17f7cbc34997bf87e0c9be52"),
+        clock = PoseTimeRegion(0x1555b8, 0x78, "76bc4a3d6ca7beb282b034bfc8d03e5e1cfcb737769d1f9a4e4b979fc2f579a7"),
     ),
     PoseTimeScene(
         "2.0.23", 5002363,
@@ -121,12 +140,9 @@ private val controllerPoseTimeCompatibilities = COMPATIBILITIES_STEAM_LINK_EXPER
 @Suppress("unused")
 val controllerPoseTimePatch = rawResourcePatch(
     name = "Controller pose time (experimental)",
-    description = "Sends each controller pose to SteamVR with the time it was sampled at instead of the " +
-        "packet's send time, so SteamVR predicts the controller from the right moment. The Galaxy XR runtime " +
-        "labels every controller pose 28.82 ms after the sample it carries; the compensation is subtracted " +
-        "from that label. Builds: exact 2.0.20/5001712 and 2.0.23/5002363, Galaxy XR firmware I610UEU2AZF3. " +
-        "Experimental: ported from the Steam Link Pose Time root module, not yet run as an APK layer on a " +
-        "headset. Needs: nothing; not with Controller pose extrapolation or the controller HAL pose patch. " +
+    description = "Dates each controller pose by its sample time; the runtime labels poses 28.82 ms late. " +
+        buildLabel(controllerPoseTimeCompatibilities) +
+        " Needs: not with Controller pose extrapolation or the HAL pose patch. " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = false,
 ) {

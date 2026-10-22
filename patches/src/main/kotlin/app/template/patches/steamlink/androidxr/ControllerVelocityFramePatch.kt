@@ -4,6 +4,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 
 internal const val CONTROLLER_VELOCITY_FRAME_LIBRARY = "libgxr_controller_velocity_frame.so"
 internal const val CONTROLLER_VELOCITY_FRAME_MANIFEST =
@@ -25,6 +26,9 @@ private data class ControllerVelocityFrameBuild(
 private val CONTROLLER_VELOCITY_FRAME_BUILDS = listOf(
     ControllerVelocityFrameBuild("2.0.23", 5002363, angularWorld = false),
     ControllerVelocityFrameBuild("2.0.20", 5001712, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.20", 5001812, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.21", 5001968, angularWorld = true),
+    ControllerVelocityFrameBuild("2.0.22", 5002244, angularWorld = true),
 )
 
 private fun List<ControllerVelocityFrameBuild>.has(version: String, versionCode: String): Boolean =
@@ -54,10 +58,9 @@ private const val CONTROLLER_VELOCITY_FRAME_DESCRIPTION =
 @Suppress("unused")
 val controllerVelocityFramePatch = rawResourcePatch(
     name = "Controller velocity frame",
-    description = "$CONTROLLER_VELOCITY_FRAME_DESCRIPTION Builds: 2.0.23, angular velocity is " +
-        "reported local to the streamed pose; 2.0.20/5001712, it is reported in the base space. " +
-        "Angles measured on 2.0.23/5002363. Needs: nothing. The root Velocity Frame and Steam Link " +
-        "Pose Time modules do not run while this layer is loaded. " +
+    description = "$CONTROLLER_VELOCITY_FRAME_DESCRIPTION " +
+        buildLabel(COMPATIBILITIES_STEAM_LINK) +
+        " Angular velocity is local to the streamed pose on 2.0.23/5002363 and in the base space on older builds; measured on 2.0.23/5002363. " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = true,
 ) {

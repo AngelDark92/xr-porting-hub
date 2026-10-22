@@ -92,12 +92,35 @@ const GOTProfile kProfile5001712 = {
     0x21bb88,
 };
 
+const GOTProfile kProfile5001812 = {
+    "2.0.20/5001812",
+    0xfd1c0,
+    "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed",
+    0x21bab8,
+};
+
+const GOTProfile kProfile5001968 = {
+    "2.0.21/5001968",
+    0xf9168,
+    "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b",
+    0x221bc8,
+};
+
+const GOTProfile kProfile5002244 = {
+    "2.0.22/5002244",
+    0xfa4a8,
+    "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643",
+    0x226150,
+};
+
 // Runtime base selection (the codecs-support-layer anchor-identity pattern):
 // the loop below hashes each profile's anchor window at the dl_iterate_phdr
 // base in this order; the first matching profile wins; no match = the same
 // fail-closed stand-down as before (unknown layouts never gain interception).
-const GOTProfile* const kProfiles[] = {&kProfile5002363, &kProfile5001712};
-constexpr size_t kProfileCount = 2;
+const GOTProfile* const kProfiles[] = {
+    &kProfile5002363, &kProfile5001712, &kProfile5001812, &kProfile5001968, &kProfile5002244,
+};
+constexpr size_t kProfileCount = 5;
 
 std::atomic<int> g_state{0};  // 0 = pending, 1 = armed, 2 = failed closed / disabled
 std::atomic<bool> g_busy{false};

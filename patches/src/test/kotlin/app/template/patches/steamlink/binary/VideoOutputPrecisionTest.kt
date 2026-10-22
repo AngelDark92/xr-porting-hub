@@ -21,6 +21,9 @@ class VideoOutputPrecisionTest {
 
     private val layouts = listOf(
         Layout("2.0.20", "5001712", VIDEO_LIBRARY_SIZE_5001712, SWAPCHAIN_FORMAT_OFFSETS_5001712),
+        Layout("2.0.20", "5001812", 2_220_872, intArrayOf(0x10ab24, 0x10ab94)),
+        Layout("2.0.21", "5001968", 2_234_048, intArrayOf(0x106a94, 0x106b04)),
+        Layout("2.0.22", "5002244", VIDEO_LIBRARY_SIZE_5002244, SWAPCHAIN_FORMAT_OFFSETS_5002244),
         Layout("2.0.23", "5002363", VIDEO_LIBRARY_SIZE_5002363, SWAPCHAIN_FORMAT_OFFSETS_5002363),
     )
 

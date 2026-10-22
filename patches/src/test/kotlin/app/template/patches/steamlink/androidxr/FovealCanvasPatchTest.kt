@@ -22,6 +22,9 @@ class FovealCanvasPatchTest {
 
     private val bases = listOf(
         Base("2.0.20", "5001712", 2_221_072, listOf(0x10a410, 0x10ad18)),
+        Base("2.0.20", "5001812", 2_220_872, listOf(0x10a570, 0x10ae78)),
+        Base("2.0.21", "5001968", 2_234_048, listOf(0x1064e0, 0x106de8)),
+        Base("2.0.22", "5002244", 2_251_920, listOf(0x107bf0, 0x10872c)),
         Base("2.0.23", "5002363", 2_292_008, listOf(0x10c1c4, 0x10cd00)),
     )
 
@@ -33,7 +36,10 @@ class FovealCanvasPatchTest {
             .all { it.name == EXPERIMENTAL_COMPATIBILITY_NAME })
         val targets = xrFovealCanvasPatch.compatibility.orEmpty().flatMap { it.targets }
         assertEquals(
-            setOf("2.0.20" to 5001712, "2.0.23" to 5002363),
+            setOf(
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
+            ),
             targets.flatMap { target ->
                 target.versionCodes.orEmpty().values.map { target.version to it }
             }.toSet(),
@@ -41,8 +47,8 @@ class FovealCanvasPatchTest {
         bases.forEach { base ->
             assertTrue(isFovealCanvasSteamLinkBuild(base.version, base.code), "${base.version}/${base.code}")
         }
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.22" to "5002244",
-            "2.0.20" to "5002363", "2.0.23" to "5001712", "2.0.23" to "5002364").forEach { (version, code) ->
+        listOf("2.0.20" to "5001813", "2.0.20" to "5002363",
+            "2.0.23" to "5001712", "2.0.23" to "5002364").forEach { (version, code) ->
             assertFalse(isFovealCanvasSteamLinkBuild(version, code), "$version/$code")
         }
     }
@@ -50,7 +56,7 @@ class FovealCanvasPatchTest {
     @Test
     fun `excluded exact pairs return unchanged before file or payload access`() = withTemporaryRoot { root ->
         val missing = File(root, "must-stay-absent")
-        listOf("2.0.20" to "5001812", "2.0.21" to "5001968", "2.0.20" to "5001713")
+        listOf("2.0.20" to "5001813", "2.0.21" to "5001969", "2.0.20" to "5001713")
             .forEach { (version, code) ->
                 assertFalse(installFovealCanvasResources(missing, version, code,
                     byteArrayOf(1), byteArrayOf(2)))

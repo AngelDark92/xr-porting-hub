@@ -77,7 +77,8 @@ class ControllerVelocityFramePatchTest {
         assertEquals(COMPATIBILITIES_STEAM_LINK, compatibilities, controllerVelocityFramePatch.name)
         assertEquals(
             setOf(
-                "2.0.20" to 5001712, "2.0.23" to 5002363,
+                "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
             ),
             compatibilities.map { it.targets.single() }.map { it.version to it.versionCodes!!.values.toSet().single() }.toSet(),
             controllerVelocityFramePatch.name,
@@ -86,8 +87,10 @@ class ControllerVelocityFramePatchTest {
         assertTrue("in the base space" in controllerVelocityFramePatch.description.orEmpty())
         assertTrue("measured on 2.0.23/5002363" in controllerVelocityFramePatch.description.orEmpty())
 
-        listOf("2.0.20" to "5001712")
-            .forEach { (version, versionCode) ->
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244",
+        ).forEach { (version, versionCode) ->
                 assertTrue(isControllerVelocityFrameLegacyBuild(version, versionCode), "$version/$versionCode")
                 assertFalse(isControllerVelocityFrameNativeBuild(version, versionCode), "$version/$versionCode")
             }

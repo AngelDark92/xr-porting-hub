@@ -114,7 +114,8 @@ class ControllerHalPosePatchTest {
         )
         assertEquals(
             listOf(
-                "2.0.23" to 5002363, "2.0.20" to 5001712,
+                "2.0.23" to 5002363, "2.0.20" to 5001712, "2.0.20" to 5001812,
+                "2.0.21" to 5001968, "2.0.22" to 5002244,
             ),
             compatibilities.map { it.targets.single() }.map { it.version to it.versionCodes!!.values.toSet().single() },
             controllerHalPosePatch.name,
@@ -122,8 +123,10 @@ class ControllerHalPosePatchTest {
         assertTrue("local to the grip pose" in controllerHalPosePatch.description.orEmpty())
         assertTrue("in the base space" in controllerHalPosePatch.description.orEmpty())
 
-        listOf("2.0.20" to "5001712", "2.0.23" to "5002363")
-            .forEach { (version, versionCode) ->
+        listOf(
+            "2.0.20" to "5001712", "2.0.20" to "5001812",
+            "2.0.21" to "5001968", "2.0.22" to "5002244", "2.0.23" to "5002363",
+        ).forEach { (version, versionCode) ->
                 assertTrue(isControllerHalPoseBuild(version, versionCode), "$version/$versionCode")
             }
         listOf("2.0.23" to "5002364", "2.0.19" to "5001712", "2.0.20" to "5002363")

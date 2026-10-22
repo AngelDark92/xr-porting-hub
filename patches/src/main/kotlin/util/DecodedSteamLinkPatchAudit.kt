@@ -40,9 +40,7 @@ import app.template.patches.steamlink.binary.patchNativeMicrophonePreset
 import app.template.patches.steamlink.binary.patchVisualDelay
 import app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild
 import app.template.patches.steamlink.identity.changePackageNamePatch
-import app.template.patches.steamlink.identity.deviceIdentityNativeXrPatch
 import app.template.patches.steamlink.identity.deviceIdentityPatch
-import app.template.patches.steamlink.identity.patchGalaxyIdentity
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -73,7 +71,7 @@ private val legacySites = mapOf(
 )
 
 private val publicPatchesFor5002363: List<Patch<*>> = listOf(
-    deviceIdentityNativeXrPatch, gxrFacebridgePatch, xrGalaxyXrHighResolutionPatch,
+    gxrFacebridgePatch, xrGalaxyXrHighResolutionPatch,
     microphoneInputPresetPatch, oledCalibrationPatch, unrestrictedBatteryUsagePatch, hmdOnlyPatch,
 )
 
@@ -383,10 +381,7 @@ private fun verifyModernPublicOutput(
             val path = "assets/config/$name"
             if (original.getEntry(path) == null) continue
             val bytes = original.requireEntryBytes(path)
-            val expected = if (patch == deviceIdentityNativeXrPatch && name == "hmd_config.json") {
-                patchGalaxyIdentity(bytes.decodeToString()).encodeToByteArray()
-            } else bytes
-            check(result.requireEntryBytes(path).contentEquals(expected)) { "${patch.name}: changed $path unexpectedly" }
+            check(result.requireEntryBytes(path).contentEquals(bytes)) { "${patch.name}: changed $path unexpectedly" }
         }
         scene.requireBytesAt(fixture.permissionOffset, permissionOriginal)
         val manifest = result.requireEntryBytes("AndroidManifest.xml")

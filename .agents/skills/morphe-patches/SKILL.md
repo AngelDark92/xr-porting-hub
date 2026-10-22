@@ -125,6 +125,13 @@ named; omit `Needs:` when only a normal install is required; keep credit appends
 and excluded from the length budget; no jargon beyond app/tool names. Names keep
 pinned suffixes like `(experimental)` unchanged.
 
+The build line is generated with `buildLabel(compatibilityList)` from
+`shared/PatchBuilds.kt` and the same list is passed to `compatibleWith`. Never hand-write a
+build line that can drift from the declared compatibility. The `assertPatchDescriptionContract` test helper enforces the exact code mapping and a 150-character
+one-sentence budget. One patch object per feature: add a per-build table row instead of a
+second patch object. Duplicate objects only when the global `default` recommendation scope
+genuinely differs, and say why in the source comment.
+
 Option texts: `stringOption(...)`/`intSliderOption(...)` carry user-facing `title` and
 `description`, plus a `values` map whose left keys are display labels and right keys the
 stored settings — reword left keys only when clearly long, never the right-side values,

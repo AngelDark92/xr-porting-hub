@@ -30,7 +30,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -39,7 +39,7 @@
     },
     {
       "name": "Android XR native permission names",
-      "description": "Swaps the app's built-in face and eye permission names to the ones Android XR needs. Builds: 2.0.20/5001712.",
+      "description": "Swaps the built-in Oculus face and eye permission names for Android XR ones. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [],
@@ -62,7 +62,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -71,7 +137,7 @@
     },
     {
       "name": "Appear on top (legacy)",
-      "description": "Legacy overlay fallback for older builds: lets Steam Link draw its panel over other screens.",
+      "description": "Lets Steam Link draw its panel over other screens (legacy fallback). Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Startup & permissions",
       "default": false,
       "dependencies": [
@@ -97,7 +163,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -129,7 +261,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -138,7 +270,7 @@
     },
     {
       "name": "Blue-noise dithering",
-      "description": "Adds fine grain that hides harsh color steps, with separate on/off choices for the center and the background. Builds: 2.0.20/5001712, 2.0.23/5002363.",
+      "description": "Adds fine grain that hides color steps; center and background can be toggled. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Image quality",
       "default": true,
       "dependencies": [],
@@ -161,7 +293,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -183,7 +381,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -211,7 +409,7 @@
     },
     {
       "name": "Change package name",
-      "description": "Renames the app so the patched Steam Link can install next to the original. Builds: 2.0.20/5001712.",
+      "description": "Renames the app so it can install next to the original. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "App & device identity",
       "default": false,
       "dependencies": [
@@ -236,7 +434,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -257,7 +521,7 @@
     },
     {
       "name": "Controller velocity frame",
-      "description": "Fixes thrown-object directions by rotating controller speeds into the frame SteamVR expects. Builds: 2.0.23, angular velocity is reported local to the streamed pose; 2.0.20/5001712, it is reported in the base space. Angles measured on 2.0.23/5002363. Needs: nothing. The root Velocity Frame and Steam Link Pose Time modules do not run while this layer is loaded. Details: https://github.com/4uva4ek.",
+      "description": "Fixes thrown-object directions by rotating controller speeds into the frame SteamVR expects. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Angular velocity is local to the streamed pose on 2.0.23/5002363 and in the base space on older builds; measured on 2.0.23/5002363. Details: https://github.com/4uva4ek.",
       "category": "Controller",
       "default": true,
       "dependencies": [],
@@ -280,7 +544,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -302,7 +632,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -311,12 +641,11 @@
     },
     {
       "name": "Device identity",
-      "description": "Sets the Galaxy XR headset identity SteamVR sees (model xrvst2ue) and keeps the eye-tracking extension request. Builds: exact 2.0.20/5001712.",
+      "description": "Reports the Galaxy XR headset identity to SteamVR (model xrvst2ue). Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "App & device identity",
       "default": true,
       "dependencies": [
-        "RawResourcePatch",
-        "ResourcePatch"
+        "RawResourcePatch"
       ],
       "compatiblePackages": [
         {
@@ -337,23 +666,10 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
             }
           ]
-        }
-      ],
-      "options": []
-    },
-    {
-      "name": "Device identity (2.0.23/5002363)",
-      "description": "Sets the Galaxy XR headset identity SteamVR sees (model xrvst2ue) on the native Android XR build; optional, so it stays out of the recommended set. Builds: exact 2.0.23/5002363.",
-      "category": "App & device identity",
-      "default": false,
-      "dependencies": [
-        "RawResourcePatch",
-        "ResourcePatch"
-      ],
-      "compatiblePackages": [
+        },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
           "name": "Steam Link",
@@ -363,16 +679,60 @@
           "signatures": null,
           "targets": [
             {
-              "version": "2.0.23",
+              "version": "2.0.20",
               "versionCodes": {
-                "ARM64_V8A": 5002363,
-                "ARMEABI_V7A": 5002363,
-                "X86_64": 5002363,
-                "X86": 5002363
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending."
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -381,7 +741,7 @@
     },
     {
       "name": "Force HMD initialization gates",
-      "description": "Removes 2 headset startup checks so tracking starts even when the app's own checks would stop it. Builds: 2.0.20/5001712.",
+      "description": "Removes 2 startup checks that can stop headset tracking. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [],
@@ -404,7 +764,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -413,7 +839,7 @@
     },
     {
       "name": "Force lobby permission-state gate",
-      "description": "Skips a lobby permission check so the room screen loads normally. Builds: 2.0.20/5001712.",
+      "description": "Skips a lobby permission check so the room screen loads. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [],
@@ -436,7 +862,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -445,7 +937,7 @@
     },
     {
       "name": "Force stream XR gates",
-      "description": "Removes 3 XR checks on the streaming path so video can start. Builds: 2.0.20/5001712.",
+      "description": "Removes 3 XR checks so video can start. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [],
@@ -468,7 +960,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -502,7 +1060,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -511,7 +1069,7 @@
     },
     {
       "name": "GXR face and tongue bridge",
-      "description": "Face and tongue feed for the VRCFT module: the face bridge on 2.0.20/5001712, tongue out/left/right/up/down slots on 2.0.23/5002363; Valve's own expressions and tongue-out keep working.",
+      "description": "Adds face and tongue data for the VRCFT module. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [
@@ -537,7 +1095,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -559,7 +1183,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -568,11 +1192,10 @@
     },
     {
       "name": "Galaxy XR SteamVR driver (galaxyxr)",
-      "description": "Sets Galaxy XR headset and controller names in SteamVR, replacing the Meta Quest Pro spoof. Builds: 2.0.20/5001712, 2.0.23/5002363. Needs: Galaxy XR VRLink Setup on the PC, or controllers show no model. Details: https://github.com/4uva4ek/steamlink-patches.",
+      "description": "Sets Galaxy XR names in SteamVR; needs the PC-side Galaxy XR VRLink Setup. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "App & device identity",
       "default": false,
       "dependencies": [
-        "RawResourcePatch",
         "RawResourcePatch"
       ],
       "compatiblePackages": [
@@ -594,7 +1217,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -616,7 +1305,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -667,7 +1356,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -676,7 +1365,7 @@
     },
     {
       "name": "Galaxy XR high-resolution 3-projection fix",
-      "description": "Permission-free high-resolution fix: adds a small Android-surface trigger and leaves the renderer's own formats, including future RGB10_A2, untouched. No image copy. Builds: 2.0.20/5001712, 2.0.23/5002363.",
+      "description": "Permission-free high-resolution fix that leaves renderer formats, including future RGB10_A2, untouched. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Image quality",
       "default": true,
       "dependencies": [
@@ -701,7 +1390,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Exact Steam Link 2.0.20/5001712 high-resolution target with its isolated 2-projection to 3-layer payload. The topology correction has prior user-reported startup and delayed-frame runtime evidence; this rebuilt binary remains uninstalled."
+              "description": "Steam Link 2.0.20/5001712 high-resolution target."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 high-resolution target."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 high-resolution target."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 high-resolution target."
             }
           ]
         },
@@ -723,7 +1478,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact Steam Link 2.0.23 build 5002363; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 high-resolution target."
             }
           ]
         }
@@ -755,7 +1510,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -787,7 +1542,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -819,7 +1574,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -851,7 +1606,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -883,7 +1638,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -892,7 +1647,7 @@
     },
     {
       "name": "Microphone input preset",
-      "description": "Switches the microphone's capture mode; Voice Recognition tested clearest and loudest on Galaxy XR. Builds: 2.0.20/5001712, 2.0.23/5002363.",
+      "description": "Switches microphone capture mode; Voice Recognition tested best. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [],
@@ -915,7 +1670,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -937,7 +1758,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -961,11 +1782,99 @@
     },
     {
       "name": "Network Optimizations",
-      "description": "Keeps streaming smooth after Wi-Fi hiccups: lost packets are re-requested, recent video frames are kept, and bigger buffers absorb bursts; headset verification still pending. Builds: 2.0.23/5002363 only.",
+      "description": "Keeps streaming smooth after packet loss. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Streaming & network",
       "default": true,
       "dependencies": [],
       "compatiblePackages": [
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001712,
+                "ARMEABI_V7A": 5001712,
+                "X86_64": 5001712,
+                "X86": 5001712
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
+            }
+          ]
+        },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
           "name": "Steam Link",
@@ -984,7 +1893,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Native and APK adaptation for exact Steam Link 2.0.23 build 5002363; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -993,7 +1902,7 @@
     },
     {
       "name": "OLED color calibration",
-      "description": "Tunes the OLED headset's color with gamma and saturation presets, plus optional center-of-view tweaks; visible improvement needs headset verification. Builds: 2.0.20/5001712, 2.0.23/5002363.",
+      "description": "Tunes OLED color with gamma and saturation presets. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Headset verification pending.",
       "category": "Image quality",
       "default": true,
       "dependencies": [],
@@ -1016,7 +1925,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -1038,7 +2013,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -1098,7 +2073,7 @@
     },
     {
       "name": "OpenXR CPU and GPU BOOST",
-      "description": "Asks OpenXR for the CPU and GPU BOOST hint at each session start; the headset still controls clocks and thermals, and unsupported ones continue without BOOST. No root needed; performance gain not yet measured. Details: https://github.com/4uva4ek/steamlink-patches.",
+      "description": "Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "App & device identity",
       "default": true,
       "dependencies": [],
@@ -1121,7 +2096,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -1143,7 +2184,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -1175,7 +2216,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1207,7 +2248,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1239,7 +2280,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1271,7 +2312,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1280,7 +2321,7 @@
     },
     {
       "name": "Startup permission requests (before 5002322)",
-      "description": "Requests hand, eye, face, microphone and Bluetooth permissions at startup on older builds; battery settings and the splash are separate patches.",
+      "description": "Requests hand, eye, face, microphone and Bluetooth permissions at startup. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Startup & permissions",
       "default": true,
       "dependencies": [
@@ -1306,7 +2347,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1315,7 +2422,7 @@
     },
     {
       "name": "Startup splash and XR launch mode (before 5002322)",
-      "description": "Adds the Launching Steam Link splash and full-space VR start mode on older builds; requests no permissions (pick Startup permission requests for those).",
+      "description": "Adds the launch splash and full-space VR start mode. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Startup & permissions",
       "default": true,
       "dependencies": [
@@ -1344,7 +2451,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1378,7 +2551,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1410,7 +2583,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }
@@ -1419,7 +2592,7 @@
     },
     {
       "name": "Unrestricted battery usage",
-      "description": "Opens Android's Battery usage page at startup so Unrestricted can be selected for XR streaming.",
+      "description": "Opens Android's Battery usage page at startup so XR streaming can run unrestricted. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Startup & permissions",
       "default": true,
       "dependencies": [
@@ -1446,7 +2619,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -1468,7 +2707,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -1477,7 +2716,7 @@
     },
     {
       "name": "Visual Delay Fix",
-      "description": "Re-times the headset's position report so head movement shows up sooner; controller movement is untouched. Builds: 2.0.20/5001712, 2.0.23/5002363.",
+      "description": "Makes head movement appear sooner without touching controller motion. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [],
@@ -1500,7 +2739,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         },
@@ -1522,7 +2827,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Build 5002363 recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, Microphone input preset (Voice Recognition), Unrestricted battery usage, Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, Blue-noise dithering with the default foveal layer, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. The retired projection experiments are excluded. Decoded-base adaptation; headset validation pending."
+              "description": "Steam Link 2.0.23/5002363 native Android XR."
             }
           ]
         }
@@ -1541,7 +2846,7 @@
     },
     {
       "name": "XR Core Runtime",
-      "description": "Installs the bridge files the other XR patches need.",
+      "description": "Installs the bridge files the other XR patches need. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [
@@ -1568,7 +2873,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1577,7 +2948,7 @@
     },
     {
       "name": "XR Device Config Baseline",
-      "description": "Installs the default Galaxy XR controller settings plus the dashboard files.",
+      "description": "Installs the default Galaxy XR controller settings and dashboard files. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [
@@ -1602,7 +2973,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1611,7 +3048,7 @@
     },
     {
       "name": "XR Input Routing Config",
-      "description": "Installs the settings file that routes pointer and button input to the launcher UI.",
+      "description": "Routes pointer and button input to the launcher UI. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [
@@ -1636,7 +3073,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1645,7 +3148,7 @@
     },
     {
       "name": "XR Manifest Capability Pack",
-      "description": "Adds the Android XR/OpenXR permissions, features and app properties Steam Link needs.",
+      "description": "Adds the Android XR permissions, features and app properties Steam Link needs. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",
       "default": true,
       "dependencies": [
@@ -1670,7 +3173,73 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Verified Steam Link 2.0.20 build 5001712."
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001812,
+                "ARMEABI_V7A": 5001812,
+                "X86_64": 5001812,
+                "X86": 5001812
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001812 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.21",
+              "versionCodes": {
+                "ARM64_V8A": 5001968,
+                "ARMEABI_V7A": 5001968,
+                "X86_64": 5001968,
+                "X86": 5001968
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.21/5001968 legacy base."
+            }
+          ]
+        },
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.22",
+              "versionCodes": {
+                "ARM64_V8A": 5002244,
+                "ARMEABI_V7A": 5002244,
+                "X86_64": 5002244,
+                "X86": 5002244
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.22/5002244 legacy base."
             }
           ]
         }
@@ -1704,7 +3273,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "4XVR Galaxy XR adaptation for exact build 20022; decoded-base design, headset validation pending."
+              "description": "4XVR 2.0.22/20022 Galaxy XR port."
             }
           ]
         }

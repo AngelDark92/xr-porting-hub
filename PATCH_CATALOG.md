@@ -15,14 +15,14 @@ The retired entries below are historical records and are not selectable.
 | Image quality | 4 | [Galaxy XR high-resolution 3-projection fix](#galaxy-xr-high-resolution-3-projection-fix-xrgalaxyxrhighresolutionpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch); [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental-xrfovealcanvaspatch) |
 | Tracking & audio | 4 | [Visual Delay Fix](#visual-delay-fix-hmdonlypatch); [GXR face and tongue bridge](#gxr-face-and-tongue-bridge-gxrfacebridgepatch); [XR Input Routing Config](#xr-input-routing-config-xrinputroutingconfigpatch); [Microphone input preset](#microphone-input-preset-microphoneinputpresetpatch) |
 | Startup & permissions | 4 | [Startup permission requests (before 5002322)](#startup-permission-requests-before-5002322-xrstartuppermissionspatch); [Startup splash and XR launch mode (before 5002322)](#startup-splash-and-xr-launch-mode-before-5002322-xrlauncherbootstrappatch); [Unrestricted battery usage](#unrestricted-battery-usage-unrestrictedbatteryusagepatch); [Appear on top (legacy)](#appear-on-top-legacy-appearontoppatch) |
-| App & device identity | 5 | [Change package name](#change-package-name-changepackagenamepatch); [Device identity](#device-identity-deviceidentitypatch); [Device identity (2.0.23/5002363)](#device-identity-20235002363-deviceidentitynativexrpatch); Galaxy XR vendor driver; [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost-performanceboostpatch) |
+| App & device identity | 4 | [Change package name](#change-package-name-changepackagenamepatch); [Device identity](#device-identity-deviceidentitypatch); Galaxy XR vendor driver; [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost-performanceboostpatch) |
 | Advanced XR compatibility | 7 | [XR Core Runtime](#xr-core-runtime-xrcoreruntimepatch); [XR Device Config Baseline](#xr-device-config-baseline-xrdeviceconfigbaselinepatch); [XR Manifest Capability Pack](#xr-manifest-capability-pack-xrmanifestcapabilitypackpatch); [Android XR native permission names; Force HMD initialization gates; Force lobby permission-state gate; Force stream XR gates](#native-xr-compatibility-gates) |
-| Controller | 5 | [Controller pose extrapolation](#controller-pose-extrapolation-controllerposeextrapolationpatch); [Controller velocity frame](#controller-velocity-frame-controllervelocityframepatch) (stable, recommended on both bases); [Controller pose time (experimental)](#controller-pose-time-experimental-controllerposetimepatch) (exact 5001712 and 5002363); [Controller tracking from the controller HAL through Shizuku](#controller-tracking-from-the-controller-hal-through-shizuku-controllerhalposepatch); [Controller grip haptics through Shizuku](#controller-grip-haptics-through-shizuku-controllergriphapticspatch). Only Controller velocity frame is on by default. |
-| Streaming & network | 2 | [Codecs Support](#codecs-support-xrcodecssupportpatch) (exact 2.0.20/5001712 and 2.0.23/5002363; experimental, recommended); [Network Optimizations](#network-optimizations-networkoptimizationspatch) (exact 2.0.23/5002363 only; recommended) |
+| Controller | 5 | [Controller pose extrapolation](#controller-pose-extrapolation-controllerposeextrapolationpatch); [Controller velocity frame](#controller-velocity-frame-controllervelocityframepatch) (stable, recommended on every supported build); [Controller pose time (experimental)](#controller-pose-time-experimental-controllerposetimepatch) (all five builds); [Controller tracking from the controller HAL through Shizuku](#controller-tracking-from-the-controller-hal-through-shizuku-controllerhalposepatch); [Controller grip haptics through Shizuku](#controller-grip-haptics-through-shizuku-controllergriphapticspatch). Only Controller velocity frame is on by default. |
+| Streaming & network | 2 | [Codecs Support](#codecs-support-xrcodecssupportpatch) (all five builds; experimental, recommended); [Network Optimizations](#network-optimizations-networkoptimizationspatch) (all five builds; recommended) |
 
 ## OpenXR CPU and GPU BOOST (`performanceBoostPatch`)
 
-Recommended, default on for exact 2.0.20/5001712 and 2.0.23/5002363.
+Recommended, default on for all five supported builds.
 Available in stable and experimental catalogs. Adds `lib/arm64-v8a/libgxr_performance_boost.so`
 and `assets/openxr/1/api_layers/implicit.d/XR_APILAYER_local_GalaxyXR_performance_boost.json`.
 Existing APK code and rendering resources are unchanged. The layer requests CPU/GPU
@@ -70,23 +70,23 @@ Separate, default-off experiment for exact **2.0.22/5002322** and **2.0.23/50023
 - Limits: 24 lazy 4 MiB staging allocations per codec, 96 MiB maximum; real input capacity checked before copying. The stock 20 ms complete-frame acquisition wait and real-error recovery remain.
 - [Exact layouts and hashes](diagnostics/steamlink-hitches/decoder-hook-layouts.json), [v1 tried record](diagnostics/steamlink-hitches/EXPERIMENT-2026-09-15-decoder-staging-v1.md), [v2 diagnostic capture](diagnostics/steamlink-hitches/TELEMETRY-2026-09-15.md). V1 did not solve the reported freezes. It was an 8th modern individual selection without changing the existing 6-patch recommended set, until retirement on 2026-09-19.
 
-## Retired bases (2026-10-21)
+## Restored bases (2026-10-22)
 
-Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21. Their layout tables, compatibility entries and the optional BOOST patch were removed; only 2.0.20/5001712 and 2.0.23/5002363 remain supported. The Full-FOV foveal canvas experiment was re-scoped the same day to those two bases. Historical records stay under `diagnostics/`.
+Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21 and restored on 2026-10-22 with per-build native tables, compatibility entries, tests and catalogs. The restored pre-2363 builds share the same 22-patch recommended set. Historical retired/restored records stay under `diagnostics/`.
 
 ## Current adaptations
 
-The current catalog supports exactly **2.0.20/5001712** and **2.0.23/5002363**. Compatibility uses the exact version name and build code, never a version range. Historical references to 5001740, 5002296, 5002313, 5002318, and 5002322 below do not make those builds selectable.
+The current catalog supports exactly **2.0.20/5001712**, **2.0.20/5001812**, **2.0.21/5001968**, **2.0.22/5002244** and **2.0.23/5002363**. Compatibility uses the exact version name and build code, never a version range. Historical references to 5001740, 5002296, 5002313, 5002318, and 5002322 below do not make those builds selectable.
 
-The legacy base (2.0.20/5001712) exposes **22 individual patches** in the core compatibility matrix and recommends **20**, BOOST and Codecs Support included; 2.0.23/5002363 exposes 11 individual patches and recommends 10. Morphe Manager auto-selects the set for the detected exact version and build. Appear on top and Change package name remain optional.
+The four pre-2363 builds expose the same 24 standalone patches and recommend the same 22, including BOOST, Codecs Support, Network Optimizations and Controller velocity frame. 2.0.23/5002363 exposes 11 individual patches and recommends 11. Morphe Manager auto-selects the set for the detected exact version and build. Appear on top and Change package name remain optional.
 
-The 5001712 reference is an analysis reconstruction, so its regression checks do not establish pristine-source APK patching.
+The 5001712 reference is an analysis reconstruction, so its regression checks do not establish pristine-source APK patching. 5002244 has a reconstructed decoded fixture; 5001812 and 5001968 currently have decoded trees only.
 
 Startup permissions and splash/XR launch-mode edits are separate patches, part of the default-enabled legacy recommended set. The 5002363 recommended set preserves native startup and permission handling apart from the selected battery-settings hook. Manager 1.30.0 or newer with compatibility checks enabled is required for exact build-code filtering; Expert mode may still display incompatible patches.
 
 ### Steam Link 2.0.23 / 5002363
 
-This exact pair exposes 11 core individual patches; the 10-patch recommended set is default-enabled: GXR face and tongue bridge, Galaxy XR high-resolution 3-projection fix, Microphone input preset, OLED color calibration, Blue-noise dithering (fovea default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, OpenXR CPU and GPU BOOST, and Codecs Support. Device identity (2.0.23/5002363) stays available but is not part of the recommended set; it remains optional and off by default. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
+This exact pair exposes 11 core individual patches; the 11-patch recommended set is default-enabled: GXR face and tongue bridge, Galaxy XR high-resolution 3-projection fix, Microphone input preset, OLED color calibration, Blue-noise dithering (fovea default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support and Controller velocity frame. Device identity is legacy-only: stock 2.0.23 identity is authoritative, so no identity patch is shipped for this build. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
 
 See the [5002363 validation](diagnostics/steamlink-5002363/README.md), [native targets](diagnostics/steamlink-5002363/native-targets.md), and [Java/config targets](diagnostics/steamlink-5002363/surface-targets.md).
 
@@ -94,7 +94,7 @@ See the [5002363 validation](diagnostics/steamlink-5002363/README.md), [native t
 
 The recommended set is the individual patches themselves, default-enabled and auto-selected for the detected exact version and build code.
 
-On exact 2.0.20/5001712 the 18 individual patches below plus BOOST and Codecs Support are default-enabled (20 selections):
+On each exact pre-2363 build (2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.0.22/5002244) the same 22 individual patches are default-enabled:
 
 1. Android XR native permission names
 2. Force HMD initialization gates
@@ -114,10 +114,12 @@ On exact 2.0.20/5001712 the 18 individual patches below plus BOOST and Codecs Su
 16. Device identity (Galaxy XR identity, model `xrvst2ue`)
 17. Startup permission requests (before 5002322)
 18. Blue-noise dithering (fovea default, background opt-in; OLED's VD-like fovea toggle must stay off)
-19. OpenXR CPU and GPU BOOST (exact 2.0.20/5001712)
-20. Codecs Support (exact 2.0.20/5001712)
+19. OpenXR CPU and GPU BOOST
+20. Codecs Support
+21. Network Optimizations
+22. Controller velocity frame
 
-**Device identity** has no selector: every legacy base reports the Galaxy XR identity with model `xrvst2ue`, the headset's `Build.PRODUCT`. The 10-patch 5002363 recommended set does not select Device identity (2.0.23/5002363), which stays optional and off by default.
+**Device identity** has no selector and is legacy-only: every pre-2363 base reports the Galaxy XR identity with model `xrvst2ue`, the headset's `Build.PRODUCT`. Stock 2.0.23 identity is authoritative; no native identity patch exists.
 
 The legacy Device identity entry depends on XR Device Config Baseline, so the baseline runs before the
 identity writer; the baseline itself no longer writes `hmd_config.json`. The Galaxy payload
@@ -126,7 +128,7 @@ entry reports the single model `xrvst2ue`.
 Private/transitive support dependencies are deduplicated by Morphe; the counts above describe
 direct public selections, not all internal tasks.
 
-The recommended selection never broadens verified build guards. 2.0.20/5001712 uses the independently verified 2-projection payload; 2.0.23/5002363 uses the 3-projection payload. The 2 new bases retain array-shaped `requestedExtensions`; only 5001712 uses the special device-keyed conversion. Headset behavior remains a separate validation gate.
+The recommended selection never broadens verified build guards. 2.0.20/5001712 uses the independently verified 2-projection payload; 2.0.23/5002363 uses the 3-projection payload. The three restored legacy bases retain array-shaped `requestedExtensions`; only 5001712 uses the special device-keyed conversion. Headset behavior remains a separate validation gate.
 
 ---
 
@@ -219,7 +221,7 @@ Face and tongue bridge, high resolution and battery no longer select either publ
 ---
 
 ### Controller pose extrapolation (`controllerPoseExtrapolationPatch`)
-**Default: disabled** — no dependencies; exact 2.0.20/5001712 and 2.0.23/5002363. The layer hooks the runtime library and wraps `xrLocateSpace` for VRLink's controller pose action, which every base creates under the same name, so it does not depend on the base; measured on 5002363 only, 5001712 was not run.
+**Default: disabled** — no dependencies; all five supported builds. The layer hooks the runtime library and wraps `xrLocateSpace` for VRLink's controller pose action, which every base creates under the same name, so it does not depend on the base; measured on 5002363 only, 5001712 was not run.
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libgxr_controller_extrapolation.so` | New file (OpenXR implicit API layer; source `extensions/controller-extrapolation-layer`) |
@@ -232,7 +234,7 @@ Measured on a Galaxy XR headset with 2.0.23/5002363 on 2026-10-04: stock, the ru
 ---
 
 ### Controller velocity frame (`controllerVelocityFramePatch`)
-**Default: enabled** (stable, recommended on both bases) — no dependencies. It replaces the retired *Controller angular world to local* adapter: that adapter converted the root Velocity Frame module's base-space angular velocity into the local axes Steam Link 2.0.23 reads, and this layer already reports the angular velocity local to the streamed pose on 2.0.23. The root **OpenXR Velocity Frame** and **Steam Link Pose Time** modules refuse to run while this layer is mapped, so an APK built with it does not use those modules. One patch covers both bases: the frame the angular velocity is reported in is chosen per build and written into the library's config block (`GXRVFRCFG0000001`, `angularWorld` at +20) — local to the streamed pose on 2.0.23/5002363, base space on 2.0.20/5001712. The 2.0.20/5001712 base uses the same pose action and, with this repository's `controller_config.json`, the same controller pose offset; the angles were measured on 5002363 only and the layer itself was not run on 2.0.20/5001712 (there it was installed together with the controller HAL tracking patch, which supplies the velocities).
+**Default: enabled** (stable, recommended on all five supported builds) — no dependencies. It replaces the retired *Controller angular world to local* adapter: that adapter converted the root Velocity Frame module's base-space angular velocity into the local axes Steam Link 2.0.23 reads, and this layer already reports the angular velocity local to the streamed pose on 2.0.23. The root **OpenXR Velocity Frame** and **Steam Link Pose Time** modules refuse to run while this layer is mapped, so an APK built with it does not use those modules. One patch covers both bases: the frame the angular velocity is reported in is chosen per build and written into the library's config block (`GXRVFRCFG0000001`, `angularWorld` at +20) — local to the streamed pose on 2.0.23/5002363, base space on 2.0.20/5001712. The 2.0.20/5001712 base uses the same pose action and, with this repository's `controller_config.json`, the same controller pose offset; the angles were measured on 5002363 only and the layer itself was not run on 2.0.20/5001712 (there it was installed together with the controller HAL tracking patch, which supplies the velocities).
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libgxr_controller_velocity_frame.so` | New file (OpenXR implicit API layer; source `extensions/controller-velocity-frame-layer`); the patch sets the angular velocity frame in its config block |
@@ -243,7 +245,7 @@ No Steam Link code, shader or config is changed. The Galaxy XR runtime reports t
 Measured on the PC from the poses VRLink delivers, Galaxy XR headset with 2.0.23/5002363 on 2026-10-04, against the displacement of the streamed positions (left / right controller): the linear velocity's direction error went from 44 / 55 degrees to 15 / 17.5 degrees and the angular velocity's from 18 / 33 degrees to 12 / 14 degrees; speed stayed at 98-100% of the positions'. Independent of the controller pose extrapolation patch.
 
 ### Controller pose time (experimental) (`controllerPoseTimePatch`)
-**Default: disabled** (experimental) — no dependencies; exact 2.0.20/5001712 and 2.0.23/5002363, Galaxy XR firmware I610UEU2AZF3. APK form of the root **Steam Link Pose Time** module. Option **Pose time compensation (ms)**: 0 to 30, default 5.
+**Default: disabled** (experimental) — no dependencies; all five supported builds, Galaxy XR firmware I610UEU2AZF3. APK form of the root **Steam Link Pose Time** module. Option **Pose time compensation (ms)**: 0 to 30, default 5.
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libgxr_controller_pose_time.so` | New file (OpenXR implicit API layer; source `extensions/controller-pose-time-layer`); the patch writes the compensation into its config block (`GXRPTMCFG0000001`, `leadUs` at +20) |
@@ -254,7 +256,7 @@ No Steam Link file other than these two is changed. Stock VRLink sends every con
 ---
 
 ### Controller grip haptics through Shizuku (`controllerGripHapticsPatch`)
-**Default: disabled** — no patch dependencies; exact 2.0.20/5001712 and 2.0.23/5002363. Needs [Shizuku](https://github.com/RikkaApps/Shizuku) on the headset.
+**Default: disabled** — no patch dependencies; all five supported builds. Needs [Shizuku](https://github.com/RikkaApps/Shizuku) on the headset.
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libgxr_haptic_main.so` | New file (OpenXR implicit API layer; source `extensions/controller-grip-haptics`) |
@@ -286,7 +288,7 @@ Measured on a Galaxy XR headset with 2.0.20/5001712 on 2026-10-06, against Steam
 ---
 
 ### GXR face and tongue bridge (`gxrFacebridgePatch`)
-**Default: enabled individually; part of the recommended set on both exact bases** — one patch, per exact build: the face-bridge layer on the legacy base (exact 2.0.20/5001712; adds the guarded face-permission declaration without selecting startup patches), the tongue transport slots on exact 2.0.23/5002363.
+**Default: enabled individually; part of the recommended set on all five supported builds** — one patch, per exact build: the face-bridge layer on the legacy bases (2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.0.22/5002244; adds the guarded face-permission declaration without selecting startup patches), the tongue transport slots on exact 2.0.23/5002363.
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libgxr_face_bridge.so` (legacy builds) | New file (XR_FB_face_tracking2 → XR_ANDROID_face_tracking API layer) |
@@ -317,7 +319,7 @@ Preserves Valve's native `XR_ANDROID_face_tracking` mapping for expressions 0–
 ---
 
 ### Unrestricted Battery Usage (`unrestrictedBatteryUsagePatch`)
-**Default: enabled individually; part of the recommended set on both exact bases** — battery-only stock-activity hook on exact 5002363; transparent settings bootstrap on exact 5001712
+**Default: enabled individually; part of the recommended set on all five supported builds** — battery-only stock-activity hook on exact 5002363; transparent settings bootstrap on the legacy bases
 | Artifact | Edit |
 |---|---|
 | `AndroidManifest.xml` `uses-permission` | Adds `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` |
@@ -328,7 +330,7 @@ Preserves Valve's native `XR_ANDROID_face_tracking` mapping for expressions 0–
 ---
 
 ### Galaxy XR high-resolution 3-projection fix (`xrGalaxyXrHighResolutionPatch`)
-**Default: enabled individually; part of the recommended set** — exact 2.0.20/5001712 and 2.0.23/5002363 only.
+**Default: enabled individually; part of the recommended set** — all five supported builds.
 
 | Artifact | Exact guarded edit |
 |---|---|
@@ -479,7 +481,7 @@ The mode preserved all 3 projections and replaced only the 6 source swapchain ha
 ## binary group
 
 ### Microphone Input Preset (`microphoneInputPresetPatch`)
-**Default: enabled individually; part of the recommended set on both exact bases**
+**Default: enabled individually; part of the recommended set on all five supported builds**
 
 | Artifact | Edit |
 |---|---|
@@ -490,7 +492,7 @@ The 5002363 layout is pinned to 2,292,008 bytes at `0xF44C0`; the 5001712 adapte
 ---
 
 ### Visual Delay Fix (`hmdOnlyPatch`)
-**Default: enabled individually; part of the recommended set on both exact bases**
+**Default: enabled individually; part of the recommended set on all five supported builds**
 | Artifact | Edit |
 |---|---|
 | `lib/arm64-v8a/libvrlink_scene.so` @ hook vaddr (version-specific) | 4 bytes: `ldr x2,[sp,#8]` → AArch64 unconditional branch to the mapped trampoline |
@@ -523,7 +525,7 @@ The independently decoded 5001712 layout is 2,221,072 bytes with stock SHA-256 `
 
 ### OLED Color Calibration (`oledCalibrationPatch`)
 
-Enabled by default; part of the recommended set on both exact bases. Exact current
+Enabled by default; part of the recommended set on all five supported builds. Exact current
 native adaptations are **2.0.20/5001712** and **2.0.23/5002363**.
 The single `foveaVdLike` toggle selects the
 same **VD-informed SDR foveal processing**, based on VD's HEVC 10-bit PCVR path; the
@@ -615,7 +617,7 @@ Exact 2.0.23/5002363 only; headset validation pending. See the [diagnostic recor
 ---
 
 ### Codecs Support (`xrCodecsSupportPatch`)
-**Default: enabled individually; recommended on exact 2.0.20/5001712 and 2.0.23/5002363**. 1 patch selects its pinned scene contract and runtime decoder layout by exact version/build. The optional telemetry setting remains off by default.
+**Default: enabled individually; recommended on all five supported builds**. 1 patch selects its pinned scene contract and runtime decoder layout by exact version/build. The optional telemetry setting remains off by default.
 
 - Bundles the `libgxr_codecs_support.so` OpenXR implicit layer: detects H.264 / AV1 in the first access unit and rebuilds the HEVC decoder in place; stock HEVC streams are untouched
 - Pairs with the GalaxyXR driver Stream codec setting (`nvencCodec`: 1 = H.264, 2 = AV1)
@@ -644,23 +646,6 @@ PC-side VRLink driver reads, so a patched legacy build routes to the same sectio
 
 ---
 
-### Device identity (2.0.23/5002363) (`deviceIdentityNativeXrPatch`)
-**Default: disabled; exact 2.0.23/5002363 only** — optional, and not part of the recommended set.
-
-| Artifact | Edit |
-|---|---|
-| `assets/config/hmd_config.json` (native build) | Atomic targeted merge: upserts exact `unknown`, `xrvst2`, and `xrvst2ue` entries with the same `xrvst2ue` model, `SamsungVST` tracking and `{vrlink}` roots; unrelated extensions, profiles, offsets, and controller configuration are preserved |
-
-This intentionally preserves the native build's requested extensions and vendor profiles. In particular,
-`controller_config.json` remains byte-identical, retaining `XR_EXT_hand_interaction`,
-`/interaction_profiles/ext/hand_interaction_ext`, and its hand grip/aim poses.
-
-Both entries run one shared factory body (`createDeviceIdentityPatch`) that branches per exact
-base; Morphe exposes one global `default` flag per patch object, so the recommended legacy scope
-and the optional native scope stay separate entries. Neither exposes any option.
-
----
-
 ### Change Package Name (`changePackageNamePatch`)
 **Default: disabled**
 | Artifact | Edit |
@@ -682,7 +667,7 @@ and the optional native scope stay separate entries. Neither exposes any option.
 | APK artifact | Patches that write to it |
 |---|---|
 | `lib/arm64-v8a/libvrlink_scene.so` | `disablePermissionPromptNativePatch` (layout-specific 8 B), native permission/gate patches, `hmdOnlyPatch` (hook + cave + velocity), `gxrFacebridgePatch` (5002363-only 24 B), `oledCalibrationPatch` (1087-byte GLSL block plus guarded swapchain instructions), `blueNoisePatch` (11 exact dependency/import/loader strings and sRGB8 instructions; finalizes after optional calibration) |
-| `assets/config/hmd_config.json` | `deviceIdentityPatch` (legacy payload), `deviceIdentityNativeXrPatch` (native upsert) and the optional `galaxyXrVendorDriverPatch` (resource roots/controller rewrite; it also rewrites the headset model to `Galaxy XR`, so it must not be combined with the `xrvst2ue` routing) — one writer per base |
+| `assets/config/hmd_config.json` | `deviceIdentityPatch` (legacy payload) and the optional `galaxyXrVendorDriverPatch` (resource roots/controller rewrite; it also rewrites the headset model to `Galaxy XR`, so it must not be combined with the `xrvst2ue` routing) — one writer per base |
 | `AndroidManifest.xml` | `xrManifestCapabilityPackPatch`, `xrLauncherBootstrapPatch`, `xrStartupPermissionsPatch`, shared face-tracking declaration used by `gxrFacebridgePatch`, `unrestrictedBatteryUsagePatch`, `appearOnTopPatch`, `xrGalaxyXrHighResolutionPatch`, `changePackageNamePatch` |
 | `SteamLink.onCreate` (5002363) | `nativeBatterySettingsPatch`: battery-only settings hook; earlier builds use the guarded transparent bootstrap |
 | `lib/arm64-v8a/libgxr_ast.so` | `xrGalaxyXrHighResolutionPatch` |

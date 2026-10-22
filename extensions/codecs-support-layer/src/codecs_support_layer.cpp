@@ -62,7 +62,7 @@ using gxr::PatchAv1SeqHeaders;
 using gxr::Sniffed;
 
 constexpr const char* kLayerName = "XR_APILAYER_local_GalaxyXR_codecs_support";
-constexpr const char* kBuild = "codecs-support-v8-20261021";
+constexpr const char* kBuild = "codecs-support-v9-20261022";
 constexpr const char* kDisableEnv = "GXR_DISABLE_CODECS_SUPPORT";
 constexpr const char* kSceneSoname = "libvrlink_scene.so";
 constexpr const char* kMediaNdkSoname = "libmediandk.so";
@@ -93,12 +93,34 @@ const GotProfile kProfile5001712 = {
     {0x21b5d0, 0x21b5d8, 0x21b5e0, 0x21b5e8, 0x21b608, 0x21b610, 0x21b618,
      0x21b640, 0x21b648, 0x21b660, 0x21b668, 0x21b670, 0x21b6c0, 0x21b6d0, 0x21b6d8},
 };
+const GotProfile kProfile5001812 = {
+    "2.0.20/5001812", 0xfd1c0,
+    "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed",
+    {0x21b510, 0x21b518, 0x21b520, 0x21b528, 0x21b548, 0x21b550, 0x21b558,
+     0x21b580, 0x21b588, 0x21b5a0, 0x21b5a8, 0x21b5b0, 0x21b600, 0x21b610, 0x21b618},
+};
+const GotProfile kProfile5001968 = {
+    "2.0.21/5001968", 0xf9168,
+    "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b",
+    {0x221620, 0x221628, 0x221630, 0x221638, 0x221658, 0x221660, 0x221668,
+     0x221690, 0x221698, 0x2216b0, 0x2216b8, 0x2216c0, 0x221710, 0x221720, 0x221728},
+};
+const GotProfile kProfile5002244 = {
+    "2.0.22/5002244", 0xfa4a8,
+    "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643",
+    {0x225b98, 0x225ba0, 0x225ba8, 0x225bb0, 0x225bd0, 0x225bd8, 0x225be0,
+     0x225c08, 0x225c10, 0x225c28, 0x225c30, 0x225c38, 0x225c88, 0x225c98, 0x225ca0},
+};
 const GotProfile kProfile5002363 = {
     "2.0.23/5002363", 0xfd6fc,
     "f5c43c6aacb69e61c3f929f361612e1b91bb509803d2c14824b9601b3dd8c795",
     {0x22f6b0, 0x22f6b8, 0x22f6c0, 0x22f6c8, 0x22f6e8, 0x22f6f0, 0x22f6f8,
      0x22f720, 0x22f728, 0x22f740, 0x22f748, 0x22f750, 0x22f7a0, 0x22f7b0, 0x22f7b8},
 };
+const GotProfile* const kProfiles[] = {
+    &kProfile5001712, &kProfile5001812, &kProfile5001968, &kProfile5002244, &kProfile5002363,
+};
+constexpr size_t kProfileCount = sizeof(kProfiles) / sizeof(kProfiles[0]);
 
 // Originals: resolved libmediandk entry points (dlsym, never the scene GOT).
 using FnCreateDecoder = void* (*)(const char*);
@@ -641,17 +663,16 @@ void TryPatch() {
     }
     uint8_t digest[32];
     char hex[65];
-    gxr::Sha256::Digest(reinterpret_cast<const void*>(g_sceneBase + kProfile5001712.anchorOffset),
-                        0x80, digest);
-    gxr::Sha256::Hex(digest, hex);
     const GotProfile* profile = nullptr;
-    if (std::strcmp(hex, kProfile5001712.anchorSha256) == 0) {
-        profile = &kProfile5001712;
-    } else {
+    for (size_t i = 0; i < kProfileCount; ++i) {
+        const GotProfile* candidate = kProfiles[i];
         gxr::Sha256::Digest(
-            reinterpret_cast<const void*>(g_sceneBase + kProfile5002363.anchorOffset), 0x80, digest);
+            reinterpret_cast<const void*>(g_sceneBase + candidate->anchorOffset), 0x80, digest);
         gxr::Sha256::Hex(digest, hex);
-        if (std::strcmp(hex, kProfile5002363.anchorSha256) == 0) profile = &kProfile5002363;
+        if (std::strcmp(hex, candidate->anchorSha256) == 0) {
+            profile = candidate;
+            break;
+        }
     }
     if (!profile) {
         LOG("libvrlink_scene.so matches no pinned base layout; no interception (fail closed)");

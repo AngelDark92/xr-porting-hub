@@ -6,6 +6,7 @@ import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
 import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
+import app.template.patches.shared.buildLabel
 import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
@@ -36,6 +37,33 @@ private val FOVEAL_CANVAS_LAYOUTS = listOf(
         functions = listOf(
             SceneFunction(0x10a410, 492, "adb6101ef08c9245e61a0950d7046b3b6d96205074657e294cc265ee0bc28576"),
             SceneFunction(0x10ad18, 2772, "bc5e4118046726343cba0edd0d40793cd53dafe5b99db9f3935f3e713b9f5b1d"),
+        ),
+    ),
+    FovealCanvasLayout(
+        versionName = "2.0.20",
+        versionCode = 5001812,
+        sceneSize = 2_220_872,
+        functions = listOf(
+            SceneFunction(0x10a570, 492, "0a71c29e06febb89060fa68dc1c8a753461e97018e66b93b9d9dc6097c52b5db"),
+            SceneFunction(0x10ae78, 2772, "718be9d52955db23249d64079db5b5b543c1765748be6a5d324bb39581bca48b"),
+        ),
+    ),
+    FovealCanvasLayout(
+        versionName = "2.0.21",
+        versionCode = 5001968,
+        sceneSize = 2_234_048,
+        functions = listOf(
+            SceneFunction(0x1064e0, 492, "29f66cdf40a79fc75c1ea49f1e311b850dbd469d4620036544131e0810d856fe"),
+            SceneFunction(0x106de8, 2788, "26ec7214b26d5e9559507dd89b7116ebc845ecbcbb11c92d55958969acaee9fc"),
+        ),
+    ),
+    FovealCanvasLayout(
+        versionName = "2.0.22",
+        versionCode = 5002244,
+        sceneSize = 2_251_920,
+        functions = listOf(
+            SceneFunction(0x107bf0, 692, "bb860b81d28a9f26b67745598c76c35bf6e47db3236e8c0a4982fc32c95c1bae"),
+            SceneFunction(0x10872c, 3000, "79fd47806e5eb8b77729d1abc57fde6f7858ab7c85a4a5fde060ccd2bb7cfdc8"),
         ),
     ),
     FovealCanvasLayout(
@@ -172,8 +200,8 @@ internal fun installFovealCanvasResources(
 @Suppress("unused")
 val xrFovealCanvasPatch = rawResourcePatch(
     name = "Full-FOV foveal canvas (experimental)",
-    description = "Only for exact 2.0.20/5001712 and 2.0.23/5002363: draws just the foveal image on a " +
-        "transparent 5000x6000 canvas per eye, keeping the background view. Needs: headset validation.",
+    description = "Draws only the foveal image on a transparent canvas per eye. " +
+        buildLabel(FOVEAL_CANVAS_COMPATIBILITIES) + " Experimental; headset validation pending.",
     default = false,
 ) {
     category(PatchCategories.IMAGE_QUALITY)

@@ -2,7 +2,6 @@ package app.template.patches.steamlink.androidxr
 
 import app.template.patches.shared.Constants.isMouseOnlySteamLinkBuild
 import app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild
-import app.template.patches.steamlink.identity.deviceIdentityNativeXrPatch
 import app.template.patches.steamlink.identity.deviceIdentityPatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,10 +9,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NewLegacyDispatchTest {
-    private val legacyBuilds = listOf("2.0.20" to "5001712")
+    private val legacyBuilds = listOf(
+        "2.0.20" to "5001712",
+        "2.0.20" to "5001812",
+        "2.0.21" to "5001968",
+    )
 
     @Test
-    fun `legacy base selects the verified 2 projection payload and mouse only JNI wrappers`() {
+    fun `legacy bases select the verified 2 projection payload and mouse only JNI wrappers`() {
         legacyBuilds.forEach { (version, code) ->
             assertTrue(isTwoProjectionSteamLinkBuild(version, code), "$version/$code")
             assertTrue(isMouseOnlySteamLinkBuild(version, code), "$version/$code")
@@ -33,6 +36,7 @@ class NewLegacyDispatchTest {
     @Test
     fun `later bases and mismatched pairs retain standard projection and input dispatch`() {
         listOf(
+            "2.0.22" to "5002244",
             "2.0.23" to "5002363",
             "2.0.20" to "5002363",
             "2.0.23" to "5001712",
@@ -55,10 +59,11 @@ class NewLegacyDispatchTest {
     }
 
     @Test
-    fun `identity patch exposes no headset selector on any base`() {
-        assertTrue(deviceIdentityPatch.options.isEmpty(), "legacy identity has no options")
-        assertTrue(deviceIdentityNativeXrPatch.options.isEmpty(), "native identity has no options")
-        assertTrue(deviceIdentityPatch.default, "legacy identity stays recommended")
-        assertFalse(deviceIdentityNativeXrPatch.default, "native identity stays optional")
+    fun `identity patch is legacy-only and has no headset selector`() {
+        assertTrue(deviceIdentityPatch.options.isEmpty())
+        assertTrue(deviceIdentityPatch.default)
+        assertFalse(deviceIdentityPatch.compatibility.orEmpty().any { compatibility ->
+            compatibility.targets.any { target -> target.version == "2.0.23" }
+        })
     }
 }

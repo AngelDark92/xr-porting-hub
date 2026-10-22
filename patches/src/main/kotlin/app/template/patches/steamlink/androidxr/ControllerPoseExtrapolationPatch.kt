@@ -7,6 +7,7 @@ import app.morphe.patcher.patch.SupportedAbi
 import app.morphe.patcher.patch.rawResourcePatch
 import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
 import app.template.patches.shared.PatchCategories
+import app.template.patches.shared.buildLabel
 
 internal const val CONTROLLER_EXTRAPOLATION_LIBRARY = "libgxr_controller_extrapolation.so"
 internal const val CONTROLLER_EXTRAPOLATION_MANIFEST =
@@ -19,6 +20,9 @@ private data class ControllerExtrapolationBuild(val version: String, val version
 // not depend on the base. Its effect was measured on 5002363 only.
 private val CONTROLLER_EXTRAPOLATION_BUILDS = listOf(
     ControllerExtrapolationBuild("2.0.20", 5001712, measured = false),
+    ControllerExtrapolationBuild("2.0.20", 5001812, measured = false),
+    ControllerExtrapolationBuild("2.0.21", 5001968, measured = false),
+    ControllerExtrapolationBuild("2.0.22", 5002244, measured = false),
     ControllerExtrapolationBuild("2.0.23", 5002363, measured = true),
 )
 
@@ -32,28 +36,31 @@ internal fun controllerExtrapolationResource(name: String): ByteArray =
         ?: throw PatchException("Missing bundled resource: steamlink/androidxr/$name"))
         .use { it.readBytes() }
 
+private val CONTROLLER_EXTRAPOLATION_COMPATIBILITIES = CONTROLLER_EXTRAPOLATION_BUILDS.map { build ->
+    Compatibility(
+        name = EXPERIMENTAL_COMPATIBILITY_NAME,
+        packageName = "com.valvesoftware.steamlinkvr",
+        targets = listOf(AppTarget(
+            version = build.version,
+            versionCodes = SupportedAbi.entries.associateWith { build.versionCode },
+            description = "Controller pose extrapolation layer for exact Steam Link " +
+                "${build.version}/${build.versionCode}; " +
+                if (build.measured) "measured on a Galaxy XR headset."
+                else "measured on 2.0.23/5002363 only, not run on this base.",
+        )),
+    )
+}
+
 @Suppress("unused")
 val controllerPoseExtrapolationPatch = rawResourcePatch(
     name = "Controller pose extrapolation",
-    description = "Makes Galaxy XR predict controller poses to the moment the app asks, instead of repeating one sample per frame, and smooths out jitter. Builds: 2.0.20/5001712, 2.0.23/5002363 (measured on 2.0.23). Needs: nothing. " +
+    description = "Predicts controller poses to the moment the app asks and smooths out jitter. " +
+        buildLabel(CONTROLLER_EXTRAPOLATION_COMPATIBILITIES) + " " +
         STEAM_LINK_CONTROLLER_CREDIT,
     default = false,
 ) {
     category(PatchCategories.CONTROLLER)
-    compatibleWith(*CONTROLLER_EXTRAPOLATION_BUILDS.map { build ->
-        Compatibility(
-            name = EXPERIMENTAL_COMPATIBILITY_NAME,
-            packageName = "com.valvesoftware.steamlinkvr",
-            targets = listOf(AppTarget(
-                version = build.version,
-                versionCodes = SupportedAbi.entries.associateWith { build.versionCode },
-                description = "Controller pose extrapolation layer for exact Steam Link " +
-                    "${build.version}/${build.versionCode}; " +
-                    if (build.measured) "measured on a Galaxy XR headset."
-                    else "measured on 2.0.23/5002363 only, not run on this base.",
-            )),
-        )
-    }.toTypedArray())
+    compatibleWith(*CONTROLLER_EXTRAPOLATION_COMPATIBILITIES.toTypedArray())
 
     execute {
         // Morphe dependencies do not re-check compatibility before execution.

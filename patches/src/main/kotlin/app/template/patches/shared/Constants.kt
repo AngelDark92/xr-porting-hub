@@ -13,6 +13,9 @@ object Constants {
 
     private val LEGACY_STEAM_LINK_BUILDS = listOf(
         SteamLinkBuild("2.0.20", 5001712),
+        SteamLinkBuild("2.0.20", 5001812),
+        SteamLinkBuild("2.0.21", 5001968),
+        SteamLinkBuild("2.0.22", 5002244),
     )
     private val NATIVE_XR_STEAM_LINK_BUILDS = listOf(
         SteamLinkBuild("2.0.23", 5002363),
@@ -23,17 +26,28 @@ object Constants {
     )
     private val HIGH_RESOLUTION_STEAM_LINK_BUILDS = listOf(
         SteamLinkBuild("2.0.20", 5001712),
+        SteamLinkBuild("2.0.20", 5001812),
+        SteamLinkBuild("2.0.21", 5001968),
+        SteamLinkBuild("2.0.22", 5002244),
         SteamLinkBuild("2.0.23", 5002363),
     )
     private val TWO_PROJECTION_STEAM_LINK_BUILDS = listOf(
         SteamLinkBuild("2.0.20", 5001712),
+        SteamLinkBuild("2.0.20", 5001812),
+        SteamLinkBuild("2.0.21", 5001968),
+    )
+    private val LEGACY_RECOMMENDED_STEAM_LINK_BUILDS = listOf(
+        SteamLinkBuild("2.0.22", 5002244),
     )
     private val LEGACY_XR_FOUNDATION_STEAM_LINK_BUILDS = LEGACY_STEAM_LINK_BUILDS
 
-    // The legacy bundle and the legacy-recommended defaults both resolve to the exact 5001712
-    // pair. Match exact pairs, not a numeric build cutoff.
+    // The exact early-build bundles are separate from the shared legacy bundle, but all use the
+    // legacy recommendation defaults. Match exact pairs, not a numeric build cutoff.
     fun isLegacyRecommendedSteamLinkBuild(version: String, versionCode: String): Boolean =
-        isTwoProjectionSteamLinkBuild(version, versionCode)
+        isTwoProjectionSteamLinkBuild(version, versionCode) ||
+            LEGACY_RECOMMENDED_STEAM_LINK_BUILDS.any {
+                it.version == version && it.versionCode.toString() == versionCode
+            }
 
     fun isTwoProjectionSteamLinkBuild(version: String, versionCode: String): Boolean =
         TWO_PROJECTION_STEAM_LINK_BUILDS.any {
@@ -80,12 +94,10 @@ object Constants {
     private fun steamLinkBuildCompatibility(
         build: SteamLinkBuild,
         name: String = "Steam Link",
-        description: String = if (build in listOf(
-                SteamLinkBuild("2.0.23", 5002363),
-            )) {
-            "Native and APK adaptation for exact Steam Link ${build.version} build ${build.versionCode}; headset validation pending."
+        description: String = if (isNativeXrBuild(build)) {
+            "Steam Link ${build.version}/${build.versionCode} native Android XR."
         } else {
-            "Verified Steam Link ${build.version} build ${build.versionCode}."
+            "Steam Link ${build.version}/${build.versionCode} legacy base."
         },
     ) = Compatibility(
         name = name,
@@ -101,29 +113,14 @@ object Constants {
         ),
     )
 
+    private fun isNativeXrBuild(build: SteamLinkBuild): Boolean =
+        NATIVE_XR_STEAM_LINK_BUILDS.any { it.version == build.version && it.versionCode == build.versionCode }
+
     val COMPATIBILITIES_STEAM_LINK_LEGACY =
         LEGACY_STEAM_LINK_BUILDS.map(::steamLinkBuildCompatibility)
 
     val COMPATIBILITIES_STEAM_LINK_NATIVE_XR =
-        NATIVE_XR_STEAM_LINK_BUILDS.map { build ->
-            steamLinkBuildCompatibility(
-                build = build,
-                description = if (build in MODERN_TONGUE_BRIDGE_STEAM_LINK_BUILDS) {
-                    "Build ${build.versionCode} recommends Galaxy XR high-resolution 3-projection fix, GXR face and tongue bridge, " +
-                        "Microphone input preset (Voice Recognition), Unrestricted battery usage, " +
-                        "Visual Delay Fix (60 ms), OLED color calibration with the Final balanced tested profile, " +
-                        "Blue-noise dithering with the default foveal layer, Network Optimizations, " +
-                        "OpenXR CPU and GPU BOOST, Codecs Support, and Controller velocity frame. " +
-                        "The retired projection experiments are excluded. " +
-                        if (build.versionCode == 5002363) "Decoded-base adaptation; headset validation pending." else ""
-                } else {
-                    "Build ${build.versionCode} recommends its native-Android-XR-safe set: Galaxy XR " +
-                        "high-resolution 3-projection fix, Device identity, Microphone input preset, OLED color " +
-                        "calibration, GXR face and tongue bridge, Visual Delay Fix, and Unrestricted battery usage. " +
-                        "Appear on top remains an optional legacy fallback."
-                },
-            )
-        }
+        NATIVE_XR_STEAM_LINK_BUILDS.map(::steamLinkBuildCompatibility)
 
     val COMPATIBILITIES_STEAM_LINK =
         COMPATIBILITIES_STEAM_LINK_LEGACY + COMPATIBILITIES_STEAM_LINK_NATIVE_XR
@@ -157,17 +154,28 @@ object Constants {
             }
         }
 
+    val COMPATIBILITIES_STEAM_LINK_5001812 =
+        COMPATIBILITIES_STEAM_LINK_LEGACY.filter { compatibility ->
+            compatibility.targets.any { target ->
+                target.version == "2.0.20" && target.versionCodes?.values?.contains(5001812) == true
+            }
+        }
+
+    val COMPATIBILITIES_STEAM_LINK_5001968 =
+        COMPATIBILITIES_STEAM_LINK_LEGACY.filter { compatibility ->
+            compatibility.targets.any { target ->
+                target.version == "2.0.21" && target.versionCodes?.values?.contains(5001968) == true
+            }
+        }
+
+    val COMPATIBILITIES_STEAM_LINK_LEGACY_RECOMMENDED =
+        LEGACY_RECOMMENDED_STEAM_LINK_BUILDS.map(::steamLinkBuildCompatibility)
+
     val COMPATIBILITIES_STEAM_LINK_HIGH_RESOLUTION =
         HIGH_RESOLUTION_STEAM_LINK_BUILDS.map { build ->
             steamLinkBuildCompatibility(
                 build = build,
-                description = when (build.versionCode) {
-                    5001712 -> "Exact Steam Link 2.0.20/5001712 high-resolution target with its isolated " +
-                        "2-projection to 3-layer payload. The topology correction has prior user-reported " +
-                        "startup and delayed-frame runtime evidence; this rebuilt binary remains uninstalled."
-                    else -> "Static decoded-base adaptation of the Galaxy XR high-resolution patch for exact " +
-                        "Steam Link ${build.version} build ${build.versionCode}; headset validation pending."
-                },
+                description = "Steam Link ${build.version}/${build.versionCode} high-resolution target.",
             )
         }
 
@@ -176,7 +184,7 @@ object Constants {
             steamLinkBuildCompatibility(
                 build = build,
                 name = EXPERIMENTAL_COMPATIBILITY_NAME,
-                description = "Experimental patches for Steam Link ${build.version} build ${build.versionCode}.",
+                description = "Experimental Steam Link ${build.version}/${build.versionCode}.",
             )
         }
 
@@ -212,8 +220,7 @@ object Constants {
             AppTarget(
                 version = build.version,
                 versionCodes = SupportedAbi.entries.associateWith { build.versionCode },
-                description = "4XVR Galaxy XR adaptation for exact build ${build.versionCode}; " +
-                    "decoded-base design, headset validation pending.",
+                description = "4XVR ${build.version}/${build.versionCode} Galaxy XR port.",
             ),
         ),
     )

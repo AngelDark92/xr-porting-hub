@@ -12,13 +12,19 @@ import java.security.MessageDigest
 internal const val TELEMETRY_PACKAGE = "com.valvesoftware.steamlinkvr"
 internal const val TELEMETRY_LIBRARY = "libgxr_telemetry.so"
 internal const val TELEMETRY_MANIFEST = "XR_APILAYER_local_GalaxyXR_telemetry.json"
-private val TELEMETRY_EXACT_PAIRS = setOf("2.0.20" to "5001712", "2.0.23" to "5002363")
+private val TELEMETRY_EXACT_PAIRS = setOf(
+    "2.0.20" to "5001712",
+    "2.0.20" to "5001812",
+    "2.0.21" to "5001968",
+    "2.0.22" to "5002244",
+    "2.0.23" to "5002363",
+)
 internal const val TELEMETRY_PROFILES_SHA256 =
-    "a53b26bb3a991bc5f14163f86b0bb608cfbf9056f3d32f63c31ab25a0a8f39bf"
+    "41182cc919023d48348e0a33e752fef87ebeaab59c88974e70fb760c8bb5499a"
 
 // Pins are replaced together with the independently built, tracked payloads.
 internal val TELEMETRY_PAYLOAD_SHA256 = linkedMapOf(
-    TELEMETRY_LIBRARY to "91837f363f98b572d4ea9049010e65b84b3ef69f0c4b187ebb69bea00d701259",
+    TELEMETRY_LIBRARY to "6420bc2ca1549f70e3a34f4725ae794b3dea0e98eda528f4b762dbaf5cc38b93",
     "libshadowhook.so" to "fc84287eac46e3bade2f7e07e3c9efdca005822e21191d6db5b8cb222d53e8a0",
     "libshadowhook_nothing.so" to "f2cc6a6f94d7361be915daafff1d25b7b3af34972e7308ac540982cfd608bd32",
     TELEMETRY_MANIFEST to "fc99f5b12bd715d2e16845ddb3c44d9e36009b35c28450b21baf9ad0fda70140",

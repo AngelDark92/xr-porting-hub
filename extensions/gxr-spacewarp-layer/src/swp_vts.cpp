@@ -189,9 +189,64 @@ const VtsProfile kVtsProfile5001712 = {
     0xa08,     // SVLRoot + 0xa08 (census: 22 real call sites, one immediate)
 };
 
-// Order of tries (brief 13): 5002363 first (the existing base), 5001712 second.
-const VtsProfile* const kVtsProfiles[] = {&kVtsProfile5002363, &kVtsProfile5001712};
-constexpr size_t kVtsProfileCount = 2;
+const VtsProfile kVtsProfile5001812 = {
+    "2.0.20/5001812",
+    0xfd1c0,
+    "b1bfbf75b91c7f522411c68d30283c414517ac0ef4f948cb73fbe6cde55385ed",
+    "GetRemoteValue",
+    0x16a2bc,
+    "4fdbb103a30949c7be8526de890a84e2662fec7e8df7181773c2b80d9a83bbd0",
+    ReadReturn::kCopiedByteCount,
+    0x164c28,
+    "cb57aa43cab2f8047490fe0d0ae37fad53273c40e54e0a0a3aed0f8940355150",
+    0x21b1d8,  // RUNTIME vaddr (GOT)
+    0x164ae0,
+    "13eef8450164c26f9723dd6758c81b45ac1b5337081a3844fe41072b83473e1d",
+    0x21b120,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+const VtsProfile kVtsProfile5001968 = {
+    "2.0.21/5001968",
+    0xf9168,
+    "0206212ba391e8486f3d67c41a7373103c02fd41c3ce19432645ad411fa3b52b",
+    "GetRemoteValue",
+    0x16cf2c,
+    "b157c632a93c4c2279dec464b20639e3c6070f37db8133aaec7f0cdd4d3ef017",
+    ReadReturn::kCopiedByteCount,
+    0x161054,
+    "5705f972f2144137b959083a093436baf0ac5c0e5ff0698571929bdbc6b42264",
+    0x2212f0,  // RUNTIME vaddr (GOT)
+    0x160ef4,
+    "c1ab7b447687818e7739859c31cab3d19af9b4fdaff38d74861d0975438f0a4d",
+    0x221238,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+const VtsProfile kVtsProfile5002244 = {
+    "2.0.22/5002244",
+    0xfa4a8,
+    "f2efc6f172f7dd0724a79a4fd921bca68fc180bff33182c6f51ce55a4b1c0643",
+    "GetRemoteValue",
+    0x17156c,
+    "ee6610ff9427945df893d8ae6bf04e7eb98c3087f8d1b0345afdcbec5f893f26",
+    ReadReturn::kCopiedByteCount,
+    0x164020,
+    "957662bc91a65ecce072b3bf6de7e53085e297ce4d658ff2d19d8326efd7ef71",
+    0x225868,  // RUNTIME vaddr (GOT)
+    0x163ec0,
+    "3702fae746c1a8d0b70613c4c7b35a2cd7ebddd44aad8f4a74a2b188c6934e84",
+    0x2257d0,  // RUNTIME vaddr (GOT)
+    0xa08,
+};
+
+// Order of tries: the two originally verified bases first, then the restored
+// legacy bases.
+const VtsProfile* const kVtsProfiles[] = {
+    &kVtsProfile5002363, &kVtsProfile5001712, &kVtsProfile5001812,
+    &kVtsProfile5001968, &kVtsProfile5002244,
+};
+constexpr size_t kVtsProfileCount = 5;
 
 // bool (*)(VTS* obj, unsigned id, void* out, unsigned size) — the shared
 // AArch64 argument shape of the re-derived read APIs (this, id, out, size).

@@ -1,8 +1,8 @@
 # Exact legacy adaptations: 2.0.20/5001812 and 2.0.21/5001968
 
-> **Retired 2026-10-21.** These bases and the harness scripts described below were removed
-> from the repository. See [RETIRED-2026-10-21.md](RETIRED-2026-10-21.md). This page is a
-> historical record, not a current procedure.
+> **Restored 2026-10-22.** 5001812, 5001968 and 5002244 are supported again. See
+> [RESTORED-2026-10-22.md](RESTORED-2026-10-22.md). The 2026-10-21 retirement note remains
+> below as history.
 
 Validated 2026-09-28. Both exact pairs expose the same **17 direct recommended
 patches** and **22 standalone patches** as 2.0.20/5001712. Each pair has its own

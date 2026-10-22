@@ -2,7 +2,7 @@
 
 Kotlin morphe-patcher patch library for several Galaxy XR apps. Steam Link VR
 (`com.valvesoftware.steamlinkvr`) targets the exact `(versionName, versionCode)` bases
-2.0.20/5001712 and 2.0.23/5002363; 4XVR
+2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.0.22/5002244 and 2.0.23/5002363; 4XVR
 (`cn.vr4p.oculus4xvrplayerov`) targets 2.0.22/20022. Read repository-root `AGENTS.md`
 first — its app registry maps each app to its package, bases, sources, resources and
 extension payload.
@@ -15,6 +15,8 @@ extension payload.
 - Use `resourcePatch` with `finalize {}` for AndroidManifest.xml / XML edits.
 - Every top-level patch: `@Suppress("unused")` plus the appropriate exact compatibility list from `shared/Constants.kt` (`COMPATIBILITIES_STEAM_LINK*`, `COMPATIBILITIES_FOUR_XVR`).
 - Preserve every existing version adaptation, global default, and build-aware dependency guard when adding a base.
+- Prefer one patch object per feature with a per-build layout table. Do not duplicate a patch for another build; duplicate only when the global `default` recommendation scope genuinely differs.
+- Generate every public description's `Builds:` line from the same compatibility list passed to `compatibleWith` (`shared/PatchBuilds.kt`). Keep the sentence short; The `assertPatchDescriptionContract` test helper enforces the mapping.
 - Keep apps isolated: a patch declares `compatibleWith` only its own app's `Compatibility`, and an app's `extendWith` payload never references another app's `.mpe`, classes or resources.
 
 ## Extension DEX (smali)
