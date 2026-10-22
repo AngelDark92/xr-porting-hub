@@ -1,3 +1,9 @@
+## [2.0.0-dev.11](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.10...v2.0.0-dev.11) (2026-10-22)
+
+### ✨ New Features
+
+* **steamlink:** make OpenXR BOOST experimental ([9b1d581](https://github.com/AngelDark92/xr-porting-hub/commit/9b1d581f0a934c3ad3314da9ecfc84b3f2a0f4b3))
+
 ## [2.0.0-dev.10](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.9...v2.0.0-dev.10) (2026-10-22)
 
 ### 🐛 Bug Fixes
