@@ -83,7 +83,7 @@ Gradle uses `gradle/root` and `gradle/patches`; mixed retained fixtures/tools/ev
 use `build/`; native CMake uses `extensions/<name>/build-*` there. Do not create
 repository-local build trees or clean retained inputs wholesale. See
 [the build layout](../../../diagnostics/build-layout/README.md) and the local
-[agent presets](../../../.github/agents/). Reviewers must check output routing,
+[agent presets](../../../.codex/agents/). Reviewers must check output routing,
 release consumers and clean/input separation. Static routing checks and cached
 compiler passes do not establish a successful Morphe Gradle or GitHub CI build.
 
