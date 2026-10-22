@@ -1,3 +1,9 @@
+## [2.0.0-dev.9](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.8...v2.0.0-dev.9) (2026-10-22)
+
+### ✨ New Features
+
+* **steamlink:** restore support for all five builds ([9a75e32](https://github.com/AngelDark92/xr-porting-hub/commit/9a75e32297b43c70907703a2c37c7ac0520ca07d))
+
 ## [2.0.0-dev.8](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0-dev.7...v2.0.0-dev.8) (2026-10-21)
 
 ### 🐛 Bug Fixes
