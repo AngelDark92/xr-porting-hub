@@ -1817,7 +1817,7 @@
     },
     {
       "name": "GXR face and tongue bridge",
-      "description": "Adds face and tongue data for the VRCFT module. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working.",
+      "description": "Installs the VRCFT face bridge on legacy builds; on 2.0.23/5002363 it only adds tongue transport. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [
@@ -2940,15 +2940,15 @@
       ]
     },
     {
-      "name": "OpenXR CPU and GPU BOOST",
+      "name": "OpenXR CPU and GPU BOOST (experimental)",
       "description": "Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
       "category": "App & device identity",
-      "default": true,
+      "default": false,
       "dependencies": [],
       "compatiblePackages": [
         {
           "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
+          "name": "Steam Link Experimental",
           "description": null,
           "apkFileType": "APK",
           "appIconColor": "#1B2838",
@@ -2964,13 +2964,13 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Steam Link 2.0.20/5001712 legacy base."
+              "description": "Experimental Steam Link 2.0.20/5001712."
             }
           ]
         },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
+          "name": "Steam Link Experimental",
           "description": null,
           "apkFileType": "APK",
           "appIconColor": "#1B2838",
@@ -2986,13 +2986,13 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Steam Link 2.0.20/5001812 legacy base."
+              "description": "Experimental Steam Link 2.0.20/5001812."
             }
           ]
         },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
+          "name": "Steam Link Experimental",
           "description": null,
           "apkFileType": "APK",
           "appIconColor": "#1B2838",
@@ -3008,13 +3008,13 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Steam Link 2.0.21/5001968 legacy base."
+              "description": "Experimental Steam Link 2.0.21/5001968."
             }
           ]
         },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
+          "name": "Steam Link Experimental",
           "description": null,
           "apkFileType": "APK",
           "appIconColor": "#1B2838",
@@ -3030,13 +3030,13 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Steam Link 2.0.22/5002244 legacy base."
+              "description": "Experimental Steam Link 2.0.22/5002244."
             }
           ]
         },
         {
           "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
+          "name": "Steam Link Experimental",
           "description": null,
           "apkFileType": "APK",
           "appIconColor": "#1B2838",
@@ -3052,7 +3052,7 @@
               },
               "isExperimental": false,
               "minSdk": null,
-              "description": "Steam Link 2.0.23/5002363 native Android XR."
+              "description": "Experimental Steam Link 2.0.23/5002363."
             }
           ]
         }

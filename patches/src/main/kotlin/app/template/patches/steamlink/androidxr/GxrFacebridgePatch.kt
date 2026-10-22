@@ -81,7 +81,7 @@ internal val gxrFaceTrackingManifestPatch = resourcePatch {
 @Suppress("unused")
 val gxrFacebridgePatch = rawResourcePatch(
     name = "GXR face and tongue bridge",
-    description = "Adds face and tongue data for the VRCFT module. " +
+    description = "Installs the VRCFT face bridge on legacy builds; on 2.0.23/5002363 it only adds tongue transport. " +
         buildLabel(COMPATIBILITIES_STEAM_LINK_FULL_FACEBRIDGE + COMPATIBILITIES_STEAM_LINK_MODERN_TONGUE_BRIDGE) +
         " Valve's own expressions and tongue-out keep working.",
     default = true,

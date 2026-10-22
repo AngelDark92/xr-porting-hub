@@ -3,7 +3,7 @@ package app.template.patches.steamlink.androidxr
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.rawResourcePatch
-import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL
 import app.template.patches.shared.PatchCategories
 import app.template.patches.shared.buildLabel
 
@@ -18,22 +18,22 @@ private fun matchesPerformanceBoostTarget(
     }
 }
 internal fun isPerformanceBoostTarget(packageName: String, version: String, code: String): Boolean =
-    matchesPerformanceBoostTarget(COMPATIBILITIES_STEAM_LINK, packageName, version, code)
+    matchesPerformanceBoostTarget(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL, packageName, version, code)
 internal fun performanceBoostResource(name: String): ByteArray =
     (object {}.javaClass.getResourceAsStream("/steamlink/androidxr/$name")
         ?: throw PatchException("Missing performance boost resource: $name")).use { it.readBytes() }
 
 @Suppress("unused")
 val performanceBoostPatch = rawResourcePatch(
-    name = "OpenXR CPU and GPU BOOST",
+    name = "OpenXR CPU and GPU BOOST (experimental)",
     description = "Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. " +
-        buildLabel(COMPATIBILITIES_STEAM_LINK),
-    default = true,
+        buildLabel(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL),
+    default = false,
 ) {
     category(PatchCategories.APP_AND_DEVICE_IDENTITY)
-    compatibleWith(*COMPATIBILITIES_STEAM_LINK.toTypedArray())
+    compatibleWith(*COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL.toTypedArray())
     execute {
-        if (!matchesPerformanceBoostTarget(COMPATIBILITIES_STEAM_LINK, packageMetadata.packageName,
+        if (!matchesPerformanceBoostTarget(COMPATIBILITIES_STEAM_LINK_EXPERIMENTAL, packageMetadata.packageName,
                 packageMetadata.versionName, packageMetadata.versionCode)) return@execute
         if (!get("lib/arm64-v8a/libopenxr_loader.so").isFile) {
             throw PatchException("OpenXR BOOST requires the ARM64 Steam Link OpenXR loader")

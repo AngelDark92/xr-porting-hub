@@ -37,7 +37,7 @@ class PatchCompatibilityMatrixTest {
     @Test
     fun `every pre-2363 build recommends the same set`() {
         val expected = legacyRecommendedPatches
-        assertEquals(22, expected.size)
+        assertEquals(21, expected.size)
         assertEquals(expected, recommendedFor("2.0.20", 5001712).toSet(), "2.0.20/5001712")
         assertEquals(expected, recommendedFor("2.0.20", 5001812).toSet(), "2.0.20/5001812")
         assertEquals(expected, recommendedFor("2.0.21", 5001968).toSet(), "2.0.21/5001968")
@@ -207,7 +207,6 @@ class PatchCompatibilityMatrixTest {
             xrManifestCapabilityPackPatch,
             deviceIdentityPatch, blueNoisePatch,
             xrCodecsSupportPatch,
-            performanceBoostPatch,
             networkOptimizationsPatch,
             controllerVelocityFramePatch,
         )
@@ -217,7 +216,6 @@ class PatchCompatibilityMatrixTest {
             gxrFacebridgePatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch,
-            performanceBoostPatch,
             xrCodecsSupportPatch,
             blueNoisePatch,
             unrestrictedBatteryUsagePatch,

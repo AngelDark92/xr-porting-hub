@@ -1,29 +1,29 @@
 package app.template.patches.steamlink.androidxr
 
+import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
 import com.google.gson.JsonParser
 import org.junit.Assert.*
 import org.junit.Test
 
 class PerformanceBoostPatchTest {
-    @Test fun recommendedScopeCoversEverySupportedBase() {
-        val recommended = setOf(
+    @Test fun experimentalScopeCoversEverySupportedBase() {
+        val experimental = setOf(
             "2.0.20" to 5001712, "2.0.20" to 5001812,
             "2.0.21" to 5001968, "2.0.22" to 5002244, "2.0.23" to 5002363,
         )
-        assertEquals("OpenXR CPU and GPU BOOST", performanceBoostPatch.name)
-        assertTrue(performanceBoostPatch.default)
+        assertEquals("OpenXR CPU and GPU BOOST (experimental)", performanceBoostPatch.name)
+        assertFalse(performanceBoostPatch.default)
         assertEquals("App & device identity", performanceBoostPatch.category)
         assertTrue(performanceBoostPatch.dependencies.isEmpty())
         val actual = performanceBoostPatch.compatibility!!.flatMap { compatibility ->
             assertEquals("com.valvesoftware.steamlinkvr", compatibility.packageName)
-            assertEquals("Steam Link", compatibility.name)
+            assertEquals(EXPERIMENTAL_COMPATIBILITY_NAME, compatibility.name)
             compatibility.targets.flatMap { target ->
-                assertFalse(target.isExperimental)
                 target.versionCodes!!.values.map { target.version to it }
             }
         }.toSet()
-        assertEquals(recommended, actual)
-        recommended.forEach { (version, code) ->
+        assertEquals(experimental, actual)
+        experimental.forEach { (version, code) ->
             assertTrue(isPerformanceBoostTarget("com.valvesoftware.steamlinkvr", version, code.toString()))
             assertFalse(isPerformanceBoostTarget("cn.vr4p.oculus4xvrplayerov", version, code.toString()))
         }

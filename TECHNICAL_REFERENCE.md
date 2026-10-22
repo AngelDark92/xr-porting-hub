@@ -4,11 +4,11 @@ Implementation notes, compatibility details, validation status, and build instru
 
 ## Steam Link 2.0.20–2.0.22 (5001712, 5001812, 5001968, 5002244)
 
-The four legacy builds share one recommended set of 22 patches: the XR foundation and startup patches, Device identity, high-resolution, GXR face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, OpenXR BOOST, Codecs Support and Controller velocity frame. They use the verified 2-projection helper on 2.0.20/5001712, 2.0.20/5001812 and 2.0.21/5001968; 2.0.22/5002244 uses the 3-projection helper. All four HMD/controller configs are byte-identical. Headset validation remains pending for 5001812, 5001968 and 5002244.
+The four legacy builds share one recommended set of 21 patches: the XR foundation and startup patches, Device identity, high-resolution, GXR face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, Codecs Support and Controller velocity frame. They use the verified 2-projection helper on 2.0.20/5001712, 2.0.20/5001812 and 2.0.21/5001968; 2.0.22/5002244 uses the 3-projection helper. All four HMD/controller configs are byte-identical. Headset validation remains pending for 5001812, 5001968 and 5002244.
 
 ## Steam Link 2.0.23 / 5002363
 
-Exact 2.0.23/5002363 exposes 11 core individual patches and recommends 11 by default, including Network Optimizations, OpenXR CPU and GPU BOOST, and Codecs Support. Device identity is not shipped for this build: Valve's native Android XR identity is authoritative. Native addresses and the existing decoder layout guards are unchanged; codec headset validation on this base is pending. See the [5002363 audit](diagnostics/steamlink-5002363/README.md) for source APK provenance, exact addresses, mutation/option tests, APK patching and remaining runtime gaps.
+Exact 2.0.23/5002363 exposes 11 core individual patches and recommends 10 by default, including Network Optimizations and Codecs Support. Device identity is not shipped for this build: Valve's native Android XR identity is authoritative. Native addresses and the existing decoder layout guards are unchanged; codec headset validation on this base is pending. See the [5002363 audit](diagnostics/steamlink-5002363/README.md) for source APK provenance, exact addresses, mutation/option tests, APK patching and remaining runtime gaps.
 
 ## Compatibility and implementation notes
 
@@ -21,7 +21,7 @@ Steam Link VR (`com.valvesoftware.steamlinkvr`) was not built for Android XR. Th
 
 Target APK: `com.valvesoftware.steamlinkvr`. Exact compatibility metadata and guarded adaptations cover v2.0.20/5001712, v2.0.20/5001812, v2.0.21/5001968, v2.0.22/5002244 and v2.0.23/5002363. The permission-free high-resolution fix accepts exactly those five builds; 5001712/5001812/5001968 use the 2-projection helper, 5002244/5002363 the 3-projection helper. Reconstruction, quad-view, permission-matrix, warm-up/omit, and DFR re-arm experiments are retired.
 
-Use Morphe Manager 1.30.0 or newer with compatibility checks enabled for build-specific filtering. Expert mode may intentionally show incompatible patches. Morphe's `default` flag is one global value per patch, so the recommended defaults live on the individual patches: every pre-2363 build default-enables the same 22-patch set — the XR foundation and startup patches, Device identity (Galaxy XR, model `xrvst2ue`), high-resolution, face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, OpenXR BOOST, Codecs Support and Controller velocity frame. 2.0.23/5002363 default-enables its 11-patch native set: GXR face and tongue bridge, high-resolution, Microphone input preset (Voice Recognition), OLED (`final-balanced`), Blue-noise dithering, Unrestricted battery, Network Optimizations, Visual Delay (60 ms), OpenXR BOOST, Codecs Support and Controller velocity frame. Device identity is legacy-only; stock 2.0.23 identity is authoritative. **Appear on top (legacy)** and **Change package name** are never recommended.
+Use Morphe Manager 1.30.0 or newer with compatibility checks enabled for build-specific filtering. Expert mode may intentionally show incompatible patches. Morphe's `default` flag is one global value per patch, so the recommended defaults live on the individual patches: every pre-2363 build default-enables the same 21-patch set — the XR foundation and startup patches, Device identity (Galaxy XR, model `xrvst2ue`), high-resolution, face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, Codecs Support and Controller velocity frame. 2.0.23/5002363 default-enables its 10-patch native set: GXR face and tongue bridge, high-resolution, Microphone input preset (Voice Recognition), OLED (`final-balanced`), Blue-noise dithering, Unrestricted battery, Network Optimizations, Visual Delay (60 ms), Codecs Support and Controller velocity frame. Device identity is legacy-only; stock 2.0.23 identity is authoritative. **Appear on top (legacy)** and **Change package name** are never recommended.
 
 **Startup permission requests (before 5002322)** and **Startup splash and XR launch mode (before 5002322)** are members of the legacy recommended set, default-enabled on the 2.0.20/5001712 legacy base and independently deselectable. The permission patch declares missing hand, eye, face, microphone and Bluetooth permissions and enables their startup requests. The splash patch enables the black startup screen and unmanaged VRLink start-mode override; older legacy builds also receive panel sizing. The shared helper defaults both behaviors off. Earlier battery/overlay settings flows use a transparent bootstrap unless those explicit patches are selected.
 
@@ -122,7 +122,7 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link&nbsp;&nbsp;•&nbsp;&nbsp;24 patches</summary>
+<summary>📦 Steam Link&nbsp;&nbsp;•&nbsp;&nbsp;23 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -143,7 +143,7 @@ This section is generated from the patch catalog during releases.
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
-| [GXR face and tongue bridge](#gxr-face-and-tongue-bridge) | Adds face and tongue data for the VRCFT module. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
+| [GXR face and tongue bridge](#gxr-face-and-tongue-bridge) | Installs the VRCFT face bridge on legacy builds; on 2.0.23/5002363 it only adds tongue transport. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
 | [Microphone input preset](#microphone-input-preset) | Switches microphone capture mode; Voice Recognition tested best. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. | 5001712, 5001812, 5001968, 5002244, 5002363 | • Microphone mode |
 | [Visual Delay Fix](#visual-delay-fix) | Makes head movement appear sooner without touching controller motion. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. | 5001712, 5001812, 5001968, 5002244, 5002363 | • Head motion offset (ms) |
 | [XR Input Routing Config](#xr-input-routing-config) | Routes pointer and button input to the launcher UI. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244. | 5001712, 5001812, 5001968, 5002244 |  |
@@ -164,7 +164,6 @@ This section is generated from the patch catalog during releases.
 | [Change package name](#change-package-name) | Renames the app so it can install next to the original. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244. | 5001712, 5001812, 5001968, 5002244 | • Package name |
 | [Device identity](#device-identity) | Reports the Galaxy XR headset identity to SteamVR (model xrvst2ue). Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244. | 5001712, 5001812, 5001968, 5002244 |  |
 | [Galaxy XR SteamVR driver (galaxyxr)](#galaxy-xr-steamvr-driver-galaxyxr) | Sets Galaxy XR names in SteamVR; needs the PC-side Galaxy XR VRLink Setup. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. | 5001712, 5001812, 5001968, 5002244, 5002363 | • Grip offset position (cm, x,y,z)<br>• Grip offset rotation (deg, x,y,z) |
-| [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost) | Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
 
 #### Advanced XR compatibility
 
@@ -193,7 +192,7 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -207,6 +206,12 @@ This section is generated from the patch catalog during releases.
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
 | [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental) | Draws only the foveal image on a transparent canvas per eye. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
+
+#### App & device identity
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [OpenXR CPU and GPU BOOST (experimental)](#openxr-cpu-and-gpu-boost-experimental) | Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
 
 #### Controller
 

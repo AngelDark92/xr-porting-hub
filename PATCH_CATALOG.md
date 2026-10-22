@@ -22,8 +22,7 @@ The retired entries below are historical records and are not selectable.
 
 ## OpenXR CPU and GPU BOOST (`performanceBoostPatch`)
 
-Recommended, default on for all five supported builds.
-Available in stable and experimental catalogs. Adds `lib/arm64-v8a/libgxr_performance_boost.so`
+Experimental, default off, available only in the experimental catalog. Not part of any recommended set. Adds `lib/arm64-v8a/libgxr_performance_boost.so`
 and `assets/openxr/1/api_layers/implicit.d/XR_APILAYER_local_GalaxyXR_performance_boost.json`.
 Existing APK code and rendering resources are unchanged. The layer requests CPU/GPU
 BOOST on session creation/start; clocks and thermal policy remain runtime-controlled.
@@ -72,13 +71,13 @@ Separate, default-off experiment for exact **2.0.22/5002322** and **2.0.23/50023
 
 ## Restored bases (2026-10-22)
 
-Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21 and restored on 2026-10-22 with per-build native tables, compatibility entries, tests and catalogs. The restored pre-2363 builds share the same 22-patch recommended set. Historical retired/restored records stay under `diagnostics/`.
+Steam Link 2.0.20/5001812, 2.0.21/5001968 and 2.0.22/5002244 support was retired on 2026-10-21 and restored on 2026-10-22 with per-build native tables, compatibility entries, tests and catalogs. The restored pre-2363 builds share the same 21-patch recommended set. Historical retired/restored records stay under `diagnostics/`.
 
 ## Current adaptations
 
 The current catalog supports exactly **2.0.20/5001712**, **2.0.20/5001812**, **2.0.21/5001968**, **2.0.22/5002244** and **2.0.23/5002363**. Compatibility uses the exact version name and build code, never a version range. Historical references to 5001740, 5002296, 5002313, 5002318, and 5002322 below do not make those builds selectable.
 
-The four pre-2363 builds expose the same 24 standalone patches and recommend the same 22, including BOOST, Codecs Support, Network Optimizations and Controller velocity frame. 2.0.23/5002363 exposes 11 individual patches and recommends 11. Morphe Manager auto-selects the set for the detected exact version and build. Appear on top and Change package name remain optional.
+The four pre-2363 builds expose the same 24 standalone patches and recommend the same 21, including Codecs Support, Network Optimizations and Controller velocity frame. 2.0.23/5002363 exposes 11 individual patches and recommends 10. The OpenXR CPU and GPU BOOST patch is experimental and off by default. Morphe Manager auto-selects the set for the detected exact version and build. Appear on top and Change package name remain optional.
 
 The 5001712 reference is an analysis reconstruction, so its regression checks do not establish pristine-source APK patching. 5002244 has a reconstructed decoded fixture; 5001812 and 5001968 currently have decoded trees only.
 
@@ -86,7 +85,7 @@ Startup permissions and splash/XR launch-mode edits are separate patches, part o
 
 ### Steam Link 2.0.23 / 5002363
 
-This exact pair exposes 11 core individual patches; the 11-patch recommended set is default-enabled: GXR face and tongue bridge, Galaxy XR high-resolution 3-projection fix, Microphone input preset, OLED color calibration, Blue-noise dithering (fovea default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, OpenXR CPU and GPU BOOST, Codecs Support and Controller velocity frame. Device identity is legacy-only: stock 2.0.23 identity is authoritative, so no identity patch is shipped for this build. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
+This exact pair exposes 11 core individual patches; the 10-patch recommended set is default-enabled: GXR face and tongue bridge, Galaxy XR high-resolution 3-projection fix, Microphone input preset, OLED color calibration, Blue-noise dithering (fovea default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, Codecs Support and Controller velocity frame. OpenXR CPU and GPU BOOST is experimental and off by default. Device identity is legacy-only: stock 2.0.23 identity is authoritative, so no identity patch is shipped for this build. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
 
 See the [5002363 validation](diagnostics/steamlink-5002363/README.md), [native targets](diagnostics/steamlink-5002363/native-targets.md), and [Java/config targets](diagnostics/steamlink-5002363/surface-targets.md).
 
@@ -114,10 +113,9 @@ On each exact pre-2363 build (2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.
 16. Device identity (Galaxy XR identity, model `xrvst2ue`)
 17. Startup permission requests (before 5002322)
 18. Blue-noise dithering (fovea default, background opt-in; OLED's VD-like fovea toggle must stay off)
-19. OpenXR CPU and GPU BOOST
-20. Codecs Support
-21. Network Optimizations
-22. Controller velocity frame
+19. Codecs Support
+20. Network Optimizations
+21. Controller velocity frame
 
 **Device identity** has no selector and is legacy-only: every pre-2363 base reports the Galaxy XR identity with model `xrvst2ue`, the headset's `Build.PRODUCT`. Stock 2.0.23 identity is authoritative; no native identity patch exists.
 

@@ -1069,7 +1069,7 @@
     },
     {
       "name": "GXR face and tongue bridge",
-      "description": "Adds face and tongue data for the VRCFT module. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working.",
+      "description": "Installs the VRCFT face bridge on legacy builds; on 2.0.23/5002363 it only adds tongue transport. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Valve's own expressions and tongue-out keep working.",
       "category": "Tracking & audio",
       "default": true,
       "dependencies": [
@@ -2070,126 +2070,6 @@
           "values": null
         }
       ]
-    },
-    {
-      "name": "OpenXR CPU and GPU BOOST",
-      "description": "Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363.",
-      "category": "App & device identity",
-      "default": true,
-      "dependencies": [],
-      "compatiblePackages": [
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
-          "description": null,
-          "apkFileType": "APK",
-          "appIconColor": "#1B2838",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.20",
-              "versionCodes": {
-                "ARM64_V8A": 5001712,
-                "ARMEABI_V7A": 5001712,
-                "X86_64": 5001712,
-                "X86": 5001712
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.20/5001712 legacy base."
-            }
-          ]
-        },
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
-          "description": null,
-          "apkFileType": "APK",
-          "appIconColor": "#1B2838",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.20",
-              "versionCodes": {
-                "ARM64_V8A": 5001812,
-                "ARMEABI_V7A": 5001812,
-                "X86_64": 5001812,
-                "X86": 5001812
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.20/5001812 legacy base."
-            }
-          ]
-        },
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
-          "description": null,
-          "apkFileType": "APK",
-          "appIconColor": "#1B2838",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.21",
-              "versionCodes": {
-                "ARM64_V8A": 5001968,
-                "ARMEABI_V7A": 5001968,
-                "X86_64": 5001968,
-                "X86": 5001968
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.21/5001968 legacy base."
-            }
-          ]
-        },
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
-          "description": null,
-          "apkFileType": "APK",
-          "appIconColor": "#1B2838",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.22",
-              "versionCodes": {
-                "ARM64_V8A": 5002244,
-                "ARMEABI_V7A": 5002244,
-                "X86_64": 5002244,
-                "X86": 5002244
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.22/5002244 legacy base."
-            }
-          ]
-        },
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link",
-          "description": null,
-          "apkFileType": "APK",
-          "appIconColor": "#1B2838",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.23",
-              "versionCodes": {
-                "ARM64_V8A": 5002363,
-                "ARMEABI_V7A": 5002363,
-                "X86_64": 5002363,
-                "X86": 5002363
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.23/5002363 native Android XR."
-            }
-          ]
-        }
-      ],
-      "options": []
     },
     {
       "name": "Popup refresh on resume (4XVR)",
