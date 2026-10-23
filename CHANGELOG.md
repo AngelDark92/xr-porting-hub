@@ -1,3 +1,9 @@
+## [2.0.1-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0...v2.0.1-dev.1) (2026-10-23)
+
+### 🐛 Bug Fixes
+
+* **steamlink:** pin canonical LF telemetry manifest hash ([93de117](https://github.com/AngelDark92/xr-porting-hub/commit/93de1170a0f628e9c70e05f8cd11b87eeab6127b))
+
 ## [2.0.0](https://github.com/AngelDark92/xr-porting-hub/compare/v1.32.1...v2.0.0) (2026-10-22)
 
 ### ⚠ BREAKING CHANGES

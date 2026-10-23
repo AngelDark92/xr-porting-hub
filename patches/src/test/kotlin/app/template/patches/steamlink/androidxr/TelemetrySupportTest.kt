@@ -69,6 +69,10 @@ class TelemetryPatchTest {
         validateTelemetryPayloads(payloads)
         assertEquals(setOf(TELEMETRY_LIBRARY, "libshadowhook.so", "libshadowhook_nothing.so",
             TELEMETRY_MANIFEST, "NOTICE.txt"), payloads.keys)
+        payloads.filterKeys { !it.endsWith(".so") }.forEach { (name, bytes) ->
+            assertFalse(bytes.contains(0x0d.toByte()),
+                "$name must use canonical LF bytes; re-checkout the telemetry resource on Windows")
+        }
         val producer = payloads.getValue(TELEMETRY_LIBRARY).toString(Charsets.ISO_8859_1)
         assertTrue(producer.contains("GXRDecoderProbe"))
         assertTrue(producer.contains("colourlab-probe.request"))
