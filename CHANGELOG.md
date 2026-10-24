@@ -1,3 +1,10 @@
+## [2.2.1-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.0...v2.2.1-dev.1) (2026-10-24)
+
+### 🐛 Bug Fixes
+
+* **tooling:** retire generated APKs inside decoded trees ([fbb4c4a](https://github.com/AngelDark92/xr-porting-hub/commit/fbb4c4aa8cc54feb10c2c6427efb0817d0a21bbc))
+* **tooling:** tolerate vanishing entries during cleanup scan ([389acf3](https://github.com/AngelDark92/xr-porting-hub/commit/389acf39becc031d2bbbdd832fa0669a24fa7dad))
+
 ## [2.2.0](https://github.com/AngelDark92/xr-porting-hub/compare/v2.1.0...v2.2.0) (2026-10-24)
 
 ### ✨ New Features
