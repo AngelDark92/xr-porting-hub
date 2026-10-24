@@ -32,6 +32,10 @@ Downgrade lists the builds Meta still serves. If the build you need is not offer
 <img width="2986" height="1896" alt="DownQ downgrade button on the Steam Link store page" src="https://github.com/user-attachments/assets/3cb2c534-f4b0-46a1-80be-1854d2ab2cbf" />
 
 4. Copy the APK to the headset.
+### Alternative direct download 
+- ```https://drive.google.com/file/d/1P9t7wf-DZQzb5anJIXBYTxGq_5mUuOfp/view?usp=sharing ``` 2.0.20
+- ```https://drive.google.com/file/d/1eGhp7IU7w_SqhbBdls3qFf1_Osxuj5Yu/view?usp=sharing ``` 2.0.23
+- ```https://drive.google.com/file/d/1U3UNdBFqEWcJ3LTWHFAto5KDu0xNBdQ5/view?usp=sharing ``` 2.0.24
 
 ## 2. Patch and install
 
