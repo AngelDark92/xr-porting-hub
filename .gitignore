@@ -187,6 +187,10 @@ diagnostics/patch-categories/*
 !diagnostics/build-layout/*.md
 !diagnostics/build-layout/*.json
 !diagnostics/build-layout/*.ps1
+# Instruction rewrite ledger and parity receipts.
+!diagnostics/instruction-audit/
+diagnostics/instruction-audit/*
+!diagnostics/instruction-audit/*.md
 !diagnostics/build-verification/
 diagnostics/build-verification/*
 !diagnostics/build-verification/*.md
