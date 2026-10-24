@@ -1,3 +1,9 @@
+## [2.1.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.1-dev.1...v2.1.0-dev.1) (2026-10-24)
+
+### ✨ New Features
+
+* support for 2.0.24 apk ([79d3c09](https://github.com/AngelDark92/xr-porting-hub/commit/79d3c097686d513caf2ab16bc23b681e636cc5e7))
+
 ## [2.0.1-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0...v2.0.1-dev.1) (2026-10-23)
 
 ### 🐛 Bug Fixes
