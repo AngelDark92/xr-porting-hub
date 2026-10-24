@@ -17,11 +17,18 @@ class NewLegacyDispatchTest {
 
     @Test
     fun `legacy bases select the verified 2 projection payload and mouse only JNI wrappers`() {
+        // Exact 2.0.20/5001712 carries the alpha-0 trigger trial; 5001812 and
+        // 5001968 retain the production alpha-1 helper until it is promoted.
+        val expectedPayloads = mapOf(
+            ("2.0.20" to "5001712") to ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY,
+            ("2.0.20" to "5001812") to ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY,
+            ("2.0.21" to "5001968") to ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY,
+        )
         legacyBuilds.forEach { (version, code) ->
             assertTrue(isTwoProjectionSteamLinkBuild(version, code), "$version/$code")
             assertTrue(isMouseOnlySteamLinkBuild(version, code), "$version/$code")
             assertEquals(
-                ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY,
+                expectedPayloads.getValue(version to code),
                 androidSurfaceTriggerResourceLibraryForBuild(version, code),
                 "$version/$code",
             )
@@ -38,6 +45,7 @@ class NewLegacyDispatchTest {
         listOf(
             "2.0.22" to "5002244",
             "2.0.23" to "5002363",
+            "2.0.24" to "5002395",
             "2.0.20" to "5002363",
             "2.0.23" to "5001712",
             "2.0.20" to "5001813",

@@ -33,8 +33,11 @@ class TelemetryPatchTest {
                 target.versionCodes.orEmpty().values.map { target.version to it.toString() }
             }
         } }.toSet()
-        assertEquals(pairs.toSet(), actual)
+        // Codecs Support ships on 2.0.24 too, but the optional telemetry payload has no
+        // 2.0.24 admission profile yet; enabling it there must fail closed.
+        assertEquals((pairs + ("2.0.24" to "5002395")).toSet(), actual)
         pairs.forEach { (version, code) -> assertTrue(isTelemetrySteamLinkTarget(TELEMETRY_PACKAGE, version, code)) }
+        assertFalse(isTelemetrySteamLinkTarget(TELEMETRY_PACKAGE, "2.0.24", "5002395"))
     }
 
     @Test fun `unknown pairs and other apps return before file or payload access`() = withTemporaryRoot { root ->
