@@ -38,6 +38,40 @@
       "options": []
     },
     {
+      "name": "Alpha-0 high-resolution trigger (experimental)",
+      "description": "Clears the high-resolution trigger quad's 1/255 alpha byte so it is fully transparent on exact 2.0.20/5001712. Build: 2.0.20/5001712.",
+      "category": "Image quality",
+      "default": false,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": [
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link Experimental",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001712,
+                "ARMEABI_V7A": 5001712,
+                "X86_64": 5001712,
+                "X86": 5001712
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Android XR native permission names",
       "description": "Swaps the built-in Oculus face and eye permission names for Android XR ones. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244.",
       "category": "Advanced XR compatibility",

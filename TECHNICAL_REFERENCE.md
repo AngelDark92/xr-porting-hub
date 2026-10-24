@@ -4,7 +4,7 @@ Implementation notes, compatibility details, validation status, and build instru
 
 ## Steam Link 2.0.20–2.0.22 (5001712, 5001812, 5001968, 5002244)
 
-The four legacy builds share one recommended set of 21 patches: the XR foundation and startup patches, Device identity, high-resolution, GXR face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, Codecs Support and Controller velocity frame. They use the verified 2-projection helper on 2.0.20/5001712, 2.0.20/5001812 and 2.0.21/5001968; 2.0.22/5002244 uses the 3-projection helper. All four HMD/controller configs are byte-identical. Headset validation remains pending for 5001812, 5001968 and 5002244.
+The four legacy builds share one recommended set of 21 patches: the XR foundation and startup patches, Device identity, high-resolution, GXR face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, Codecs Support and Controller velocity frame. 2.0.20/5001712, 2.0.20/5001812 and 2.0.21/5001968 use the production alpha-1 2-projection helper; 2.0.22/5002244 uses the 3-projection helper. The optional `Alpha-0 high-resolution trigger (experimental)` patch replaces the exact 5001712 helper when selected. All four HMD/controller configs are byte-identical. Headset validation remains pending for 5001812, 5001968 and 5002244.
 
 ## Steam Link 2.0.23 / 5002363
 
@@ -23,7 +23,7 @@ working terminal-quad fix is unchanged. See the [retirement record](diagnostics/
 
 Steam Link VR (`com.valvesoftware.steamlinkvr`) was not built for Android XR. These patches adapt it to run on the Samsung Galaxy XR headset by injecting the missing OpenXR permissions and features, bundling the Galaxy XR XR-bridge native library, providing an optional standalone face-bridge layer for face-tracking, fixing broken permission flows, tuning the rendering pipeline, and optionally allowing the patched APK to coexist with the original install.
 
-Target APK: `com.valvesoftware.steamlinkvr`. Exact compatibility metadata and guarded adaptations cover v2.0.20/5001712, v2.0.20/5001812, v2.0.21/5001968, v2.0.22/5002244, v2.0.23/5002363 and v2.0.24/5002395. The permission-free high-resolution fix accepts exactly those six builds; 5001712/5001812/5001968 use the 2-projection helper, 5002244/5002363/5002395 the 3-projection helper. Reconstruction, quad-view, permission-matrix, warm-up/omit, and DFR re-arm experiments are retired.
+Target APK: `com.valvesoftware.steamlinkvr`. Exact compatibility metadata and guarded adaptations cover v2.0.20/5001712, v2.0.20/5001812, v2.0.21/5001968, v2.0.22/5002244, v2.0.23/5002363 and v2.0.24/5002395. The permission-free high-resolution fix accepts exactly those six builds; 5001712/5001812/5001968 use the production alpha-1 2-projection helper, 5002244/5002363/5002395 use the 3-projection helper, and the optional alpha-0 experimental patch replaces the exact 5001712 helper when selected. Reconstruction, quad-view, permission-matrix, warm-up/omit, and DFR re-arm experiments are retired.
 
 Use Morphe Manager 1.30.0 or newer with compatibility checks enabled for build-specific filtering. Expert mode may intentionally show incompatible patches. Morphe's `default` flag is one global value per patch, so the recommended defaults live on the individual patches: every pre-2363 build default-enables the same 21-patch set — the XR foundation and startup patches, Device identity (Galaxy XR, model `xrvst2ue`), high-resolution, face bridge, microphone, OLED, blue noise, unrestricted battery, Visual Delay, Network Optimizations, Codecs Support and Controller velocity frame. 2.0.23/5002363 and 2.0.24/5002395 default-enable the same 10-patch native set: GXR face and tongue bridge, high-resolution, Microphone input preset (Voice Recognition), OLED (`final-balanced`), Blue-noise dithering, Unrestricted battery, Network Optimizations, Visual Delay (60 ms), Codecs Support and Controller velocity frame. Device identity is legacy-only; stock 2.0.23/2.0.24 identity is authoritative. **Appear on top (legacy)** and **Change package name** are never recommended.
 
@@ -66,7 +66,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v2.1.0](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
+> **[v2.1.0](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;48 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
@@ -122,6 +122,52 @@ This section is generated from the patch catalog during releases.
 |----------|----------------|----------------|-----------|
 | [Subtitle suite (4XVR)](#subtitle-suite-4xvr) | Moves subtitles around, enlarges the subtitle panel and loads your own subtitle font. Builds: 4XVR 2.0.22/20022. Based on @logkim1's 4XVR-GalaxyXR patches: https://github.com/logkim1/4XVR-GalaxyXR. | 20022 |  |
 | [Subtitle suite payload (4XVR)](#subtitle-suite-payload-4xvr) | Adds the subtitle engine used by the 4XVR subtitle controls. Builds: 4XVR 2.0.22/20022. Based on @logkim1's 4XVR-GalaxyXR patches: https://github.com/logkim1/4XVR-GalaxyXR. | 20022 |  |
+
+</details>
+
+<details open>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 2.0.20 (5001712) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Steam Link 2.0.20/5001712 legacy base. | Experimental Steam Link 2.0.20/5001712. | Experimental Steam Link 2.0.20/5001812. | Experimental Steam Link 2.0.21/5001968. | Experimental Steam Link 2.0.22/5002244. | Experimental Steam Link 2.0.23/5002363. | Experimental Steam Link 2.0.24/5002395. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller pose extrapolation layer for exact Steam Link 2.0.24/5002395; measured on 2.0.23/5002363 only, not run on this base. | Steam Link 2.0.20/5001812 legacy base. | Steam Link 2.0.21/5001968 legacy base. | Steam Link 2.0.22/5002244 legacy base. | Steam Link 2.0.23/5002363 native Android XR. | Steam Link 2.0.24/5002395 native Android XR. |
+
+#### Image quality
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Alpha-0 high-resolution trigger (experimental)](#alpha-0-high-resolution-trigger-experimental) | Clears the high-resolution trigger quad's 1/255 alpha byte so it is fully transparent on exact 2.0.20/5001712. Build: 2.0.20/5001712. | 5001712 |  |
+| [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental) | Draws only the foveal image on a transparent canvas per eye. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
+
+#### App & device identity
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [OpenXR CPU and GPU BOOST (experimental)](#openxr-cpu-and-gpu-boost-experimental) | Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
+
+#### Controller
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Controller pose extrapolation](#controller-pose-extrapolation) | Predicts controller poses to the moment the app asks and smooths out jitter. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
+| [Controller pose time (experimental)](#controller-pose-time-experimental) | Dates each controller pose by its sample time; the runtime labels poses 28.82 ms late. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Needs: not with Controller pose extrapolation or the HAL pose patch. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 | • Pose time compensation (ms) |
+
+#### Controllers (Shizuku)
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Controller grip haptics through Shizuku](#controller-grip-haptics-through-shizuku) | Sends controller vibration to the grip motor instead of the trigger. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. This needs Shizuku running with permission granted; without it vibration stays stock. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
+| [Controller tracking from the controller HAL through Shizuku](#controller-tracking-from-the-controller-hal-through-shizuku) | Reads controller poses from the headset HAL, removing about 35 ms of lag. This needs Shizuku; without it tracking stays stock. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Angular velocity is local to the grip pose on 2.0.23/5002363 and in the base space on older builds. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
+
+#### Streaming & network
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
+|----------|----------------|----------------|-----------|
+| [Codecs Support](#codecs-support) | Lets the headset decode H.264 or AV1 streams; HEVC is untouched. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Needs: the matching driver codec setting. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 | • Enable telemetry |
+| [GXR spacewarp layer (experimental)](#gxr-spacewarp-layer-experimental) | Synthesizes a frame when the stream misses a display tick; any failure stands down to stock. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
 
 </details>
 
@@ -192,51 +238,6 @@ This section is generated from the patch catalog during releases.
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
 | [Network Optimizations](#network-optimizations) | Keeps streaming smooth after packet loss. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-
-</details>
-
-<details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
-<br>
-
-**🎯 Supported versions:**
-
-| 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Experimental Steam Link 2.0.20/5001712. | Experimental Steam Link 2.0.20/5001812. | Experimental Steam Link 2.0.21/5001968. | Experimental Steam Link 2.0.22/5002244. | Experimental Steam Link 2.0.23/5002363. | Experimental Steam Link 2.0.24/5002395. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller pose extrapolation layer for exact Steam Link 2.0.24/5002395; measured on 2.0.23/5002363 only, not run on this base. | Steam Link 2.0.20/5001712 legacy base. | Steam Link 2.0.20/5001812 legacy base. | Steam Link 2.0.21/5001968 legacy base. | Steam Link 2.0.22/5002244 legacy base. | Steam Link 2.0.23/5002363 native Android XR. | Steam Link 2.0.24/5002395 native Android XR. |
-
-#### Image quality
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
-|----------|----------------|----------------|-----------|
-| [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental) | Draws only the foveal image on a transparent canvas per eye. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-
-#### App & device identity
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
-|----------|----------------|----------------|-----------|
-| [OpenXR CPU and GPU BOOST (experimental)](#openxr-cpu-and-gpu-boost-experimental) | Asks OpenXR for the CPU and GPU BOOST hint at session start; unsupported devices continue without it. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-
-#### Controller
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
-|----------|----------------|----------------|-----------|
-| [Controller pose extrapolation](#controller-pose-extrapolation) | Predicts controller poses to the moment the app asks and smooths out jitter. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-| [Controller pose time (experimental)](#controller-pose-time-experimental) | Dates each controller pose by its sample time; the runtime labels poses 28.82 ms late. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Needs: not with Controller pose extrapolation or the HAL pose patch. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 | • Pose time compensation (ms) |
-
-#### Controllers (Shizuku)
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
-|----------|----------------|----------------|-----------|
-| [Controller grip haptics through Shizuku](#controller-grip-haptics-through-shizuku) | Sends controller vibration to the grip motor instead of the trigger. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. This needs Shizuku running with permission granted; without it vibration stays stock. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-| [Controller tracking from the controller HAL through Shizuku](#controller-tracking-from-the-controller-hal-through-shizuku) | Reads controller poses from the headset HAL, removing about 35 ms of lag. This needs Shizuku; without it tracking stays stock. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Angular velocity is local to the grip pose on 2.0.23/5002363 and in the base space on older builds. Details: https://github.com/4uva4ek. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
-
-#### Streaming & network
-
-| 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
-|----------|----------------|----------------|-----------|
-| [Codecs Support](#codecs-support) | Lets the headset decode H.264 or AV1 streams; HEVC is untouched. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Needs: the matching driver codec setting. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 | • Enable telemetry |
-| [GXR spacewarp layer (experimental)](#gxr-spacewarp-layer-experimental) | Synthesizes a frame when the stream misses a display tick; any failure stands down to stock. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363 |  |
 
 </details>
 
