@@ -110,8 +110,21 @@ function Get-SafeTree([string]$Root) {
     $pending.Push($Root)
     while ($pending.Count) {
         $dir = $pending.Pop()
-        foreach ($entry in [IO.Directory]::EnumerateFileSystemEntries($dir)) {
-            $item = Get-Item -LiteralPath $entry -Force
+        try {
+            $entries = @([IO.Directory]::EnumerateFileSystemEntries($dir))
+        } catch [System.IO.DirectoryNotFoundException] {
+            continue
+        }
+        foreach ($entry in $entries) {
+            try {
+                $item = Get-Item -LiteralPath $entry -Force -ErrorAction Stop
+            } catch [System.Management.Automation.ItemNotFoundException] {
+                continue
+            } catch [System.IO.FileNotFoundException] {
+                continue
+            } catch [System.IO.DirectoryNotFoundException] {
+                continue
+            }
             if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
                 throw "Refusing a reparse point in the build tree: $entry"
             }
@@ -123,16 +136,23 @@ function Get-SafeTree([string]$Root) {
 }
 
 function Get-TreeStat([string]$Path) {
+    if (!(Test-Path -LiteralPath $Path)) {
+        return [pscustomobject]@{ Bytes = [long]0; Files = 0 }
+    }
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
         $fi = [IO.FileInfo]::new($Path)
         return [pscustomobject]@{ Bytes = [long]$fi.Length; Files = 1 }
     }
     $bytes = [long]0
     $files = 0
-    foreach ($file in [IO.Directory]::EnumerateFiles($Path, '*', [IO.SearchOption]::AllDirectories)) {
-        $fi = [IO.FileInfo]::new($file)
-        $bytes += $fi.Length
-        $files++
+    try {
+        foreach ($file in [IO.Directory]::EnumerateFiles($Path, '*', [IO.SearchOption]::AllDirectories)) {
+            $fi = [IO.FileInfo]::new($file)
+            $bytes += $fi.Length
+            $files++
+        }
+    } catch [System.IO.DirectoryNotFoundException] {
+        # A concurrent process removed part of the tree; report what was counted.
     }
     return [pscustomobject]@{ Bytes = $bytes; Files = $files }
 }
@@ -383,6 +403,7 @@ $removedBytes = [long]0
 $removedFiles = 0
 if ($Apply) {
     foreach ($item in $plan) {
+        if (!(Test-Path -LiteralPath $item.Path)) { continue }
         try {
             Assert-Owned $item.Path $item.OwnedRoot $item.Kind
             Assert-NoReparse $item.Path $item.OwnedRoot
