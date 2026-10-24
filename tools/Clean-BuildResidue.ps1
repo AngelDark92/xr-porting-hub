@@ -202,9 +202,9 @@ function Test-ProtectedTree([string]$Relative) {
 
 function Test-KeepApk([string]$FullPath, [string]$Relative) {
     if ($Relative.StartsWith('decoded-fixture-apks\', $cmp)) { return $true }
-    if ($Relative -match '(^|\\)(temporary|decoded[^\\]*)(\\|$)') { return $true }
     if ($FullPath.Equals($canonicalFourXvr, $cmp)) { return $true }
     if ($Relative -match '(^|\\)app_original-apks(\\|$)') { return $true }
+    if ($Relative -match '(^|\\)pristine-input\\decoded-apk-[^\\]+$') { return $true }
     return $false
 }
 

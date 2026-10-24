@@ -75,4 +75,4 @@ rules.
   parity with `shared/Constants.kt`, no build pairs in adapters, and mirrored
   `.agents` skills.
 - `tools/Clean-BuildResidue.ps1` + `diagnostics/build-layout/Test-CleanBuildResidue.ps1`
-  enforce the cleanup policy with 54 assertions.
+  enforce the cleanup policy with 55 assertions.

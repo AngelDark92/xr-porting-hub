@@ -61,9 +61,11 @@ keep list. They are rebuildable from source and the regression test now covers t
 
 The owner confirmed that Morphe is used directly and build-folder APKs are never
 consumed. The apply retired the generated 4XVR patched builds, the live-hitch
-installed verification APKs and the audit `isolated-original-input` copies. Their
-sizes and hashes remain in the records and the apply receipt
-`_cleanup/steamlink-residue-20261024-185648.json`; the canonical stock 4XVR APK and
+installed verification APKs, the audit `isolated-original-input` copies and one
+patched-resources APK inside a temporary decoded tree. Nine stock/decoded APKs
+remain. Their sizes and hashes remain in the records and the apply receipts
+`_cleanup/steamlink-residue-20261024-185648.json` and
+`_cleanup/steamlink-residue-20261024-194012.json`; the canonical stock 4XVR APK and
 decoded fixtures remain. The affected 4XVR launch-hang and live-hitch records now
 state that those generated copies are retired.
 

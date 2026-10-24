@@ -63,9 +63,10 @@ function New-Fixture([string]$Name) {
     $null = Write-FixtureFile $fixtureBuild 'build/startup-boundary-tools/test-classes/AppTest.class' 'tool-tests'
     $null = Write-FixtureFile $fixtureBuild 'build/audit-5002363/compiled-abc/App.class' 'audit-classes'
 
-    # Decoded trees and their APK copies must survive.
+    # Decoded tree contents are retained, but an APK inside one is still generated.
     $null = Write-FixtureFile $fixtureBuild 'build/experiment/temporary/apk/root/classes.dex' 'decoded'
-    $null = Write-FixtureFile $fixtureBuild 'build/experiment/temporary/apk/stock.apk' 'decoded-copy'
+    $null = Write-FixtureFile $fixtureBuild 'build/experiment/temporary/apk/stock.apk' 'generated-copy'
+    $null = Write-FixtureFile $fixtureBuild 'build/audit-5002363/pristine-input/decoded-apk-fixture.apk' 'pristine-copy'
 
     return @{ Root = $root; Repo = $fixtureRepo; Build = $fixtureBuild }
 }
@@ -106,7 +107,8 @@ try {
         'build/experiment/compiled',
         'build/experiment/node_modules',
         'build/experiment/scratch',
-        'build/live-hitch-20260915/run-1/installed.apk')) {
+        'build/live-hitch-20260915/run-1/installed.apk',
+        'build/experiment/temporary/apk/stock.apk')) {
         Assert (!(Test-Path -LiteralPath (Join-Path $fixture.Build $relative))) "Generated residue survived: $relative"
     }
     foreach ($relative in @(
@@ -121,7 +123,7 @@ try {
         'build/startup-boundary-tools/test-classes/AppTest.class',
         'build/audit-5002363/compiled-abc/App.class',
         'build/experiment/temporary/apk/root/classes.dex',
-        'build/experiment/temporary/apk/stock.apk')) {
+        'build/audit-5002363/pristine-input/decoded-apk-fixture.apk')) {
         Assert (Test-Path -LiteralPath (Join-Path $fixture.Build $relative)) "Protected input deleted: $relative"
     }
     foreach ($relative in @('build', 'patches/build', '.gradle', 'builds', 'd', 'diagnostics/example/__pycache__', 'extensions/example/build-android')) {

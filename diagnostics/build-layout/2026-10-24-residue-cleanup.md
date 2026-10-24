@@ -1,7 +1,7 @@
 # Build residue cleanup - 2026-10-24
 
 Tool: `tools/Clean-BuildResidue.ps1`
-Regression test: `diagnostics/build-layout/Test-CleanBuildResidue.ps1` (54 assertions)
+Regression test: `diagnostics/build-layout/Test-CleanBuildResidue.ps1` (55 assertions)
 Full policy: `../WORKSPACE_CLEANUP.md`
 
 ## Baseline
@@ -20,9 +20,9 @@ Full policy: `../WORKSPACE_CLEANUP.md`
 | Preview plan | 173 targets, 33,902 files, 12,213,726,866 bytes (11.37 GiB) |
 | Applied | 173 targets, 33,902 files, 12,213,726,866 bytes |
 | Second apply | 0 targets, 0 files, 0 bytes |
-| External root after | 16,593,313,285 bytes (15.45 GiB) |
-| Files after | 87,377 |
-| APKs after | 10 (761,127,506 bytes, 0.71 GiB) |
+| External root after | 16,568,378,094 bytes (15.43 GiB) |
+| Files after | 87,388 |
+| APKs after | 9 (720,727,566 bytes, 0.67 GiB) |
 
 Receipts:
 
@@ -36,7 +36,6 @@ Receipts:
 |---|---|
 | 372.51 MiB | `build/4xvr-2.0.22/cn.vr4p.oculus4xvrplayerov_2.0.22_original.apk` |
 | 39.43 MiB | `build/audit-5002363/pristine-input/decoded-apk-...-2.0.23-5002363.apk` |
-| 38.53 MiB | `build/uber-link-rescan-disable/.../temporary/patched/resources.apk` |
 | 7 fixtures | `build/decoded-fixture-apks/*.apk` |
 
 The 4XVR original SHA-256 remains
@@ -45,10 +44,12 @@ All 13 protected hashes in the apply receipt match after deletion.
 
 ## Deleted classes
 
-- Generated APKs under experiment, audit and `live-hitch` directories, including the
-  two generated 4XVR patched builds, the audit `isolated-original-input` copies and
-  the live-hitch installed verification APKs. The owner confirmed these are never
-  consumed; hashes/sizes remain in the records and the apply receipt.
+- Generated APKs under experiment, audit, decoded temporary and `live-hitch`
+  directories, including the two generated 4XVR patched builds, the audit
+  `isolated-original-input` copies, the live-hitch installed verification APKs and
+  one patched-resources APK inside a temporary decoded tree. The owner confirmed
+  these are never consumed; hashes/sizes remain in the records and the apply
+  receipt.
 - `isolated-checkout` trees, compiled classes, `node_modules` and `scratch` under
   the external build root.
 - Repository-local `build/`, `builds/`, `d/`, `.gradle/`, `patches/build/`,
