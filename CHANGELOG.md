@@ -1,3 +1,9 @@
+## [2.2.0](https://github.com/AngelDark92/xr-porting-hub/compare/v2.1.0...v2.2.0) (2026-10-24)
+
+### ✨ New Features
+
+* add Alpha-0 high-resolution trigger patch for Steam Link 2.0.20 ([c9eda0c](https://github.com/AngelDark92/xr-porting-hub/commit/c9eda0c735b230ca462be6db056a576f5511fd00))
+
 ## [2.1.0](https://github.com/AngelDark92/xr-porting-hub/compare/v2.0.0...v2.1.0) (2026-10-24)
 
 ### 🐛 Bug Fixes
