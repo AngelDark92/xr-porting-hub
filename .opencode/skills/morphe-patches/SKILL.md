@@ -96,7 +96,7 @@ pointer makes the loader abort the layer. Evidence:
 
 ## Descriptions
 
-Patch descriptions are user-facing and copied verbatim into `patches-list*.json`.
+Patch descriptions are copied verbatim into `patches-list*.json`.
 Tests pin some wording; grep `patches/src/test` for `.description`,
 `patchSource.contains` and name assertions before a text pass. Treat every hit as
 locked verbatim. Known pinned fragments include `future RGB10_A2`, `needs Shizuku`,
@@ -199,11 +199,11 @@ old-phrase matches outside `CHANGELOG.md` and `diagnostics/`.
 ## On-device APK sources
 
 Morphe Manager keeps the pristine original and patched output under
-`/data/data/app.morphe.manager/app_original-apks/<pkg>_<version>[_original].apk`
-and `app_patched-apps/<pkg>_<version>.apk`. That is where a missing stock base can be
-recovered. `/sdcard/Download` copies are `media_rw`-owned; `adb pull` as shell fails
-with Permission denied. Use `su -c 'cp <src> /data/local/tmp/<name>; chmod 644 <name>'`,
-pull, verify SHA-256, then delete the stage copy.
+`/data/data/app.morphe.manager/app_original-apks/` and `app_patched-apps/`; that is
+where a missing stock base can be recovered. `/sdcard/Download` copies are
+`media_rw`-owned, so `adb pull` as shell fails. Stage with
+`su -c 'cp <src> /data/local/tmp/<name>; chmod 644 <name>'`, pull, verify SHA-256,
+then delete the stage copy.
 
 ## Manager app tile icon
 
@@ -216,16 +216,11 @@ PNGs) and point the manifest `android:icon`/`android:roundIcon` at them.
 
 ## Build, test and audits
 
-All local output, scratch, caches and temporary checkouts go under
-`../builds/steamlink-patches/`. Gradle uses `gradle/root` and `gradle/patches`;
-retained inputs/evidence use `build/`; native CMake uses
-`extensions/<name>/build-*`. Never create a local `build`, `patches/build`,
-`.gradle`, `.kotlin` or nested `builds/` tree.
+All local output follows `AGENTS.md` rule 12: external `gradle/`, `build/` and
+native `build-*` roots; never create a local build tree.
 
-Tests importing a production `compileOnly` library must declare their own
-`testImplementation` dependency. Gson belongs in `compileOnly(libs.gson)`,
-`testImplementation(libs.gson)` and the catalog generator configuration; do not
-promote it to production `implementation`.
+Tests importing a production `compileOnly` library declare it in
+`testImplementation`; do not promote it to production `implementation`.
 
 `:patches:test` is local-only. Run it at the end of every task and report counts.
 Reproduce the release graph with:
@@ -236,13 +231,9 @@ Reproduce the release graph with:
 ```
 
 For dependency, plugin, generator or test changes, run that graph plus
-`:patches:test` in an isolated checkout. Attestation resolves the exact released
-version through `.github/scripts/resolve_release_artifact.cjs`; the path must be
-canonical and contain no `..`. Run `node
-.github/scripts/test_release_artifact_paths.cjs` after `npm ci`. On Windows,
-configure GitHub Packages with `tools/Configure-GitHubPackages.ps1` and a classic
-`read:packages` token in user Gradle properties; never put tokens in source, logs or
-chat.
+`:patches:test` in an isolated checkout. Run
+`node .github/scripts/test_release_artifact_paths.cjs` after `npm ci`. GitHub
+Packages setup and token rules are in `AGENTS.md` rule 11.
 
 Real apply audits (`util.*MorpheAudit` runners such as `FovealCanvasMorpheAudit`
 and `PremiumUnlockMorpheAudit`) execute the patcher end-to-end on a retained
