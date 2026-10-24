@@ -21,6 +21,8 @@ the user reported it did not work. It copied actual fovea pixels into a Surface,
 kept 3 projections and omitted the dummy quad. Its failure cause is unknown; the
 working terminal-quad fix is unchanged. See the [retirement record](diagnostics/steamlink-surface-fovea/README.md).
 
+The Full-FOV foveal canvas was retired on 2026-10-24; it did not solve the high-resolution problem. Its patch, native layer and payload are removed. See the [resolution ledger](SteamLink-GalaxyXR-Python-Patches-Already-Tried-for_Resolution_issue/README.md).
+
 Steam Link VR (`com.valvesoftware.steamlinkvr`) was not built for Android XR. These patches adapt it to run on the Samsung Galaxy XR headset by injecting the missing OpenXR permissions and features, bundling the Galaxy XR XR-bridge native library, providing an optional standalone face-bridge layer for face-tracking, fixing broken permission flows, tuning the rendering pipeline, and optionally allowing the patched APK to coexist with the original install.
 
 Target APK: `com.valvesoftware.steamlinkvr`. Exact compatibility metadata and guarded adaptations cover v2.0.20/5001712, v2.0.20/5001812, v2.0.21/5001968, v2.0.22/5002244, v2.0.23/5002363 and v2.0.24/5002395. The permission-free high-resolution fix accepts exactly those six builds; 5001712/5001812/5001968 use the production alpha-1 2-projection helper, 5002244/5002363/5002395 use the 3-projection helper, and the optional alpha-0 experimental patch replaces the exact 5001712 helper when selected. Reconstruction, quad-view, permission-matrix, warm-up/omit, and DFR re-arm experiments are retired.
@@ -66,7 +68,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v2.2.0](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.2.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;48 patches total
+> **[v2.2.0](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.2.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
@@ -126,21 +128,20 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
-| 2.0.20 (5001712) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Steam Link 2.0.20/5001712 legacy base. | Experimental Steam Link 2.0.20/5001712. | Experimental Steam Link 2.0.20/5001812. | Experimental Steam Link 2.0.21/5001968. | Experimental Steam Link 2.0.22/5002244. | Experimental Steam Link 2.0.23/5002363. | Experimental Steam Link 2.0.24/5002395. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller pose extrapolation layer for exact Steam Link 2.0.24/5002395; measured on 2.0.23/5002363 only, not run on this base. | Steam Link 2.0.20/5001812 legacy base. | Steam Link 2.0.21/5001968 legacy base. | Steam Link 2.0.22/5002244 legacy base. | Steam Link 2.0.23/5002363 native Android XR. | Steam Link 2.0.24/5002395 native Android XR. |
+| 2.0.20 (5001712) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) | 2.0.20 (5001712) | 2.0.20 (5001812) | 2.0.21 (5001968) | 2.0.22 (5002244) | 2.0.23 (5002363) | 2.0.24 (5002395) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Steam Link 2.0.20/5001712 legacy base. | Experimental Steam Link 2.0.20/5001712. | Experimental Steam Link 2.0.20/5001812. | Experimental Steam Link 2.0.21/5001968. | Experimental Steam Link 2.0.22/5002244. | Experimental Steam Link 2.0.23/5002363. | Experimental Steam Link 2.0.24/5002395. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001712; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.20/5001812; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.21/5001968; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.22/5002244; measured on 2.0.23/5002363 only, not run on this base. | Controller pose extrapolation layer for exact Steam Link 2.0.23/5002363; measured on a Galaxy XR headset. | Controller pose extrapolation layer for exact Steam Link 2.0.24/5002395; measured on 2.0.23/5002363 only, not run on this base. |
 
 #### Image quality
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
 | [Alpha-0 high-resolution trigger (experimental)](#alpha-0-high-resolution-trigger-experimental) | Clears the high-resolution trigger quad's 1/255 alpha byte so it is fully transparent on exact 2.0.20/5001712. Build: 2.0.20/5001712. | 5001712 |  |
-| [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental) | Draws only the foveal image on a transparent canvas per eye. Builds: 2.0.20 (5001712, 5001812), 2.0.21/5001968, 2.0.22/5002244, 2.0.23/5002363, 2.0.24/5002395. Experimental; headset validation pending. | 5001712, 5001812, 5001968, 5002244, 5002363, 5002395 |  |
 
 #### App & device identity
 

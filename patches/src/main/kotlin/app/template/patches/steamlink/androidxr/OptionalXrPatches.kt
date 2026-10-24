@@ -127,6 +127,7 @@ internal fun projectionModesConflict(existingMode: String, requestedMode: String
 
 private val retiredProjectionModes = setOf(
     "surface_video_v1", // Tried on 2026-09-11; low-resolution output. Cleanup only.
+    "foveal_canvas", // Retired 2026-10-24; did not solve high resolution. Cleanup only.
     "android_surface_fovea_v1", // Tried on 2026-09-07; user reported it did not work.
     "android_surface_underside_projection_v1",
     "android_surface_trigger_warmup_omit_v1",

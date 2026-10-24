@@ -350,8 +350,10 @@ class AndroidSurfaceTriggerResourceTest {
     }
 
     @Test
-    fun `retired projection and permission-matrix resources are absent`() {
+    fun `retired layer, projection and permission-matrix resources are absent`() {
         listOf(
+            "libgxr_foveal_canvas.so",
+            "XR_APILAYER_local_GalaxyXR_foveal_canvas.json",
             "libgxr_surface_video.so",
             "libgxr_surface_video_5001712_0.so",
             "libgxr_surface_video_5001712_1.so",
@@ -381,7 +383,7 @@ class AndroidSurfaceTriggerResourceTest {
     }
 
     @Test
-    fun `working trigger removes retired actual-video resources on reapplication`() {
+    fun `working trigger removes retired layer resources on reapplication`() {
         val root = java.nio.file.Files.createTempDirectory("retired-surface-video").toFile()
         try {
             val lib = File(root, "lib").apply { mkdirs() }
@@ -389,12 +391,17 @@ class AndroidSurfaceTriggerResourceTest {
             val oldLibrary = File(lib, "libgxr_surface_video.so").apply { writeText("retired") }
             val oldManifest = File(layers, "XR_APILAYER_local_GalaxyXR_surface_video_v1.json")
                 .apply { writeText("retired") }
+            val fovealLibrary = File(lib, "libgxr_foveal_canvas.so").apply { writeText("retired") }
+            val fovealManifest = File(layers, "XR_APILAYER_local_GalaxyXR_foveal_canvas.json")
+                .apply { writeText("retired") }
             val unrelated = File(lib, "unrelated.so").apply { writeText("preserved") }
             val requested = ProjectionModeResources(ANDROID_SURFACE_TRIGGER_MODE,
                 ANDROID_SURFACE_TRIGGER_LIBRARY, ANDROID_SURFACE_TRIGGER_MANIFEST)
             repeat(2) { installProjectionModeResources(lib, layers, requested, byteArrayOf(1, 2, 3)) }
             assertFalse(oldLibrary.exists())
             assertFalse(oldManifest.exists())
+            assertFalse(fovealLibrary.exists())
+            assertFalse(fovealManifest.exists())
             assertEquals("preserved", unrelated.readText())
             assertContentEquals(byteArrayOf(1, 2, 3), File(lib, ANDROID_SURFACE_TRIGGER_LIBRARY).readBytes())
             assertTrue(File(layers, ANDROID_SURFACE_TRIGGER_MANIFEST).isFile)

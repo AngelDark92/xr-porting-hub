@@ -235,7 +235,7 @@ For dependency, plugin, generator or test changes, run that graph plus
 `node .github/scripts/test_release_artifact_paths.cjs` after `npm ci`. GitHub
 Packages setup and token rules are in `AGENTS.md` rule 11.
 
-Real apply audits (`util.*MorpheAudit` runners such as `FovealCanvasMorpheAudit`
+Real apply audits (`util.*MorpheAudit` runners such as `VdSdrMorpheAudit`
 and `PremiumUnlockMorpheAudit`) execute the patcher end-to-end on a retained
 original APK and package an unsigned output. Their classpath is a cached-compiler
 snapshot built by `build-classpath.py`; after any patch-source change, re-run that

@@ -2,6 +2,10 @@
 
 This directory is the historical record for approaches that did not produce permission-free, persistently high resolution. Do not stack these experiments into a new APK.
 
+## 2026-10-24 — Full-FOV foveal canvas: not the solution; removed
+
+**Full-FOV foveal canvas (experimental)** (`xrFovealCanvasPatch`) did not solve the high-resolution problem. The patch, native layer source, helper, manifest and catalog entry are removed. The **Galaxy XR high-resolution 3-projection fix** is separate and unchanged. Historical evidence: [steamlink-foveal-canvas](../diagnostics/steamlink-foveal-canvas/README.md). Do not re-add it.
+
 ## 2026-09-11 — Android Surface actual video: tried, low resolution; do not reapply
 
 **Android Surface actual video (experimental)** (`surface_video_v1`, `libgxr_surface_video.so`) did not meet the resolution goal. The user reported low-resolution output and requested that it be recorded here to avoid applying it again. Keep this version out of future APK selections; do not present it as an untried experiment.

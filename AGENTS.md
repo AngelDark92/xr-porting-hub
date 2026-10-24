@@ -131,6 +131,11 @@ package. Never infer it from the version name, a neighboring build or another ap
     | UDP receive buffer | Freezes worse and longer. | `diagnostics/steamlink-hitches/` |
     | Uber link rescan disable | Hitches unchanged. | `diagnostics/steamlink-hitches/` |
 
+    The Full-FOV foveal canvas is also retired: it did not solve the
+    high-resolution problem, and its patch and layer are removed. Read
+    `SteamLink-GalaxyXR-Python-Patches-Already-Tried-for_Resolution_issue/README.md`
+    before resolution work.
+
 14. **4XVR gates.** The adaptation targets exact base 2.0.22/20022 only. The
     pristine stock APK is retained at
     `../builds/steamlink-patches/build/4xvr-2.0.22/` with SHA-256

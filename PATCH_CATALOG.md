@@ -12,7 +12,7 @@ The retired entries below are historical records and are not selectable.
 
 | Category | Count | Current patches |
 |---|---:|---|
-| Image quality | 4 | [Galaxy XR high-resolution 3-projection fix](#galaxy-xr-high-resolution-3-projection-fix-xrgalaxyxrhighresolutionpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch); [Full-FOV foveal canvas (experimental)](#full-fov-foveal-canvas-experimental-xrfovealcanvaspatch) |
+| Image quality | 4 | [Galaxy XR high-resolution 3-projection fix](#galaxy-xr-high-resolution-3-projection-fix-xrgalaxyxrhighresolutionpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch); [Alpha-0 high-resolution trigger (experimental)](#alpha-0-high-resolution-trigger-experimental-xralpha0triggerpatch) |
 | Tracking & audio | 4 | [Visual Delay Fix](#visual-delay-fix-hmdonlypatch); [GXR face and tongue bridge](#gxr-face-and-tongue-bridge-gxrfacebridgepatch); [XR Input Routing Config](#xr-input-routing-config-xrinputroutingconfigpatch); [Microphone input preset](#microphone-input-preset-microphoneinputpresetpatch) |
 | Startup & permissions | 4 | [Startup permission requests (before 5002322)](#startup-permission-requests-before-5002322-xrstartuppermissionspatch); [Startup splash and XR launch mode (before 5002322)](#startup-splash-and-xr-launch-mode-before-5002322-xrlauncherbootstrappatch); [Unrestricted battery usage](#unrestricted-battery-usage-unrestrictedbatteryusagepatch); [Appear on top (legacy)](#appear-on-top-legacy-appearontoppatch) |
 | App & device identity | 4 | [Change package name](#change-package-name-changepackagenamepatch); [Device identity](#device-identity-deviceidentitypatch); Galaxy XR vendor driver; [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost-performanceboostpatch) |
@@ -384,26 +384,9 @@ catalog; it is not part of the recommended set.
 
 ---
 
-### Full-FOV foveal canvas (experimental) (`xrFovealCanvasPatch`)
+### Retired: Full-FOV foveal canvas — did not solve high resolution
 
-Optional, default off. Installs `lib/arm64-v8a/libgxr_foveal_canvas.so` and the
-`XR_APILAYER_local_GalaxyXR_foveal_canvas` implicit layer manifest. The layer draws only
-the foveal projection on a transparent 5000×6000 canvas per eye and keeps the background
-view. It changes no `libvrlink_scene.so` bytes. Before installing it validates the exact
-scene size and the two stock submission functions `QSVLRendererXR::GetProjectionLayers`
-and `QSVLRendererXR::FlipFrame` for that base, then rejects retired projection hooks.
-
-| Base | Scene size | GetProjectionLayers | FlipFrame |
-|---|---:|---|---|
-| 2.0.20/5001712 | 2,221,072 | `0x10a410`, 492 B, `adb6101ef08c9245e61a0950d7046b3b6d96205074657e294cc265ee0bc28576` | `0x10ad18`, 2,772 B, `bc5e4118046726343cba0edd0d40793cd53dafe5b99db9f3935f3e713b9f5b1d` |
-| 2.0.23/5002363 | 2,292,008 | `0x10c1c4`, 692 B, `2a732a7867cdc16309b4afa7b5d1971cfdf1bb67b5437925f11a465c797665c0` | `0x10cd00`, 3,000 B, `986357756174710f0087b191157a11ee70104190360c6c17b466b951d8004884` |
-| 2.0.24/5002395 | 2,301,432 | `0x10d41c`, 692 B, `338fac4375cf3ea36bfaa31a4a9e6e358ff4f4fc88f2953e09c4b72a7bbb477d` | `0x10df58`, 3,000 B, `d628c41334d5f9dfdc056ee436850824b5b6ac2023f990bc26f77a93f0703699` |
-
-Bundled helper SHA-256 `af816d579e753a66e32bd2001dd6bf082f49038888bfd147519cea1834e174f1`;
-manifest SHA-256 `9d28be5fe61ebe804d760cc0254aca357efdd39dc9b6996e12220527507c2832`.
-The canvas has not been run on a headset for either base. It is the experiment that checks
-whether the canvas still yields a high-resolution image when the 3-projection fix is
-selected.
+Retired 2026-10-24 at the owner's request. The patch, native layer, helper, manifest and catalog entry are removed. It drew only the foveal projection on a transparent 5000×6000 canvas per eye and did not solve the high-resolution problem. The mode identity `foveal_canvas` and both file names remain cleanup-only so re-patching removes stale installations. Do not re-add. [Historical record](diagnostics/steamlink-foveal-canvas/README.md).
 
 ---
 

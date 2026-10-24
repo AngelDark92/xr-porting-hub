@@ -93,8 +93,9 @@ consumed from CI.
 | FEC duplicate reservation guard | Retired; headset test failed | `diagnostics/steamlink-hitches/TRIED-EXPERIMENTS.md` |
 | UDP receive buffer | Retired; headset test failed | `diagnostics/steamlink-hitches/TRIED-EXPERIMENTS.md` |
 | Uber link rescan disable | Retired; headset test failed | `diagnostics/steamlink-hitches/TRIED-EXPERIMENTS.md` |
+| Full-FOV foveal canvas | Retired; did not solve high resolution | `diagnostics/steamlink-foveal-canvas/` |
 
-Do not re-add or re-derive them. Read the tried ledger before any hitch work.
+Do not re-add or re-derive them. Read the hitch ledger before hitch work and the resolution ledger before resolution work.
 
 ## History
 
