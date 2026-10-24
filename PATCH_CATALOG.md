@@ -134,7 +134,7 @@ entry reports the single model `xrvst2ue`.
 Private/transitive support dependencies are deduplicated by Morphe; the counts above describe
 direct public selections, not all internal tasks.
 
-The recommended selection never broadens verified build guards. 2.0.20/5001712 uses the independently verified 2-projection payload; 2.0.23/5002363 and 2.0.24/5002395 use the 3-projection payload. The three restored legacy bases retain array-shaped `requestedExtensions`; only 5001712 uses the special device-keyed conversion. Headset behavior remains a separate validation gate.
+The recommended selection never broadens verified build guards. 2.0.20/5001712 uses the production 2-projection payload by default; the optional **Alpha-0 high-resolution trigger (experimental)** patch replaces it when selected. 2.0.23/5002363 and 2.0.24/5002395 use the 3-projection payload. The three restored legacy bases retain array-shaped `requestedExtensions`; only 5001712 uses the special device-keyed conversion. Headset behavior remains a separate validation gate.
 
 ---
 
@@ -343,20 +343,20 @@ Preserves Valve's native `XR_ANDROID_face_tracking` mapping for expressions 0–
 |---|---|
 | `AndroidManifest.xml` | Removes `SYSTEM_ALERT_WINDOW` and sets `GXR_RESOLUTION_MODE=android_surface_trigger_passthrough_v1`; preserves stock launcher, splash and XR start mode. The explicit older splash patch owns the unmanaged Full Space override. |
 | `lib/arm64-v8a/libgxr_ast.so` | Release-built, stripped implicit OpenXR API layer selected by exact build. Exact 2.0.20/5001712 copies Valve's 2 projection pointers, places the quad at index 2, and submits 3 layers. Exact 2.0.23/5002363 and 2.0.24/5002395 retain the existing 3-pointer, quad-at-index-3, 4-layer contract. |
-| Bundled `libgxr_ast_5001712.so` | 2-projection payload installed under the standard `libgxr_ast.so` name for exact 5001712 targets. It is never selected for 5002363 or 5002395. |
+| Bundled `libgxr_ast_5001712.so` / `libgxr_ast_5001712_alpha0.so` | 2-projection payloads installed under the standard `libgxr_ast.so` name. Exact 5001712, 5001812 and 5001968 use the production `v1.2` helper (alpha byte 1). The optional **Alpha-0 high-resolution trigger (experimental)** patch replaces the exact 5001712 helper with the `alpha0` trial (`android-surface-trigger-5001712-alpha0-v1.3-20261024`, alpha byte 0). Neither is selected for 5002363 or 5002395. |
 | `assets/openxr/1/api_layers/implicit.d/XR_APILAYER_local_GalaxyXR_android_surface_trigger_passthrough_v1.json` | Registers the surface-trigger API layer; disable environment is `GXR_DISABLE_ANDROID_SURFACE_TRIGGER`. |
 
-The output remains Valve's native projection layout plus 1 nearly invisible quad: 2 projections/4 views become 3 total layers on the exact 5001712 target; 3 projections/6 views become 4 total layers on 5002363. Every validation, pointer-copy, pointer-log, and projection telemetry loop uses the selected source count, preventing the delayed out-of-bounds layer-3 read on 5001712. The layer performs no texture copy, shader draw, resampling, or projection reconstruction. The independent trigger Surface does not alter Valve's source handles or formats, so future RGB10_A2 projection sources remain reserved for unchanged passthrough.
+The output remains Valve's native projection layout plus 1 nearly invisible quad: 2 projections/4 views become 3 total layers on the exact 5001712 target; 3 projections/6 views become 4 total layers on 5002363/5002395. Every validation, pointer-copy, pointer-log, and projection telemetry loop uses the selected source count, preventing the delayed out-of-bounds layer-3 read on 5001712. The layer performs no texture copy, shader draw, resampling, or projection reconstruction. The independent trigger Surface does not alter Valve's source handles or formats, so future RGB10_A2 projection sources remain reserved for unchanged passthrough. The production alpha-1 helpers remain selected by default for 5001712, 5001812, 5001968, 5002244, 5002363 and 5002395. The optional alpha-0 experimental patch replaces the exact 5001712 helper only when explicitly selected.
 
 The production helpers are compiled with `-O2`, dead-section elimination, and stripped symbols. They do not intercept `xrWaitFrame`, perform no periodic per-frame log formatting, construct the immutable trigger quad once per session, fill the fixed source-pointer array during mandatory topology validation, and skip that validation while the trigger is inactive. Cold lifecycle evidence plus the 1st 3 accepted submissions remain available to validate topology.
 
-The current CPU-only revisions are `android-surface-trigger-passthrough-v1.4-20260903` (3 projections) and `android-surface-trigger-5001712-v1.2-20260903` (2 projections). A generation-validated, non-owning thread-local render cache replaces per-frame shared-ownership acquisition/release. The registry owns live sessions; lifecycle mutations invalidate cached lookups, including reused handles. Safe frame use relies on OpenXR's externally synchronized session/instance destruction, not on the generation counter alone. Event readers retain owned lookups, and event dispatch now requires exactly `XR_SUCCESS`, so `XR_EVENT_UNAVAILABLE` cannot process stale event data. Bundle definitions need no duplicate fix: they already depend on the main resolution patch and receive its rebuilt helper. Continuous terminal-quad submission remains unchanged; there is no GPU, resolution, or 10-bit behavior change intended, and no measured speed gain is claimed.
+The current revisions are `android-surface-trigger-passthrough-v1.4-20260903` (3 projections), `android-surface-trigger-5001712-v1.2-20260903` (2 projections, 5001712/5001812/5001968) and the optional 5001712 trial `android-surface-trigger-5001712-alpha0-v1.3-20261024` (2 projections, alpha 0, installed only by the experimental alpha-0 patch). A generation-validated, non-owning thread-local render cache replaces per-frame shared-ownership acquisition/release. The registry owns live sessions; lifecycle mutations invalidate cached lookups, including reused handles. Safe frame use relies on OpenXR's externally synchronized session/instance destruction, not on the generation counter alone. Event readers retain owned lookups, and event dispatch now requires exactly `XR_SUCCESS`, so `XR_EVENT_UNAVAILABLE` cannot process stale event data. Bundle definitions need no duplicate fix: they already depend on the main resolution patch and receive its rebuilt helper. Continuous terminal-quad submission remains unchanged; there is no GPU, resolution, or 10-bit behavior change intended, and no measured speed gain is claimed.
 
 Host CTest checks of the actual registry and both 2-/3-projection helper integration paths passed. Both Android payloads rebuilt with NDK `27.2.12479018` and cached OpenXR `1.1.43` headers. Headset validation of these revisions remains pending. The accepted 2026-09-01 capture below belongs to the same append-only topology in an earlier helper and is prior behavioral evidence, not a runtime result for the new binaries.
 
 For user A/B testing, retain the previous patch artifact and compare newly patched APKs from the same Steam Link base with identical patch options, host settings, and fixed scene. Check cold start, stream stop/restart, palm and DFR-UI transitions, and session/focus loss followed by resume. Report any sharpness change, crash, or failure to recover, alongside comparable CPU/GPU timings if available; lower GPU composition time is not an expected consequence of these CPU-only changes.
 
-Both current exact bases have independent metadata and resource/manifest routing checks; the 5001712 layout uses the existing 2-projection helper. Historical 5001712 startup/frame-900 feedback is separate from the current local checks.
+Both current exact bases have independent metadata and resource/manifest routing checks; the 5001712 layout uses the production 2-projection helper by default, and the optional alpha-0 patch replaces it only when selected. Historical 5001712 startup/frame-900 feedback is separate from the current local checks.
 
 #### Historical headset validation (2.0.22/5002322; not a current target)
 
@@ -366,6 +366,21 @@ when explicitly requested: the function loaded, a 2x2 Surface was created and qu
 terminal quad. No overlay permission, type-2038 Steam Link window, or recording contamination
 existed. The headset palm A/B/A result was `MATCHES REFERENCE -> MATCHES REFERENCE -> MATCHES
 REFERENCE`, establishing perceived parity with Valve's native 3-projection APK with Appear on top.
+
+---
+
+### Alpha-0 high-resolution trigger (experimental) (`xrAlpha0TriggerPatch`)
+
+Optional, default off, experimental catalog only; exact 2.0.20/5001712.
+Depends on **Galaxy XR high-resolution 3-projection fix**, which installs the
+normal high-resolution layer and manifest first. This patch then replaces the
+installed `lib/arm64-v8a/libgxr_ast.so` with `libgxr_ast_5001712_alpha0.so`
+(`android-surface-trigger-5001712-alpha0-v1.3-20261024`, SHA-256
+`dac7be1ad94ab7f69396cb35a1c0881b07b38fbb40036824f738fed05b145d43`). The layer
+topology (2 source projections + 1 terminal quad) and 1 mm quad size are
+unchanged; only the 2x2 buffer's alpha byte changes from 1/255 to 0. Headset
+visibility and sharpness are unverified. Select it in Morphe's experimental
+catalog; it is not part of the recommended set.
 
 ---
 

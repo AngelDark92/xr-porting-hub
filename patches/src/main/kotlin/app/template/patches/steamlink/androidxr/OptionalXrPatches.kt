@@ -5,10 +5,13 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.rawResourcePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.Compatibility
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK
+import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_5001712
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_HIGH_RESOLUTION
 import app.template.patches.shared.Constants.COMPATIBILITIES_STEAM_LINK_BEFORE_LATEST
 import app.template.patches.shared.Constants.isHighResolutionSteamLinkBuild
+import app.template.patches.shared.Constants.EXPERIMENTAL_COMPATIBILITY_NAME
 import app.template.patches.shared.buildLabel
 import org.w3c.dom.Document
 import org.w3c.dom.Element
@@ -189,26 +192,22 @@ internal fun isAlpha0SurfaceTriggerSteamLinkBuild(
 internal fun androidSurfaceTriggerResourceLibraryForBuild(
     versionName: String,
     versionCode: String,
-): String = when {
-    isAlpha0SurfaceTriggerSteamLinkBuild(versionName, versionCode) ->
-        ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY
-    app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode) ->
-        ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY
-    else ->
-        // Exact 2.0.23/5002363 retains the verified 3-projection contract. This API layer
-        // contains no Valve native offsets; the installer applies the exact-build guard.
-        ANDROID_SURFACE_TRIGGER_LIBRARY
+): String = if (app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode)) {
+    ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY
+} else {
+    // Exact 2.0.23/5002363 and 2.0.24/5002395 retain the verified 3-projection
+    // contract. This API layer contains no Valve native offsets; the installer
+    // applies the exact-build guard.
+    ANDROID_SURFACE_TRIGGER_LIBRARY
 }
 
 internal fun androidSurfaceTriggerBuildIdForBuild(
     versionName: String,
     versionCode: String,
-): String = when {
-    isAlpha0SurfaceTriggerSteamLinkBuild(versionName, versionCode) ->
-        ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_BUILD_ID
-    app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode) ->
-        ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID
-    else -> ANDROID_SURFACE_TRIGGER_BUILD_ID
+): String = if (app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode)) {
+    ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID
+} else {
+    ANDROID_SURFACE_TRIGGER_BUILD_ID
 }
 
 internal fun installProjectionModeResources(
@@ -359,5 +358,53 @@ val xrGalaxyXrHighResolutionPatch = resourcePatch(
         document("AndroidManifest.xml").use { document ->
             configurePermissionFreeProjectionMode(document, ANDROID_SURFACE_TRIGGER_MODE)
         }
+    }
+}
+
+private val alpha0TriggerCompatibilities = COMPATIBILITIES_STEAM_LINK_5001712.map { exact ->
+    Compatibility(
+        name = EXPERIMENTAL_COMPATIBILITY_NAME,
+        packageName = requireNotNull(exact.packageName),
+        targets = exact.targets,
+    )
+}
+
+/**
+ * Selectable alpha-0 variant. This is deliberately a second patch object because
+ * its global default must differ from the recommended high-resolution patch: the
+ * production helper stays alpha 1/255 by default, while this optional experiment
+ * replaces the installed helper with alpha 0 on exact 2.0.20/5001712.
+ */
+@Suppress("unused")
+val xrAlpha0TriggerPatch = rawResourcePatch(
+    name = "Alpha-0 high-resolution trigger (experimental)",
+    description = "Clears the high-resolution trigger quad's 1/255 alpha byte so it is fully transparent on exact 2.0.20/5001712. " +
+        buildLabel(alpha0TriggerCompatibilities),
+    default = false,
+) {
+    category(PatchCategories.IMAGE_QUALITY)
+    compatibleWith(*alpha0TriggerCompatibilities.toTypedArray())
+    // The dependency installs the high-resolution layer and its manifest first;
+    // this variant then replaces only the installed helper.
+    dependsOn(xrGalaxyXrHighResolutionPatch)
+    execute {
+        // Dependencies bypass compatibility checks. Leave every other base untouched
+        // before reading or writing target files.
+        if (!isAlpha0SurfaceTriggerSteamLinkBuild(
+                packageMetadata.versionName,
+                packageMetadata.versionCode,
+            )) {
+            return@execute
+        }
+        val sceneFile = get("lib/arm64-v8a/libvrlink_scene.so")
+        val apkRoot = sceneFile.parentFile!!.parentFile!!.parentFile!!
+        val layerDir = File(apkRoot, "assets/openxr/1/api_layers/implicit.d")
+        val requested = activeProjectionModes.first { it.mode == ANDROID_SURFACE_TRIGGER_MODE }
+        val helperBytes = projectionModeResource(ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY)
+        if (helperBytes.size < 4 || !helperBytes.copyOfRange(0, 4)
+                .contentEquals(byteArrayOf(0x7F, 0x45, 0x4C, 0x46))) {
+            throw PatchException("Bundled alpha-0 Android-surface trigger is not an ELF library")
+        }
+        installProjectionModeResources(sceneFile.parentFile!!, layerDir, requested, helperBytes)
     }
 }
