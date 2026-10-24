@@ -100,6 +100,10 @@ internal const val ANDROID_SURFACE_TRIGGER_BUILD_ID =
     "android-surface-trigger-passthrough-v1.4-20260903"
 internal const val ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID =
     "android-surface-trigger-5001712-v1.2-20260903"
+internal const val ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY =
+    "libgxr_ast_5001712_alpha0.so"
+internal const val ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_BUILD_ID =
+    "android-surface-trigger-5001712-alpha0-v1.3-20261024"
 internal data class ProjectionModeResources(
     val mode: String,
     val library: String,
@@ -172,15 +176,39 @@ internal fun projectionModeResource(name: String): ByteArray =
         ?: throw PatchException("Missing bundled XR projection-mode resource: $name"))
         .use { it.readBytes() }
 
+/**
+ * Exact 2.0.20/5001712 alpha-0 trial. The other two 2-projection legacy builds
+ * (5001812, 5001968) keep the production alpha-1 helper until this trial is
+ * validated and promoted.
+ */
+internal fun isAlpha0SurfaceTriggerSteamLinkBuild(
+    versionName: String,
+    versionCode: String,
+): Boolean = versionName == "2.0.20" && versionCode == "5001712"
+
 internal fun androidSurfaceTriggerResourceLibraryForBuild(
     versionName: String,
     versionCode: String,
-): String = if (app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode)) {
-    ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY
-} else {
-    // Exact 2.0.23/5002363 retains the verified 3-projection contract. This API layer
-    // contains no Valve native offsets; the installer applies the exact-build guard.
-    ANDROID_SURFACE_TRIGGER_LIBRARY
+): String = when {
+    isAlpha0SurfaceTriggerSteamLinkBuild(versionName, versionCode) ->
+        ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY
+    app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode) ->
+        ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY
+    else ->
+        // Exact 2.0.23/5002363 retains the verified 3-projection contract. This API layer
+        // contains no Valve native offsets; the installer applies the exact-build guard.
+        ANDROID_SURFACE_TRIGGER_LIBRARY
+}
+
+internal fun androidSurfaceTriggerBuildIdForBuild(
+    versionName: String,
+    versionCode: String,
+): String = when {
+    isAlpha0SurfaceTriggerSteamLinkBuild(versionName, versionCode) ->
+        ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_BUILD_ID
+    app.template.patches.shared.Constants.isTwoProjectionSteamLinkBuild(versionName, versionCode) ->
+        ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID
+    else -> ANDROID_SURFACE_TRIGGER_BUILD_ID
 }
 
 internal fun installProjectionModeResources(

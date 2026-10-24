@@ -136,10 +136,30 @@ class AndroidSurfaceTriggerResourceTest {
     }
 
     @Test
-    fun `5001712 alone selects the 2 projection helper resource`() {
+    fun `exact 5001712 selects the alpha0 trial and other 2 projection builds keep production`() {
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY,
+            androidSurfaceTriggerResourceLibraryForBuild("2.0.20", "5001712"),
+        )
         assertEquals(
             ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY,
-            androidSurfaceTriggerResourceLibraryForBuild("2.0.20", "5001712"),
+            androidSurfaceTriggerResourceLibraryForBuild("2.0.20", "5001812"),
+        )
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_5001712_RESOURCE_LIBRARY,
+            androidSurfaceTriggerResourceLibraryForBuild("2.0.21", "5001968"),
+        )
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_BUILD_ID,
+            androidSurfaceTriggerBuildIdForBuild("2.0.20", "5001712"),
+        )
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID,
+            androidSurfaceTriggerBuildIdForBuild("2.0.20", "5001812"),
+        )
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_BUILD_ID,
+            androidSurfaceTriggerBuildIdForBuild("2.0.23", "5002363"),
         )
         assertEquals(
             ANDROID_SURFACE_TRIGGER_LIBRARY,
@@ -150,9 +170,18 @@ class AndroidSurfaceTriggerResourceTest {
             androidSurfaceTriggerResourceLibraryForBuild("2.0.22", "5001712"),
         )
         assertTrue(isHighResolutionSteamLinkBuild("2.0.23", "5002363"))
+        assertTrue(isHighResolutionSteamLinkBuild("2.0.24", "5002395"))
         assertFalse(isHighResolutionSteamLinkBuild("2.0.22", "5002363"))
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_BUILD_ID,
+            androidSurfaceTriggerBuildIdForBuild("2.0.24", "5002395"),
+        )
         val modernResource = androidSurfaceTriggerResourceLibraryForBuild("2.0.23", "5002363")
         assertEquals(ANDROID_SURFACE_TRIGGER_LIBRARY, modernResource)
+        assertEquals(
+            ANDROID_SURFACE_TRIGGER_LIBRARY,
+            androidSurfaceTriggerResourceLibraryForBuild("2.0.24", "5002395"),
+        )
         assertContentEquals(
             projectionModeResource(modernResource),
             projectionModeResource(ANDROID_SURFACE_TRIGGER_LIBRARY),
@@ -229,6 +258,36 @@ class AndroidSurfaceTriggerResourceTest {
         ).forEach { invariant -> assertTrue(strings.contains(invariant), invariant) }
         assertFalse(strings.contains(ANDROID_SURFACE_TRIGGER_BUILD_ID))
         assertFalse(strings.contains("sourcePointer2"))
+    }
+
+    @Test
+    fun `5001712 alpha0 helper keeps the 2 to 3 layer payload with zero alpha`() {
+        val helper = requireNotNull(
+            javaClass.getResourceAsStream(
+                "/steamlink/androidxr/$ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_RESOURCE_LIBRARY",
+            ),
+        ).use { it.readBytes() }
+        assertContentEquals(byteArrayOf(0x7F, 0x45, 0x4C, 0x46), helper.copyOfRange(0, 4))
+        assertEquals(
+            "dac7be1ad94ab7f69396cb35a1c0881b07b38fbb40036824f738fed05b145d43",
+            MessageDigest.getInstance("SHA-256").digest(helper)
+                .joinToString("") { "%02x".format(it) },
+        )
+        val strings = helper.toString(Charsets.ISO_8859_1)
+        listOf(
+            ANDROID_SURFACE_TRIGGER_MODE,
+            ANDROID_SURFACE_TRIGGER_5001712_ALPHA0_BUILD_ID,
+            "XR_APILAYER_local_GalaxyXR_android_surface_trigger_passthrough_v1",
+            "surface_trigger_frame",
+            "surface_trigger_submission",
+        ).forEach { invariant -> assertTrue(strings.contains(invariant), invariant) }
+        assertFalse(strings.contains(ANDROID_SURFACE_TRIGGER_5001712_BUILD_ID))
+        assertFalse(strings.contains(ANDROID_SURFACE_TRIGGER_BUILD_ID))
+        assertFalse(strings.contains("sourcePointer2"))
+
+        val source = source("extensions/resolution-trace-layer/src/android_surface_trigger_passthrough_layer.cpp")
+        assertTrue(source.contains("GXR_AST_TRIGGER_ALPHA"))
+        assertTrue(source.contains("row[x * 4 + 3] = kSurfaceAlpha"))
     }
 
     @Test
