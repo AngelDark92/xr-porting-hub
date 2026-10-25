@@ -11,7 +11,7 @@ import app.template.patches.steamlink.androidxr.xrCodecsSupportPatch
 import app.template.patches.steamlink.androidxr.xrCoreRuntimePatch
 import app.template.patches.steamlink.androidxr.xrDeviceConfigBaselinePatch
 import app.template.patches.steamlink.androidxr.xrDirectInputFixPatch
-import app.template.patches.steamlink.androidxr.xrGalaxyXrHighResolutionPatch
+import app.template.patches.steamlink.androidxr.alpha0HighResolutionTriggerPatch
 import app.template.patches.steamlink.androidxr.xrInputRoutingConfigPatch
 import app.template.patches.steamlink.androidxr.xrLauncherBootstrapPatch
 import app.template.patches.steamlink.androidxr.xrManifestCapabilityPackPatch
@@ -92,7 +92,7 @@ class PatchCompatibilityMatrixTest {
     @Test
     fun `native base exposes its expected individual patches`() {
         val expected = setOf(
-            xrGalaxyXrHighResolutionPatch,
+            alpha0HighResolutionTriggerPatch,
             gxrFacebridgePatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch,
@@ -132,7 +132,7 @@ class PatchCompatibilityMatrixTest {
         assertTrue(xrManifestCapabilityPackPatch in routingClosure)
         assertTrue(xrCoreRuntimePatch in routingClosure)
 
-        listOf(xrGalaxyXrHighResolutionPatch, gxrFacebridgePatch).forEach { patch ->
+        listOf(alpha0HighResolutionTriggerPatch, gxrFacebridgePatch).forEach { patch ->
             val closure = patch.dependencyClosure()
             assertFalse(xrLauncherBootstrapPatch in closure, patch.name)
             assertFalse(xrPermissionSettingsBootstrapPatch in closure, patch.name)
@@ -179,7 +179,7 @@ class PatchCompatibilityMatrixTest {
             forceLobbyPermissionStateGatePatch,
             forceStreamXrGatesPatch,
             gxrFacebridgePatch,
-            xrGalaxyXrHighResolutionPatch,
+            alpha0HighResolutionTriggerPatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch, blueNoisePatch,
             xrCodecsSupportPatch,
@@ -201,7 +201,7 @@ class PatchCompatibilityMatrixTest {
             forceLobbyPermissionStateGatePatch,
             forceStreamXrGatesPatch,
             gxrFacebridgePatch,
-            xrGalaxyXrHighResolutionPatch,
+            alpha0HighResolutionTriggerPatch,
             microphoneInputPresetPatch,
             oledCalibrationPatch,
             unrestrictedBatteryUsagePatch,
@@ -219,7 +219,7 @@ class PatchCompatibilityMatrixTest {
         )
 
         val nativeRecommendedPatches = setOf(
-            xrGalaxyXrHighResolutionPatch,
+            alpha0HighResolutionTriggerPatch,
             gxrFacebridgePatch,
             microphoneInputPresetPatch,
             networkOptimizationsPatch,
