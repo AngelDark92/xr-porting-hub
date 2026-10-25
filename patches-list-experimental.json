@@ -1960,38 +1960,6 @@
       "options": []
     },
     {
-      "name": "Fovea quad layers (experimental)",
-      "description": "Replaces Steam Link's fovea projection with two per-eye quad layers while keeping the background projection. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger.",
-      "category": "Image quality",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": [
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link Experimental",
-          "description": null,
-          "apkFileType": null,
-          "appIconColor": null,
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.20",
-              "versionCodes": {
-                "ARM64_V8A": 5001712,
-                "ARMEABI_V7A": 5001712,
-                "X86_64": 5001712,
-                "X86": 5001712
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.20/5001712 legacy base."
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
       "name": "Frame-synced render dispatch (4XVR)",
       "description": "Syncs scene changes and screen updates to the display's frame rhythm, keeping playback smooth. Builds: 4XVR 2.0.22/20022. Based on @logkim1's 4XVR-GalaxyXR patches: https://github.com/logkim1/4XVR-GalaxyXR.",
       "category": "Advanced XR compatibility",
@@ -3344,38 +3312,6 @@
       "options": []
     },
     {
-      "name": "Quad-only composition (experimental)",
-      "description": "Submits Steam Link's background and fovea as four per-eye quad layers with no projection layers. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger.",
-      "category": "Image quality",
-      "default": false,
-      "dependencies": [],
-      "compatiblePackages": [
-        {
-          "packageName": "com.valvesoftware.steamlinkvr",
-          "name": "Steam Link Experimental",
-          "description": null,
-          "apkFileType": null,
-          "appIconColor": null,
-          "signatures": null,
-          "targets": [
-            {
-              "version": "2.0.20",
-              "versionCodes": {
-                "ARM64_V8A": 5001712,
-                "ARMEABI_V7A": 5001712,
-                "X86_64": 5001712,
-                "X86": 5001712
-              },
-              "isExperimental": false,
-              "minSdk": null,
-              "description": "Steam Link 2.0.20/5001712 legacy base."
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
       "name": "Render dispatch payload (4XVR)",
       "description": "Adds the scene-timing engine that keeps 4XVR visuals and screens in step with the frames. Builds: 4XVR 2.0.22/20022. Based on @logkim1's 4XVR-GalaxyXR patches: https://github.com/logkim1/4XVR-GalaxyXR.",
       "category": "Advanced XR compatibility",
@@ -3704,6 +3640,38 @@
               "isExperimental": false,
               "minSdk": null,
               "description": "4XVR 2.0.22/20022 Galaxy XR port."
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Surface video + trigger (experimental)",
+      "description": "Presents Steam Link's rendered video through Android Surface swapchains and keeps the terminal trigger quad. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger.",
+      "category": "Image quality",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link Experimental",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001712,
+                "ARMEABI_V7A": 5001712,
+                "X86_64": 5001712,
+                "X86": 5001712
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001712 legacy base."
             }
           ]
         }

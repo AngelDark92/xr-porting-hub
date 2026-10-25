@@ -210,15 +210,13 @@ internal fun installProjectionModeResources(
         }
     }
 
-    // The experimental quad arms replace the same terminal composition topology.
-    // Reject either direction so a patch order can never stack both strategies.
-    QUAD_LAYER_VARIANTS.forEach { variant ->
-        if (File(libDir, variant.library).exists() ||
-            File(layerDir, variant.manifest).exists()) {
-            throw PatchException(
-                "${variant.patchName} is mutually exclusive with Alpha-0 high-resolution trigger",
-            )
-        }
+    // The Surface-video experiment appends its own terminal trigger. Reject either
+    // patch order so Alpha-0 can never leave a three-layer Surface-video frame behind.
+    if (File(libDir, SURFACE_VIDEO_TRIGGER_LIBRARY).exists() ||
+        File(layerDir, SURFACE_VIDEO_TRIGGER_MANIFEST).exists()) {
+        throw PatchException(
+            "Surface video + trigger is mutually exclusive with Alpha-0 high-resolution trigger",
+        )
     }
 
     retiredProjectionModes.forEach { mode ->

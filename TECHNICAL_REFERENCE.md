@@ -23,8 +23,6 @@ working terminal-quad fix is unchanged. See the [retirement record](diagnostics/
 
 The Full-FOV foveal canvas was retired on 2026-10-24; it did not solve the high-resolution problem. Its patch, native layer and payload are removed. See the [resolution ledger](SteamLink-GalaxyXR-Python-Patches-Already-Tried-for_Resolution_issue/README.md).
 
-Two default-off experimental arms now test timkhronos-recommended quad composition on exact 2.0.20/5001712 only. **Fovea quad layers** keeps Valve's background projection and replaces the fovea projection with two per-eye quads. **Quad-only composition** submits the background and fovea as four per-eye quads. Both reuse the source swapchains without copies, require Alpha-0 high-resolution trigger to be deselected, and are mutually exclusive. No headset frame has been submitted yet; arm 1 is expected to be lighter on CPU and generic compositors, while arm 2 is the closer timkhronos-recommended topology match. See [implementation](extensions/quad-layer/README.md) and [evidence](diagnostics/steamlink-quad-layers/README.md).
-
 Steam Link VR (`com.valvesoftware.steamlinkvr`) was not built for Android XR. These patches adapt it to run on the Samsung Galaxy XR headset by injecting the missing OpenXR permissions and features, bundling the Galaxy XR XR-bridge native library, providing an optional standalone face-bridge layer for face-tracking, fixing broken permission flows, tuning the rendering pipeline, and optionally allowing the patched APK to coexist with the original install.
 
 Target APK: `com.valvesoftware.steamlinkvr`. Exact compatibility metadata and guarded adaptations cover v2.0.20/5001712, v2.0.20/5001812, v2.0.21/5001968, v2.0.22/5002244, v2.0.23/5002363 and v2.0.24/5002395. The Alpha-0 high-resolution trigger accepts exactly those six builds; 5001712/5001812/5001968 use the 2-projection alpha-0 helper and 5002244/5002363/5002395 use the 3-projection alpha-0 helper. Reconstruction, quad-view, permission-matrix, warm-up/omit, and DFR re-arm experiments are retired.
@@ -70,7 +68,7 @@ No desktop IP, pairing token, APK hash, or native telemetry enrollment is requir
 This section is generated from the patch catalog during releases.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v2.3.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.3.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;48 patches total
+> **[v2.3.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/releases/tag/v2.3.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;47 patches total
 <details open>
 <summary>📦 4XVR&nbsp;&nbsp;•&nbsp;&nbsp;16 patches</summary>
 <br>
@@ -200,7 +198,7 @@ This section is generated from the patch catalog during releases.
 </details>
 
 <details open>
-<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
+<summary>📦 Steam Link Experimental&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -213,8 +211,7 @@ This section is generated from the patch catalog during releases.
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | 🔢&nbsp;Builds | ⚙️&nbsp;Options |
 |----------|----------------|----------------|-----------|
-| [Fovea quad layers (experimental)](#fovea-quad-layers-experimental) | Replaces Steam Link's fovea projection with two per-eye quad layers while keeping the background projection. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger. | 5001712 |  |
-| [Quad-only composition (experimental)](#quad-only-composition-experimental) | Submits Steam Link's background and fovea as four per-eye quad layers with no projection layers. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger. | 5001712 |  |
+| [Surface video + trigger (experimental)](#surface-video-trigger-experimental) | Presents Steam Link's rendered video through Android Surface swapchains and keeps the terminal trigger quad. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger. | 5001712 |  |
 
 #### App & device identity
 

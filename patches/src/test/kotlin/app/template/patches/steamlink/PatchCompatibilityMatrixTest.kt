@@ -4,9 +4,8 @@ import app.morphe.patcher.patch.Patch
 import app.template.patches.steamlink.androidxr.appearOnTopPatch
 import app.template.patches.steamlink.androidxr.androidXrUiExtensionPatch
 import app.template.patches.steamlink.androidxr.controllerVelocityFramePatch
-import app.template.patches.steamlink.androidxr.foveaQuadLayersPatch
 import app.template.patches.steamlink.androidxr.gxrFacebridgePatch
-import app.template.patches.steamlink.androidxr.quadOnlyCompositionPatch
+import app.template.patches.steamlink.androidxr.surfaceVideoTriggerPatch
 import app.template.patches.steamlink.androidxr.unrestrictedBatteryUsagePatch
 import app.template.patches.steamlink.androidxr.performanceBoostPatch
 import app.template.patches.steamlink.androidxr.xrCodecsSupportPatch
@@ -84,7 +83,7 @@ class PatchCompatibilityMatrixTest {
     @Test
     fun `legacy base exposes every standalone patch with matching defaults`() {
         val reference = allIndividualPatches.filter { it.supports("2.0.20", 5001712) }.toSet()
-        assertEquals(26, reference.size)
+        assertEquals(25, reference.size)
         recommendedFor("2.0.20", 5001712).forEach { assertTrue(it.default, it.name) }
         (reference - legacyRecommendedPatches).forEach { patch ->
             assertFalse(patch.default, patch.name)
@@ -116,7 +115,7 @@ class PatchCompatibilityMatrixTest {
                 }
             }
         val excludedPublicPatches = allIndividualPatches.toSet() - expected
-        assertEquals(15, excludedPublicPatches.size)
+        assertEquals(14, excludedPublicPatches.size)
         val modernClosure = nativeRecommendedPatches.flatMap { it.dependencyClosure() }.toSet()
         assertTrue(modernClosure.intersect(excludedPublicPatches).isEmpty())
     }
@@ -195,8 +194,7 @@ class PatchCompatibilityMatrixTest {
             xrLauncherBootstrapPatch,
             xrInputRoutingConfigPatch,
             controllerVelocityFramePatch,
-            foveaQuadLayersPatch,
-            quadOnlyCompositionPatch,
+            surfaceVideoTriggerPatch,
         )
 
         val legacyRecommendedPatches = setOf(

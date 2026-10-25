@@ -2,6 +2,10 @@
 
 This directory is the historical record for approaches that did not produce permission-free, persistently high resolution. Do not stack these experiments into a new APK.
 
+## 2026-10-25 — Fovea/quad composition arms: incomplete reproduction; removed
+
+Two default-off OpenXR API-layer arms converted Steam Link's fovea projection to per-eye quads, one keeping the background projection and one converting both projections to quads. Both produced low resolution on exact 2.0.20/5001712. The arms were not a faithful reproduction of the reference standard-codec path: they omitted the small trigger projection and reused Valve's projection swapchains instead of the decoder-to-runtime-Surface path used by HEVC, AV1 and H.264. The ASTC path was deliberately out of scope. The patches, native source, payloads and manifests are removed. Do not re-add another topology-only quad approximation; a future attempt must start from a decoder Surface-swapchain experiment and a captured `xrEndFrame` layer array.
+
 ## 2026-10-24 — Full-FOV foveal canvas: not the solution; removed
 
 **Full-FOV foveal canvas (experimental)** (`xrFovealCanvasPatch`) did not solve the high-resolution problem. The patch, native layer source, helper, manifest and catalog entry are removed. The high-resolution path is now the **Alpha-0 high-resolution trigger**; the foveal canvas remains removed. Historical evidence: [steamlink-foveal-canvas](../diagnostics/steamlink-foveal-canvas/README.md). Do not re-add it.
