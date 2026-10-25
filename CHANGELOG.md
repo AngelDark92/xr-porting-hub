@@ -1,3 +1,9 @@
+## [2.2.1-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.1-dev.1...v2.2.1-dev.2) (2026-10-25)
+
+### 🐛 Bug Fixes
+
+* Refactor high-resolution patches and update dependencies ([f52a3ac](https://github.com/AngelDark92/xr-porting-hub/commit/f52a3ac649916e34fb445ae06a1d4e04b068cec1))
+
 ## [2.2.1-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.0...v2.2.1-dev.1) (2026-10-24)
 
 ### 🐛 Bug Fixes
