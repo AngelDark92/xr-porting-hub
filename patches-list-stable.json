@@ -568,7 +568,7 @@
           "description": "Fine grain over the whole background, including under the center overlay on top; the center's own grain choice is not touched.",
           "required": true,
           "type": "kotlin.Boolean",
-          "default": false,
+          "default": true,
           "values": null
         }
       ]

@@ -12,7 +12,7 @@ The retired entries below are historical records and are not selectable.
 
 | Category | Count | Current patches |
 |---|---:|---|
-| Image quality | 3 | [Alpha-0 high-resolution trigger](#alpha-0-high-resolution-trigger-alpha0highresolutiontriggerpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch) |
+| Image quality | 5 | [Alpha-0 high-resolution trigger](#alpha-0-high-resolution-trigger-alpha0highresolutiontriggerpatch); [OLED color calibration](#oled-color-calibration-oledcalibrationpatch); [Blue-noise dithering](#blue-noise-dithering-bluenoisepatch); [Fovea quad layers (experimental)](#fovea-quad-layers-experimental-foveaquadlayerspatch); [Quad-only composition (experimental)](#quad-only-composition-experimental-quadonlycompositionpatch) |
 | Tracking & audio | 4 | [Visual Delay Fix](#visual-delay-fix-hmdonlypatch); [GXR face and tongue bridge](#gxr-face-and-tongue-bridge-gxrfacebridgepatch); [XR Input Routing Config](#xr-input-routing-config-xrinputroutingconfigpatch); [Microphone input preset](#microphone-input-preset-microphoneinputpresetpatch) |
 | Startup & permissions | 4 | [Startup permission requests (before 5002322)](#startup-permission-requests-before-5002322-xrstartuppermissionspatch); [Startup splash and XR launch mode (before 5002322)](#startup-splash-and-xr-launch-mode-before-5002322-xrlauncherbootstrappatch); [Unrestricted battery usage](#unrestricted-battery-usage-unrestrictedbatteryusagepatch); [Appear on top (legacy)](#appear-on-top-legacy-appearontoppatch) |
 | App & device identity | 4 | [Change package name](#change-package-name-changepackagenamepatch); [Device identity](#device-identity-deviceidentitypatch); Galaxy XR vendor driver; [OpenXR CPU and GPU BOOST](#openxr-cpu-and-gpu-boost-performanceboostpatch) |
@@ -87,7 +87,7 @@ Startup permissions and splash/XR launch-mode edits are separate patches, part o
 
 ### Steam Link 2.0.23 / 5002363
 
-This exact pair exposes 11 core individual patches; the 10-patch recommended set is default-enabled: GXR face and tongue bridge, Alpha-0 high-resolution trigger, Microphone input preset, OLED color calibration, Blue-noise dithering (fovea default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, Codecs Support and Controller velocity frame. OpenXR CPU and GPU BOOST is experimental and off by default. Device identity is legacy-only: stock 2.0.23 identity is authoritative, so no identity patch is shipped for this build. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
+This exact pair exposes 11 core individual patches; the 10-patch recommended set is default-enabled: GXR face and tongue bridge, Alpha-0 high-resolution trigger, Microphone input preset, OLED color calibration, Blue-noise dithering (center and background default), Unrestricted battery usage, Visual Delay Fix, Network Optimizations, Codecs Support and Controller velocity frame. OpenXR CPU and GPU BOOST is experimental and off by default. Device identity is legacy-only: stock 2.0.23 identity is authoritative, so no identity patch is shipped for this build. Native targets: OLED shader `0x970a1`; format MOVs `0x10c840`, `0x10c8b0`, `0x10c920`; microphone `0xf44c0`; HMD pose hook `0x101f1c`; tongue block `0x141c6c`. High resolution uses the 3-projection API layer. Legacy mutations and retired experiments remain excluded.
 
 See the [5002363 validation](diagnostics/steamlink-5002363/README.md), [native targets](diagnostics/steamlink-5002363/native-targets.md), and [Java/config targets](diagnostics/steamlink-5002363/surface-targets.md).
 
@@ -120,7 +120,7 @@ On each exact pre-2363 build (2.0.20/5001712, 2.0.20/5001812, 2.0.21/5001968, 2.
 15. XR Manifest Capability Pack
 16. Device identity (Galaxy XR identity, model `xrvst2ue`)
 17. Startup permission requests (before 5002322)
-18. Blue-noise dithering (fovea default, background opt-in; OLED's VD-like fovea toggle must stay off)
+18. Blue-noise dithering (center and background default; OLED's VD-like fovea toggle must stay off)
 19. Codecs Support
 20. Network Optimizations
 21. Controller velocity frame
@@ -370,6 +370,30 @@ REFERENCE`, establishing perceived parity with Valve's native 3-projection APK w
 
 ---
 
+### Fovea quad layers (experimental) (`foveaQuadLayersPatch`)
+**Default: off; experimental catalog only** - exact 2.0.20/5001712.
+
+| Artifact | Exact guarded edit |
+|---|---|
+| `lib/arm64-v8a/libgxr_fovea_quad.so` | Release-built, stripped implicit OpenXR API layer (`gxr-fovea-quad-v1.0-20261025`). Converts only the exact 2-projection Steam Link topology: keeps Valve's background projection pointer and replaces the fovea projection with two per-eye quad layers. |
+| `assets/openxr/1/api_layers/implicit.d/XR_APILAYER_local_GalaxyXR_fovea_quad_v1.json` | Registers the layer; disable environment is `GXR_DISABLE_FOVEA_QUAD`. |
+
+The layer reuses the fovea projection's swapchain, `subImage`, space and flags `6`; it copies no texture and performs no app-side resampling. Each quad is a 1 m plane sized from the source view's tangent FOV and positioned from the view pose. Other frame shapes pass through unchanged. A runtime rejection returns that frame's error, disables conversion for the instance and leaves later frames unchanged. **Needs:** deselect Alpha-0 high-resolution trigger; the installer rejects either patch order, and this arm is mutually exclusive with Quad-only composition. [Implementation and runtime check](extensions/quad-layer/README.md). Headset validation is pending.
+
+---
+
+### Quad-only composition (experimental) (`quadOnlyCompositionPatch`)
+**Default: off; experimental catalog only** - exact 2.0.20/5001712.
+
+| Artifact | Exact guarded edit |
+|---|---|
+| `lib/arm64-v8a/libgxr_quad_only.so` | Release-built, stripped implicit OpenXR API layer (`gxr-quad-only-v1.0-20261025`). Converts the exact 2-projection topology to two per-eye background quads followed by two per-eye fovea quads; no projection layer is submitted. |
+| `assets/openxr/1/api_layers/implicit.d/XR_APILAYER_local_GalaxyXR_quad_only_v1.json` | Registers the layer; disable environment is `GXR_DISABLE_QUAD_ONLY`. |
+
+This is the closer match to the timkhronos-recommended fovea-and-periphery quad fast path. It reuses every source swapchain and subImage, copies no texture, and uses the same FOV-derived one-metre geometry and pass-through/rejection behavior as the fovea arm. It submits one more layer than the fovea arm and moves the full-view background onto quad sampling, so it is expected to cost more compositor work in a generic runtime; the Galaxy XR all-quad path may behave differently and is unmeasured. **Needs:** deselect Alpha-0 high-resolution trigger; the installer rejects either patch order, and this arm is mutually exclusive with Fovea quad layers. [Implementation and runtime check](extensions/quad-layer/README.md). Headset validation is pending.
+
+---
+
 ### Retired: Full-FOV foveal canvas — did not solve high resolution
 
 Retired 2026-10-24 at the owner's request. The patch, native layer, helper, manifest and catalog entry are removed. It drew only the foveal projection on a transparent 5000×6000 canvas per eye and did not solve the high-resolution problem. The mode identity `foveal_canvas` and both file names remain cleanup-only so re-patching removes stale installations. Do not re-add. [Historical record](diagnostics/steamlink-foveal-canvas/README.md).
@@ -558,9 +582,10 @@ Custom host replacements can still bypass the embedded shader modification.
 
 ### Blue-noise dithering (`blueNoisePatch`)
 
-**Recommended and default-enabled on both exact bases; included in the stable catalog and the
-per-build recommended set. The foveal layer is on by default; the background layer is opt-in.**
-Exact bases: **2.0.20/5001712**, **2.0.23/5002363**, **2.0.24/5002395**.
+**Recommended and default-enabled on every exact base; included in the stable catalog and the
+per-build recommended set. Both the foveal and background layers are on by default.**
+Exact bases: **2.0.20 (5001712, 5001812)**, **2.0.21/5001968**, **2.0.22/5002244**,
+**2.0.23/5002363**, **2.0.24/5002395**.
 
 The two former per-layer patches merged into one selectable patch with two independent
 layer toggles. 8-bit and 10-bit input always share the same final 8-bit sRGB quantizer,
@@ -570,7 +595,7 @@ identical for both depths, and there is no stream-depth branch for the client to
 | Option | Default | Behavior |
 |---|---|---|
 | `fovea` | `true` | Static blue noise on the foveal (masked) layer only; verifies the exact foveal draw caller and the 8-bit sRGB framebuffer/write state per draw. The base draw is excluded. |
-| `background` | `false` | Static blue noise on the complete base projection, including the part underneath the foveal overlay; only the exact opaque shader and background draw caller are eligible, and the foveal program is not dithered by this selection. |
+| `background` | `true` | Static blue noise on the complete base projection, including the part underneath the foveal overlay; only the exact opaque shader and background draw caller are eligible, and the foveal program is not dithered by this selection. |
 
 A static, original 128×128 R8 blue-noise tile selects neighboring 8-bit output codes
 **after** colour processing and fade. The original alpha is preserved. The helper

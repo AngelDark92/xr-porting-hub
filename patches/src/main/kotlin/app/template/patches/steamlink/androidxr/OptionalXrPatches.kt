@@ -210,6 +210,17 @@ internal fun installProjectionModeResources(
         }
     }
 
+    // The experimental quad arms replace the same terminal composition topology.
+    // Reject either direction so a patch order can never stack both strategies.
+    QUAD_LAYER_VARIANTS.forEach { variant ->
+        if (File(libDir, variant.library).exists() ||
+            File(layerDir, variant.manifest).exists()) {
+            throw PatchException(
+                "${variant.patchName} is mutually exclusive with Alpha-0 high-resolution trigger",
+            )
+        }
+    }
+
     retiredProjectionModes.forEach { mode ->
         listOf(
             File(libDir, "libgxr_$mode.so"),

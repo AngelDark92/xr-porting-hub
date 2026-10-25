@@ -167,6 +167,12 @@ extensions/resolution-trace-layer/build-host-tests/
 VirtualDesktop/**
 diagnostics/*
 # Keep the new experiment's compact provenance and receipts reviewable.
+!diagnostics/steamlink-quad-layers/
+diagnostics/steamlink-quad-layers/*
+!diagnostics/steamlink-quad-layers/*.md
+!diagnostics/steamlink-quad-layers/*.json
+
+# Keep the new experiment's compact provenance and receipts reviewable.
 !diagnostics/steamlink-foveal-canvas/
 diagnostics/steamlink-foveal-canvas/*
 !diagnostics/steamlink-foveal-canvas/*.md
