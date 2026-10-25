@@ -1,3 +1,9 @@
+## [2.4.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.3.0...v2.4.0-dev.1) (2026-10-25)
+
+### ✨ New Features
+
+* Fix runtime blocker and preserve layer chains in SurfaceVideoTrigger ([649e579](https://github.com/AngelDark92/xr-porting-hub/commit/649e579d66f3b64b663b46e75e741388fdfe1e8d))
+
 ## [2.3.0](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.0...v2.3.0) (2026-10-25)
 
 ### 🐛 Bug Fixes
