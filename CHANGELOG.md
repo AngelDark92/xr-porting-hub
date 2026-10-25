@@ -1,3 +1,9 @@
+## [2.3.0-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.3.0-dev.1...v2.3.0-dev.2) (2026-10-25)
+
+### ✨ New Features
+
+* Add SurfaceVideoTriggerPatch functionality ([e30111b](https://github.com/AngelDark92/xr-porting-hub/commit/e30111b5412f8055b2cf288c4ed8390a6430106c))
+
 ## [2.3.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.1-dev.2...v2.3.0-dev.1) (2026-10-25)
 
 ### ✨ New Features
