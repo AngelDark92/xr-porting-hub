@@ -1,3 +1,9 @@
+## [2.3.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.1-dev.2...v2.3.0-dev.1) (2026-10-25)
+
+### ✨ New Features
+
+* QuadLayerPatch functionality ([b5c255c](https://github.com/AngelDark92/xr-porting-hub/commit/b5c255c4e3610f6d1353d0c7e75f2ed5bc295f98))
+
 ## [2.2.1-dev.2](https://github.com/AngelDark92/xr-porting-hub/compare/v2.2.1-dev.1...v2.2.1-dev.2) (2026-10-25)
 
 ### 🐛 Bug Fixes
