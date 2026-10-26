@@ -117,6 +117,22 @@ int main() {
     CHECK(!SwpHooksArmed(), "armed state stays false after the mprotect failure");
     g_mprotectFails = false;
 
+    // A scene imports the EGL export. An unresolved export or another hook's
+    // pointer must fail before handing over an original or touching the GOT.
+    void* invalidExports[] = {nullptr, reinterpret_cast<void*>(0xBAD0)};
+    for (void* expected : invalidExports) {
+        SwpHooksTestResetState();
+        g_testEglExport = expected;
+        g_mprotectCalls = 0;
+        g_eglOriginalCaptured = nullptr;
+        CHECK(!SwpHooksArm(), "missing or mismatched EGL export refuses interception");
+        CHECK(*reinterpret_cast<void**>(g_fakeModule + kFakeSlotOffset) ==
+                  reinterpret_cast<void*>(0xE6C0), "unexpected EGL pointer leaves slot unchanged");
+        CHECK(g_mprotectCalls == 0 && g_eglOriginalCaptured == nullptr,
+              "unexpected EGL pointer causes no write or original handover");
+    }
+    g_testEglExport = reinterpret_cast<void*>(0xE6C0);
+
     // 3. Resolved path: matching anchor + writable GOT -> exactly the wrapper.
     SwpHooksTestResetState();
     g_mprotectCalls = 0;

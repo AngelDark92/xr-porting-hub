@@ -16,6 +16,7 @@ runtime; gate evidence is per base):
 | 2.0.21/5001968 | `gxr_spacewarp_gate0_5001968.json` | `gxr_spacewarp_vts_5001968.json` |
 | 2.0.22/5002244 | `gxr_spacewarp_gate0_5002244.json` | `gxr_spacewarp_vts_5002244.json` |
 | 2.0.23/5002363 | `gxr_spacewarp_gate0_5002363.json` | `gxr_spacewarp_vts_5002363.json` |
+| 2.0.24/5002395 | `gxr_spacewarp_gate0_5002395.json` | `gxr_spacewarp_vts_5002395.json` |
 
 ## Runtime shape
 
@@ -91,6 +92,9 @@ runtime; gate evidence is per base):
 
 ## Carrier and dormant behavior
 
+- The arrival hook accepts the resolved `libEGL.so` export for
+  `eglCreateImageKHR`; it does not require an imported function to reside in
+  `libvrlink_scene.so`. Missing or unexpected targets fail closed.
 - ID `0x48`, 4-byte int; read every 60 endframes. `0` Off, `1` late-frame
   recovery, `2` half rate. Unknown values read as late-frame recovery and never
   rewrite the host's saved setting.
@@ -128,6 +132,9 @@ runtime; gate evidence is per base):
   coverage, subpel/edges, rotation alignment and extrapolation.
 - `tests/derive_gate0.py --base <base>` and `derive_gate0_vts.py --base <base>`
   re-derive the per-base pins; `--check` cross-verifies the compiled constants.
+  5001812, 5001968, 5002244 and 5002395 are `--check`-only for
+  `derive_gate0_vts.py`; its appendix emitter still encodes the two original
+  call shapes.
 
 ## Known gaps / evidence limits
 
