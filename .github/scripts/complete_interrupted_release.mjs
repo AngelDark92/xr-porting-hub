@@ -32,8 +32,9 @@ const RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
 const VISIBILITY_DELAYS_MS = [2_000, 5_000, 10_000, 15_000];
 
 function fail(message) {
-  console.error(`::error::${message}`);
-  process.exit(1);
+  // Throw instead of process.exit() so Actions can flush the ::error:: line;
+  // the top-level catch prints it and sets a failing exit code.
+  throw new Error(message);
 }
 
 function info(message) {
@@ -177,9 +178,21 @@ async function main() {
   const releaseUrl = `${apiUrl()}/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`;
   const existing = await fetch(releaseUrl, { headers: githubHeaders(token) });
   if (existing.status === 200) {
-    fail(`A GitHub release for ${tag} already exists; the original failure is not the notes push.`);
-  }
-  if (existing.status !== 404) {
+    const existingRelease = await existing.json();
+    if (!existingRelease.draft) {
+      fail(`A GitHub release for ${tag} already exists; the original failure is not the notes push.`);
+    }
+    // A draft from an interrupted @semantic-release/github publish is not public
+    // and would block this attempt; remove it and publish a fresh release.
+    info(`Deleting interrupted draft release ${existingRelease.id} for ${tag}.`);
+    const deleted = await fetch(`${apiUrl()}/repos/${repository}/releases/${existingRelease.id}`, {
+      method: "DELETE",
+      headers: githubHeaders(token),
+    });
+    if (!deleted.ok) {
+      fail(`Could not delete draft release ${existingRelease.id}: HTTP ${deleted.status}.`);
+    }
+  } else if (existing.status !== 404) {
     fail(`GitHub release lookup for ${tag} returned HTTP ${existing.status}.`);
   }
 
@@ -277,20 +290,24 @@ async function main() {
   } catch (error) {
     // @semantic-release/github creates a draft, uploads assets, then publishes it.
     // Remove a draft left by a failed upload so a later run is not blocked by it.
-    const draftLookup = await fetch(releaseUrl, { headers: githubHeaders(token) });
-    if (draftLookup.status === 200) {
-      const draft = await draftLookup.json();
-      if (draft.draft) {
-        const deleted = await fetch(`${apiUrl()}/repos/${repository}/releases/${draft.id}`, {
-          method: "DELETE",
-          headers: githubHeaders(token),
-        });
-        info(
-          deleted.ok
-            ? `Deleted draft release ${draft.id} for ${tag}.`
-            : `Could not delete draft release ${draft.id}: HTTP ${deleted.status}.`,
-        );
+    try {
+      const draftLookup = await fetch(releaseUrl, { headers: githubHeaders(token) });
+      if (draftLookup.status === 200) {
+        const draft = await draftLookup.json();
+        if (draft.draft) {
+          const deleted = await fetch(`${apiUrl()}/repos/${repository}/releases/${draft.id}`, {
+            method: "DELETE",
+            headers: githubHeaders(token),
+          });
+          info(
+            deleted.ok
+              ? `Deleted draft release ${draft.id} for ${tag}.`
+              : `Could not delete draft release ${draft.id}: HTTP ${deleted.status}.`,
+          );
+        }
       }
+    } catch (cleanupError) {
+      info(`Could not inspect the failed release for a draft: ${cleanupError.message}`);
     }
     throw error;
   }
@@ -337,5 +354,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  fail(error instanceof Error ? error.message : String(error));
+  console.error(`::error::${error instanceof Error ? error.message : String(error)}`);
+  process.exitCode = 1;
 });
