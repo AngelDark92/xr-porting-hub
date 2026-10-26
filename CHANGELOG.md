@@ -1,3 +1,9 @@
+## [2.5.0](https://github.com/AngelDark92/xr-porting-hub/compare/v2.4.0...v2.5.0) (2026-10-26)
+
+### ✨ New Features
+
+* Add support for GXR spacewarp layer version 2.0.24 (5002395) ([72ed995](https://github.com/AngelDark92/xr-porting-hub/commit/72ed995d618d44526d85f373c203084f52c5934d))
+
 ## [2.5.0-dev.1](https://github.com/AngelDark92/xr-porting-hub/compare/v2.4.0...v2.5.0-dev.1) (2026-10-26)
 
 ### ✨ New Features
