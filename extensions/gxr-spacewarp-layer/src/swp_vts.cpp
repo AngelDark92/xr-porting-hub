@@ -284,11 +284,8 @@ std::atomic<uintptr_t> g_svlRoot{0};
 std::atomic<int> g_carrier{kCarrierUnknown};
 // Last published 4-byte carrier value (0 / 1 / 2); the mode source of truth.
 std::atomic<uint32_t> g_carrierValue{0};
-// 2026-10-21 (owner directive): half rate is retired on both sides. The host no
-// longer publishes carrier 2, and a 2 from an older host runs as late-frames-only
-// here, so the mode cannot be entered by a stale driver. The half-rate synthesis
-// code stays compiled; flip this flag (and the host's kHalfRateRetired) to revive.
-std::atomic<bool> g_halfRateRetired{true};
+// 2026-10-26 (owner directive): carrier 2 is half rate again. Unknown values
+// still read as late-frame recovery; nothing rewrites the host's saved mode.
 
 // Per-session one-line log flags (reset by SwpVtsResetSession).
 std::atomic<bool> g_notPresentLogged{false};
@@ -483,9 +480,6 @@ void PollCarrierLogged() {
         return;
     }
     if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;  // undefined mode reads as late-frames
-    if (value == kCarrierModeHalfRate && g_halfRateRetired.load(std::memory_order_relaxed)) {
-        value = kCarrierModeLateFrames;  // retired: a stale host's half rate applies as late frames
-    }
     const uint32_t previousValue = g_carrierValue.exchange(value);
     const int next = value != 0 ? kCarrierOn : kCarrierOff;
     const int previous = g_carrier.exchange(next);
@@ -675,22 +669,16 @@ void SwpVtsTestSetRoot(void* root) { SwpVtsRootObserved(root); }
 // model "the host published the carrier before the session ticks").
 void SwpVtsTestPublish(uint32_t value) {
     if (value > kCarrierModeHalfRate) value = kCarrierModeLateFrames;
-    if (value == kCarrierModeHalfRate && g_halfRateRetired.load(std::memory_order_relaxed)) {
-        value = kCarrierModeLateFrames;  // mirror the production retirement mapping
-    }
     g_carrierValue.store(value);
     g_carrier.store(value != 0 ? kCarrierOn : kCarrierOff);
     ++g_carrierGeneration;
 }
-void SwpVtsTestSetHalfRateRetired(bool retired) { g_halfRateRetired.store(retired); }
+void SwpVtsTestSetHalfRateRetired(bool) {}  // retired flag removed 2026-10-26
 void SwpVtsTestResetAll() {
     g_state.store(kVtsStatePending);
     g_svlRoot.store(0);
     g_carrierValue.store(0);
     g_carrier.store(kCarrierUnknown);
-    // Production default: half rate retired. A suite that flips it must not leak
-    // the flip into the next suite.
-    g_halfRateRetired.store(true);
     g_notPresentLogged.store(false);
     g_notCapturedLogged.store(false);
     g_notArmedLogged.store(false);

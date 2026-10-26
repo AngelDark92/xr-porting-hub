@@ -73,6 +73,9 @@ static const char* kGoodSha = nullptr;  // computed in main from the synthetic b
 // The wrapper the install must write into the slot.
 extern "C" void* SwpWrapEglCreateImageKHR(void* dpy, void* ctx, unsigned target, void* buffer,
                                           const int* attrs);
+extern "C" void* SwpWrapEglCreateImageKHR(void*, void*, unsigned, void*, const int*) {
+    return nullptr;  // hooks test never invokes the arrival wrapper
+}
 
 static void BuildFakeModule() {
     memset(g_fakeModule, 0x33, sizeof(g_fakeModule));  // plausible code filler
