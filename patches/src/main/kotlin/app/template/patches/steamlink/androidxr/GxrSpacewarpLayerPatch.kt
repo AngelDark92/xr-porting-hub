@@ -21,9 +21,9 @@ internal const val GXR_SPACEWARP_GATE0_5001712 = "gxr_spacewarp_gate0_5001712.js
 // owner build flow (Build-Native.ps1 output, staged, then pinned — extensions skill
 // "Build output only"); the manifest + Gate-0 pins are committed with their files.
 // The layer payload is base-agnostic (the .so's per-base profile table selects the
-// scene-lib pins at runtime); only the two gate evidence JSONs are per base.
+// scene-lib pins at runtime); only the gate evidence JSON pair is per base.
 internal const val GXR_SPACEWARP_LIBRARY_SHA256 =
-    "a963930142c7c9dcbe536ad1b9862d5be803f39ea079e23829968d65d51ccd22"
+    "49bec55ea26ef64b94599e170c5d628aeb0e731eb1b84fac71119e32c7edb501"
 internal const val GXR_SPACEWARP_MANIFEST_SHA256 =
     "623f0f1b9c69d049cc9c3754d0481aa06b40529d322f3e233bafa12af840943b"
 internal const val GXR_SPACEWARP_GATE0_SHA256 =
