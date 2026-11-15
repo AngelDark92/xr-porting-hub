@@ -2748,6 +2748,38 @@
       ]
     },
     {
+      "name": "Microphone input recovery",
+      "description": "Restores microphone capture after Android disconnects it; concurrent capture still needs platform support. Build: 2.0.20/5001712.",
+      "category": "Tracking & audio",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "com.valvesoftware.steamlinkvr",
+          "name": "Steam Link",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#1B2838",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "2.0.20",
+              "versionCodes": {
+                "ARM64_V8A": 5001712,
+                "ARMEABI_V7A": 5001712,
+                "X86_64": 5001712,
+                "X86": 5001712
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": "Steam Link 2.0.20/5001712 legacy base."
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Native quad far plane (experimental)",
       "description": "Builds head-oriented quads directly in Steam Link's renderer, placed far from the eye. Build: 2.0.20/5001712. Needs: deselect Alpha-0 high-resolution trigger and Stock quad composition (experimental).",
       "category": "Image quality",
